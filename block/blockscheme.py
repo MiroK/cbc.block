@@ -1,7 +1,12 @@
-class BlockPrecond_2x2(BlockBase):
+from __future__ import division
+from blockbase import blockbase
+from blockoperator import blockop
+from blockvector import blockvec
+
+class BlockPrecond_2x2(blockbase):
     def __init__(self, op_2x2, reverse=False):
         """In typical use, Ainv and Dinv are preconditioners while B and C are matrices.
-        Any of them may also be BlockOperators, or inner solvers such as ConjGrad, as long
+        Any of them may also be blockops, or inner solvers such as ConjGrad, as long
         as each block implements __mul__ or matvec; thus, any number of blocks may be preconditioned
         using nested 2x2 blocks. (B is only used by SGS)."""
 
@@ -23,29 +28,29 @@ class BlockSymmetricGaussSeidel_2x2(BlockGaussSeidel_2x2):
         y[i0] -= self.op[i0,i0] * self.op[i0,i1] * y[i1]
         return y
 
-def BlockScheme(op_2x2, scheme='jacobi', reverse=False):
+def blockscheme(op_2x2, scheme='jacobi', reverse=False):
     if isinstance(op_2x2, (list, tuple)):
-        op_2x2 = BlockOperator(op_2x2)
-    if not isinstance(op_2x2, BlockOperator) or op_2x2.blocks.shape != (2,2):
-        raise TypeError('expected 2x2 BlockOperator')
+        op_2x2 = blockop(op_2x2)
+    if not isinstance(op_2x2, blockop) or op_2x2.blocks.shape != (2,2):
+        raise TypeError('expected 2x2 blockop')
     Ainv, B = op_2x2[0,:]
     C, Dinv = op_2x2[1,:]
 
     if scheme == 'jacobi' or scheme == 'jac':
         Ainv,Dinv = op_2x2[0,0],op_2x2[1,1]
-        return BlockOperator([[Ainv,  0  ],
+        return blockop([[Ainv,  0  ],
                               [0,    Dinv]])
 
-    #bGS  = BlockOperator([[1,  0  ],
-    #                      [0, Dinv]]) * BlockOperator([[ 1,   0],
-    #                                                   [-C, 1]]) * BlockOperator([[Ainv, 0],
+    #bGS  = blockop([[1,  0  ],
+    #                      [0, Dinv]]) * blockop([[ 1,   0],
+    #                                                   [-C, 1]]) * blockop([[Ainv, 0],
     #                                                                              [ 0,   1]])
     if scheme == 'gauss-seidel' or scheme == 'gs':
         #return bGS
         return BlockGaussSeidel_2x2(op_2x2, reverse)
 
     if scheme == 'symmetric gauss-seidel' or scheme == 'sgs':
-        #return BlockOperator([[1, -Ainv*B],
+        #return blockop([[1, -Ainv*B],
         #                      [0,  1     ]]) * bGS
         return BlockSymmetricGaussSeidel_2x2(op_2x2, reverse)
 

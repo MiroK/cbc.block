@@ -1,10 +1,9 @@
 from __future__ import division
 
-from BlockStuff import BlockBase
-import Krylov
-import numpy
+from block.blockbase import blockbase
+from dolfin import warning
 
-class KrylovBase(BlockBase):
+class krylovbase(blockbase):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, name=None, show=1, **kwargs):
         self.B = precond
         self.A = A
@@ -50,6 +49,8 @@ class KrylovBase(BlockBase):
 
         # eigenvalues estimates in terms of alphas and betas
 
+        import numpy
+
         n = len(self.alphas)
         A = numpy.zeros([n,n])
         A[0,0] = 1/self.alphas[0]
@@ -61,22 +62,27 @@ class KrylovBase(BlockBase):
         e.sort()
         return e
 
-class ConjGrad(KrylovBase):
+class ConjGrad(krylovbase):
     name = "ConjGrad"
-    method = staticmethod(Krylov.precondconjgrad)
+    import conjgrad
+    method = staticmethod(conjgrad.precondconjgrad)
 
-class BiCGStab(KrylovBase):
+class BiCGStab(krylovbase):
     name = "BiCGStab"
-    method = staticmethod(Krylov.precondBiCGStab)
+    import bicgstab
+    method = staticmethod(bicgstab.precondBiCGStab)
 
-class CGN(KrylovBase):
+class CGN(krylovbase):
     name = "CGN"
-    method = staticmethod(Krylov.CGN_BABA)
+    import cgn
+    method = staticmethod(cgn.CGN_BABA)
 
-class SymmLQ(KrylovBase):
+class SymmLQ(krylovbase):
     name = "SymmLQ"
-    method = staticmethod(Krylov.symmlq)
+    import symmlq
+    method = staticmethod(symmlq.symmlq)
 
-class TFQMR(KrylovBase):
+class TFQMR(krylovbase):
     name = "TFQMR"
-    method = staticmethod(Krylov.tfqmr)
+    import tfqmr
+    method = staticmethod(tfqmr.tfqmr)

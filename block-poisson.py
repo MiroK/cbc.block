@@ -28,10 +28,11 @@ __license__   = "GNU LGPL Version 2.1"
 
 # Begin demo
 
-from MLPrec import *
+import PyTrilinos
+from block import *
+from block.krylov import ConjGrad
+from block.algebraic import MLPreconditioner
 from dolfin import *
-from BlockStuff import *
-from BlockSolvers import *
 
 parameters["linear_algebra_backend"] = "Epetra"
 
@@ -60,11 +61,11 @@ A = assemble(a11)
 B = assemble(a12)
 C = assemble(a21)
 
-AA = BlockOperator([[A, B],
+AA = blockop([[A, B],
                     [C, 0]])
 
 b1 = assemble(L2)
-b = BlockVector([0, b1])
+b = blockvec([0, b1])
 
 # Define function G such that G \cdot n = g
 class BoundarySource(Expression):
@@ -87,13 +88,13 @@ def boundary(x, on_boundary):
 
 #=====================
 
-bc = BlockBC([DirichletBC(BDM, G, boundary), None])
+bc = blockbc([DirichletBC(BDM, G, boundary), None])
 bc.apply(AA, b)
 
 Ap = MLPreconditioner(A)
 
 Linv = MLPreconditioner(assemble(u*v*dx))
-prec = BlockOperator([[Ap, B],
+prec = blockop([[Ap, B],
                       [C,  Linv]]).scheme('jac')
 #=====================
 

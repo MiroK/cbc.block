@@ -1,17 +1,25 @@
-class BlockBase(object):
+from __future__ import division
+
+import numpy
+
+class blockbase(object):
     # Convenience methods
     def __mul__(self, other):
-        if not isinstance(other, (BlockVector, Vector)):
-            return BlockCompose(self, other)
+        from blockvector import blockvec
+        from dolfin import Vector
+        if not isinstance(other, (blockvec, Vector)):
+            return blockcompose(self, other)
         return self.matvec(other)
 
     def __rmul__(self, other):
-        return BlockCompose(other, self)
+        from blockcompose import blockcompose
+        return blockcompose(other, self)
 
     def __neg__(self):
-        return BlockCompose(-1, self)
+        from blockcompose import blockcompose
+        return blockcompose(-1, self)
 
-class BlockThingy(BlockBase):
+class blockcontainer(blockbase):
     def __init__(self, mn=None, blocks=None):
         if mn:
             self.blocks = numpy.ndarray(mn, dtype=numpy.object)

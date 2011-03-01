@@ -9,9 +9,10 @@ from PyTrilinos import AztecOO
 
 from dolfin import down_cast, Vector, Matrix
 import numpy
-from BlockStuff import BlockBase, BlockCompose
+from block.blockbase import blockbase
+from block.blockcompose import blockcompose
 
-class MLPreconditioner(BlockBase):
+class MLPreconditioner(blockbase):
     def __init__(self, A, pdes=1):
         # create the ML preconditioner
         MLList = {
@@ -35,7 +36,7 @@ class MLPreconditioner(BlockBase):
 
     def __mul__(self, b):
         if not isinstance(b, Vector):
-            return BlockCompose(self, b)
+            return blockcompose(self, b)
         # apply the ML preconditioner
         x = Vector(len(b))
         err = self.ml_prec.ApplyInverse(down_cast(b).vec(), down_cast(x).vec())
@@ -46,7 +47,7 @@ class MLPreconditioner(BlockBase):
     def down_cast(self):
         return self.ml_prec
 
-class AztecSolver(BlockBase):
+class AztecSolver(blockbase):
     def __init__(self, A, tolerance=1e-5, maxiter=300, solver='cg', precond=None):
         self.A = A
         self.solver = getattr(AztecOO, 'AZ_'+solver)
@@ -59,7 +60,7 @@ class AztecSolver(BlockBase):
 
     def __mul__(self, b):
         if not isinstance(b, Vector):
-            return BlockCompose(self, b)
+            return blockcompose(self, b)
         x = Vector(len(b))
         solver = AztecOO.AztecOO(down_cast(self.A).mat(), down_cast(x).vec(), down_cast(b).vec())
         #solver.SetAztecDefaults()

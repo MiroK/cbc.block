@@ -1,8 +1,11 @@
-class BlockCompose(BlockBase):
+from __future__ import division
+from blockbase import blockbase
+
+class blockcompose(blockbase):
     def __init__(self, A, B):
-        """Args may be BlockOperators or individual blocks (scalar or Matrix)"""
-        A = A.chain if isinstance(A, BlockCompose) else [A]
-        B = B.chain if isinstance(B, BlockCompose) else [B]
+        """Args may be blockoperators or individual blocks (scalar or Matrix)"""
+        A = A.chain if isinstance(A, blockcompose) else [A]
+        B = B.chain if isinstance(B, blockcompose) else [B]
         self.chain = B+A
     def __mul__(self, x):
         for op in self.chain:
@@ -11,9 +14,9 @@ class BlockCompose(BlockBase):
                 return NotImplemented
         return x
     def __sub__(self, x):
-        return BlockSub(self, x)
+        return blocksub(self, x)
     def __add__(self, x):
-        return BlockAdd(self, x)
+        return blockadd(self, x)
 
 class SubBlockOperator(object):
     """Create an operator on a sub-block of a larger block operator. Can be used for example
@@ -23,10 +26,11 @@ class SubBlockOperator(object):
         self.idx = idx
 
     def matvec(self, other):
-        other_sub = BlockVector(other.blocks[self.idx])
+        from blockoperator import blockvec
+        other_sub = blockvec(other.blocks[self.idx])
         result_sub = self.sub_op * other_sub
 
-        result = BlockVector(len(other))
+        result = blockvec(len(other))
         for i in range(len(result_sub)):
             result[self.idx[i]] = result_sub[i]
         for i in range(len(result)):
@@ -36,34 +40,38 @@ class SubBlockOperator(object):
         return result
 
 
-# It's probably best if BlockSub and BlockAdd do not allow coercion into
-# BlockCompose, since that might mess up the operator precedence. Hence, they
-# do not inherit from BlockBase. As it is now, self.A*x and self.B*x must be
+# It's probably best if blocksub and blockadd do not allow coercion into
+# blockcompose, since that might mess up the operator precedence. Hence, they
+# do not inherit from blockbase. As it is now, self.A*x and self.B*x must be
 # reduced to vectors, which means all block multiplies are finished before
 # __mul__ does anything.
 
-class BlockSub(object):
+class blocksub(object):
     def __init__(self, A, B):
         self.A = A
         self.B = B
     def __mul__(self, x):
-        if not isinstance(x, (Vector, BlockVector)):
+        from blockoperator import blockvec
+        from dolfin import Vector
+        if not isinstance(x, (Vector, blockvec)):
             return NotImplemented
         y = self.A*x
         y -= self.B*x
         return y
     def __neg__(self):
-        return BlockSub(self.B, self.A)
+        return blocksub(self.B, self.A)
 
-class BlockAdd(object):
+class blockadd(object):
     def __init__(self, A, B):
         self.A = A
         self.B = B
     def __mul__(self, x):
-        if not isinstance(x, (Vector, BlockVector)):
+        from blockoperator import blockvec
+        from dolfin import Vector
+        if not isinstance(x, (Vector, blockvec)):
             return NotImplemented
         y = self.A*x
         y += self.B*x
         return y
     def __neg__(self):
-        return BlockCompose(-1, self)
+        return blockcompose(-1, self)

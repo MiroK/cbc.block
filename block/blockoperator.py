@@ -1,4 +1,8 @@
-class BlockOperator(BlockThingy):
+from __future__ import division
+from blockbase import blockcontainer
+from blockvector import blockvec
+
+class blockop(blockcontainer):
     """Block of matrices or other operators. Empty blocks doesn't need to be set
     (they may be None or zero), but each row must have at least one non-empty block.
 
@@ -7,13 +11,13 @@ class BlockOperator(BlockThingy):
 
     def __init__(self, m, n=None):
         if n is None:
-            BlockThingy.__init__(self, blocks=m)
+            blockcontainer.__init__(self, blocks=m)
         else:
-            BlockThingy.__init__(self, mn=(m,n))
+            blockcontainer.__init__(self, mn=(m,n))
 
     def matvec(self, x):
         m,n = self.blocks.shape
-        y = BlockVector(m)
+        y = blockvec(m)
 
         for i in range(m):
             for j in range(n):
@@ -36,7 +40,7 @@ class BlockOperator(BlockThingy):
     def transpmult(self, x, r):
         # Probably incorrect, since BiCGStab and CGN both fail...
         m,n = self.blocks.shape
-        y = BlockVector(len(r))
+        y = blockvec(len(r))
 
         for i in range(n):
             for j in range(m):
@@ -63,7 +67,7 @@ class BlockOperator(BlockThingy):
     def copy(self):
         import copy
         m,n = self.blocks.shape
-        y = BlockOperator(m,n)
+        y = blockop(m,n)
         for i in range(m):
             for j in range(n):
                 obj = self[i,j]
@@ -94,5 +98,6 @@ class BlockOperator(BlockThingy):
         return S
 
     def scheme(self, name, reverse=False):
-        return BlockScheme(self, name, reverse)
+        from blockscheme import blockscheme
+        return blockscheme(self, name, reverse)
 

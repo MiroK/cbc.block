@@ -1,9 +1,13 @@
-class BlockVector(BlockThingy):
+from __future__ import division
+from blockbase import blockcontainer
+from dolfin import Vector
+
+class blockvec(blockcontainer):
     def __init__(self, m):
         if hasattr(m, '__iter__'):
-            BlockThingy.__init__(self, mn=len(m), blocks=m)
+            blockcontainer.__init__(self, mn=len(m), blocks=m)
         else:
-            BlockThingy.__init__(self, mn=m)
+            blockcontainer.__init__(self, mn=m)
 
     def allocate(self, AA):
         for i in range(len(self)):
@@ -28,7 +32,7 @@ class BlockVector(BlockThingy):
             return pack(sum(unpack(x.norm(ntype)) for x in self))
 
     def _map_operator(self, operator):
-        y = BlockVector(len(self))
+        y = blockvec(len(self))
         for i in range(len(self)):
             y[i] = getattr(self[i], operator)()
         return y
@@ -39,7 +43,7 @@ class BlockVector(BlockThingy):
         except:
             return NotImplemented
         if y is None:
-            y = BlockVector(len(self))
+            y = blockvec(len(self))
         for i in range(len(self)):
             y[i] = getattr(self[i], operator)(x)
             if y[i] == NotImplemented: return NotImplemented
@@ -47,7 +51,7 @@ class BlockVector(BlockThingy):
 
     def _map_vector_operator(self, operator, x, y=None):
         if y is None:
-            y = BlockVector(len(self))
+            y = blockvec(len(self))
         for i in range(len(self)):
             y[i] = getattr(self[i], operator)(x[i])
             if y[i] == NotImplemented: return NotImplemented
