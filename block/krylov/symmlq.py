@@ -36,7 +36,8 @@ def symmlq(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0)
     if beta1 < 0:
         raise ValueError, 'B does not define a pos-def preconditioner'
     if beta1 == 0:
-        return r1*0, [0], [], []
+        x[:] = 0
+        return x, [0], [], []
 
     beta1 = sqrt(beta1)
     s     = 1.0 / beta1

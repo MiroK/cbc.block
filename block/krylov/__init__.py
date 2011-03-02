@@ -86,3 +86,11 @@ class TFQMR(krylovbase):
     name = "TFQMR"
     import tfqmr
     method = staticmethod(tfqmr.tfqmr)
+
+class MinRes(krylovbase):
+    import minres
+    method = staticmethod(minres.minres)
+
+class LGMRES(krylovbase):
+    import lgmres
+    method = staticmethod(lgmres.lgmres)
