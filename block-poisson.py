@@ -93,12 +93,14 @@ bc.apply(AA, b)
 
 Ap = MLPreconditioner(A)
 
-Linv = MLPreconditioner(assemble(u*v*dx))
+L = assemble(u*v*dx)
+Lpre = MLPreconditioner(L)
+Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
 prec = blockop([[Ap, B],
                 [C,  Linv]]).scheme('jac')
 #=====================
 
-AAinv = SymmLQ(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
+AAinv = ConjGrad(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
 
 
 import time

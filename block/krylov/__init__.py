@@ -94,3 +94,7 @@ class MinRes(krylovbase):
 class LGMRES(krylovbase):
     import lgmres
     method = staticmethod(lgmres.lgmres)
+
+class Richardson(krylovbase):
+    import richardson
+    method = staticmethod(richardson.richardson)
