@@ -30,7 +30,7 @@ __license__   = "GNU LGPL Version 2.1"
 
 import PyTrilinos
 from block import *
-from block.krylov import ConjGrad
+from block.krylov import *
 from block.algebraic import MLPreconditioner
 from dolfin import *
 
@@ -62,7 +62,7 @@ B = assemble(a12)
 C = assemble(a21)
 
 AA = blockop([[A, B],
-                    [C, 0]])
+              [C, 0]])
 
 b1 = assemble(L2)
 b = blockvec([0, b1])
@@ -95,10 +95,10 @@ Ap = MLPreconditioner(A)
 
 Linv = MLPreconditioner(assemble(u*v*dx))
 prec = blockop([[Ap, B],
-                      [C,  Linv]]).scheme('jac')
+                [C,  Linv]]).scheme('jac')
 #=====================
 
-AAinv = ConjGrad(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
+AAinv = SymmLQ(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
 
 
 import time

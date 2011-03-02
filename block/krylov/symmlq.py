@@ -92,7 +92,7 @@ def symmlq(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0)
 
     alphas = []
     betas = []
-    residuals = [beta1]
+    residuals = [beta1/sqrt(tnorm)]
     itn = 0
 
     while True:
@@ -129,12 +129,13 @@ def symmlq(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0)
         # (Abar = const * I).
 
         if istop == 0:
+            if itn     >  maxiter    : istop = 5
             if acond   >= 0.1/eps    : istop = 4
             if epsx    >= beta1      : istop = 3
             if cgnorm  <= epsx       : istop = 2
             if cgnorm  <= epsr       : istop = 1
 
-        residuals.append(cgnorm)
+        residuals.append(cgnorm / anorm / (ynorm or 1))
 
         if istop !=0:
             break
