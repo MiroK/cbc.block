@@ -8,4 +8,4 @@ from AztecOO import AztecSolver
 from IFPACK import *
 from Epetra import *
 
-del Vector, down_cast, blockbase
+del Vector, blockbase

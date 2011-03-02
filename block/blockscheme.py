@@ -15,7 +15,7 @@ class BlockPrecond_2x2(blockbase):
 
 class BlockGaussSeidel_2x2(BlockPrecond_2x2):
     def matvec(self, x):
-        y = BlockVector(2)
+        y = blockvec(2)
         i0,i1 = self.idx
         y[i0] = self.op[i0,i0] * x[i0]
         y[i1] = self.op[i1,i1] * (x[i1] - self.op[i1,i0] * y[i0])

@@ -1,6 +1,6 @@
 from __future__ import division
 
-from dolfin import down_cast, Vector
+from dolfin import Vector
 from block.blockbase import blockbase
 
 class ML(blockbase):
@@ -19,7 +19,7 @@ class ML(blockbase):
             "ML validate parameter list": True,
             }
         self.A = A # Prevent matrix being deleted
-        self.ml_prec = MultiLevelPreconditioner(down_cast(A).mat(), 0)
+        self.ml_prec = MultiLevelPreconditioner(A.down_cast().mat(), 0)
         self.ml_prec.SetParameterList(MLList)
         self.ml_agg = self.ml_prec.GetML_Aggregate()
         err = self.ml_prec.ComputePreconditioner()
@@ -31,7 +31,7 @@ class ML(blockbase):
             return NotImplemented
         # apply the ML preconditioner
         x = Vector(len(b))
-        err = self.ml_prec.ApplyInverse(down_cast(b).vec(), down_cast(x).vec())
+        err = self.ml_prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:
             raise RuntimeError('ApplyInverse returned %d'%err)
         return x

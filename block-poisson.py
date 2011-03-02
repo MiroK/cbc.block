@@ -96,8 +96,12 @@ Ap = ML(A)
 L = assemble(u*v*dx)
 Lpre = LumpedJacobi(L)
 #Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
+
+S = SchurComplement(AA)
+Sp = ML(S)
+
 prec = blockop([[Ap, B],
-                [C,  Lpre]]).scheme('jac')
+                [C,  Sp]]).scheme('sgs')
 #=====================
 
 AAinv = ConjGrad(AA, precond=prec, maxiter=1000, show=2, name='AAinv')

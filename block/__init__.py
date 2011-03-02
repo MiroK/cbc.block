@@ -40,3 +40,9 @@ dolfin.Matrix.__rmul__ = _mat_rmul
 def _mat_neg(self):
     return blockcompose(-1, self)
 dolfin.Matrix.__neg__ = _mat_neg
+
+# For the Trilinos stuff, it's much nicer if down_cast is a method on the object
+def _down_cast(self):
+    return dolfin.down_cast(self)
+dolfin.Matrix.down_cast = _down_cast
+dolfin.Vector.down_cast = _down_cast

@@ -5,6 +5,7 @@ import numpy
 class blockbase(object):
     # Convenience methods
     def __mul__(self, other):
+        from blockcompose import blockcompose
         from blockvector import blockvec
         from dolfin import Vector
         if not isinstance(other, (blockvec, Vector)):

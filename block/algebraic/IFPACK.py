@@ -1,9 +1,17 @@
 from __future__ import division
 
-from dolfin import down_cast, Vector
+from dolfin import Vector
 from block.blockbase import blockbase
 
 class IFPACK(blockbase):
+
+    errcode = {1 : "Generic Error (called method or function returned an error)",
+               2 : "Input data not valid (wrong parameter, out-of-bounds, wrong dimensions, matrix is not square,...)",
+               3 : "Data has not been correctly pre-processed",
+               4 : "Problem encountered during application of the algorithm (division by zero, out-of-bounds, ...)",
+               5 : "Memory allocation error",
+               98: "Feature is not supported",
+               99: "Feature is not implemented yet (check Known Bugs and Future Developments, or submit a bug)"}
 
     params = {}
 
@@ -16,7 +24,7 @@ class IFPACK(blockbase):
         if overlap == 0:
             prectype += ' stand-alone' # Skip the additive Schwarz step
 
-        self.prec = Factory().Create(prectype, down_cast(A).mat(), overlap)
+        self.prec = Factory().Create(prectype, A.down_cast().mat(), overlap)
         if not self.prec:
             raise RuntimeError, "Unknown IFPACK preconditioner '%s'"%prectype
 
@@ -32,9 +40,9 @@ class IFPACK(blockbase):
         if not isinstance(b, Vector):
             return NotImplemented
         x = Vector(len(b))
-        err = self.prec.ApplyInverse(down_cast(b).vec(), down_cast(x).vec())
+        err = self.prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:
-            raise RuntimeError('ApplyInverse returned %d'%err)
+            raise RuntimeError('ApplyInverse returned error %d: %s'%(err, self.errcode.get(-err)))
         return x
 
 # "point relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>

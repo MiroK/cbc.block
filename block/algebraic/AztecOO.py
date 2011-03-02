@@ -1,6 +1,6 @@
 from __future__ import division
 
-from dolfin import down_cast, Vector
+from dolfin import Vector
 from block.blockbase import blockbase
 
 class AztecSolver(blockbase):
@@ -20,7 +20,7 @@ class AztecSolver(blockbase):
         if not isinstance(b, Vector):
             return NotImplemented
         x = Vector(len(b))
-        solver = AztecOO.AztecOO(down_cast(self.A).mat(), down_cast(x).vec(), down_cast(b).vec())
+        solver = AztecOO.AztecOO(self.A.down_cast().mat(), x.down_cast().vec(), b.down_cast().vec())
         #solver.SetAztecDefaults()
         solver.SetAztecOption(AztecOO.AZ_solver, self.solver)
         if self.precond:
