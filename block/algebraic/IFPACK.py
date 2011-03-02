@@ -45,6 +45,9 @@ class IFPACK(blockbase):
             raise RuntimeError('ApplyInverse returned error %d: %s'%(err, self.errcode.get(-err)))
         return x
 
+    def down_cast(self):
+        return self.prec
+
 # "point relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>
 # "block relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation>
 # "Amesos" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_Amesos>.

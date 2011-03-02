@@ -97,8 +97,8 @@ L = assemble(u*v*dx)
 Lpre = LumpedJacobi(L)
 #Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
 
-S = SchurComplement(AA)
-Sp = ML(S)
+S = MatMult(C,B)
+Sp = ConjGrad(S, precond=ML(S))
 
 prec = blockop([[Ap, B],
                 [C,  Sp]]).scheme('sgs')
