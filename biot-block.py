@@ -43,11 +43,11 @@ bb = BlockVector([0, b_p])
 bcs = BlockBC(bcs)
 bcs.apply(AA, bb, save_A=True)
 
-Ap = MLPreconditioner(A)
+Ap = ML(A)
 Ainv = ConjGrad(A, precond=Ap, name='Ainv')
 
 Sa = AA.schur_approximation(scale=-1)
-Sp = MLPreconditioner(Sa)
+Sp = ML(Sa)
 
 S = C*Ainv*B-D
 Sinv = ConjGrad(S, precond=Sp, name='Sinv')

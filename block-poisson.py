@@ -31,7 +31,7 @@ __license__   = "GNU LGPL Version 2.1"
 import PyTrilinos
 from block import *
 from block.krylov import *
-from block.algebraic import MLPreconditioner
+from block.algebraic import *
 from dolfin import *
 
 parameters["linear_algebra_backend"] = "Epetra"
@@ -91,13 +91,13 @@ def boundary(x, on_boundary):
 bc = blockbc([DirichletBC(BDM, G, boundary), None])
 bc.apply(AA, b)
 
-Ap = MLPreconditioner(A)
+Ap = ML(A)
 
 L = assemble(u*v*dx)
-Lpre = MLPreconditioner(L)
-Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
+Lpre = LumpedJacobi(L)
+#Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
 prec = blockop([[Ap, B],
-                [C,  Linv]]).scheme('jac')
+                [C,  Lpre]]).scheme('jac')
 #=====================
 
 AAinv = ConjGrad(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
