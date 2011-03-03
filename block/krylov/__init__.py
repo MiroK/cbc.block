@@ -4,17 +4,22 @@ from block.blockbase import blockbase
 from dolfin import warning
 
 class krylovbase(blockbase):
-    def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, name=None, show=1, **kwargs):
+    def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, name=None, show=1, iter=None, **kwargs):
         self.B = precond
         self.A = A
         self.initial_guess = initial_guess
         self.show = show
         self.kwargs = kwargs
-        if name:
-            self.name = name
+        self.name = name if name else self.__class__.__name__
         self.tolerance = tolerance
+        if iter is not None:
+            self.tolerance = 0
+            kwargs['maxiter'] = iter
 
     def matvec(self, b):
+        from time import time
+        T = time()
+
         if self.initial_guess:
             x = self.initial_guess
         else:
@@ -27,12 +32,19 @@ class krylovbase(blockbase):
             raise
         x, self.residuals, self.alphas, self.betas = x
 
+        if self.tolerance == 0:
+            msg = "Done"
+        elif self.converged:
+            msg = "Converged"
+        else:
+            msg = "NOT CONV."
+
         if self.show == 1:
-            print '%s: iterations=%d, residual=%.1e' \
-                % (self.name, self.iterations, self.residuals[-1])
+            print '%s: %s [iter=%2d, time=%.2fs, res=%.1e]' \
+                % (self.name, msg, self.iterations, time()-T, self.residuals[-1])
         elif self.show == 2:
-            print '%s: iterations=%d, residual=%.1e, true residual=%.1e' \
-                % (self.name, self.iterations, self.residuals[-1], (self.A*x-b).norm('l2'))
+            print '%s: %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
+                % (self.name, msg, self.iterations, time()-T, self.residuals[-1], (self.A*x-b).norm('l2'))
         return x
 
     @property
@@ -40,7 +52,7 @@ class krylovbase(blockbase):
         return len(self.residuals)-1
     @property
     def converged(self):
-        return self.residuals[-1] < self.tolerance
+        return self.tolerance == 0 or self.residuals[-1] < self.tolerance
 
     def eigenvalue_estimates(self):
         #####
@@ -63,27 +75,22 @@ class krylovbase(blockbase):
         return e
 
 class ConjGrad(krylovbase):
-    name = "ConjGrad"
     import conjgrad
     method = staticmethod(conjgrad.precondconjgrad)
 
 class BiCGStab(krylovbase):
-    name = "BiCGStab"
     import bicgstab
     method = staticmethod(bicgstab.precondBiCGStab)
 
 class CGN(krylovbase):
-    name = "CGN"
     import cgn
     method = staticmethod(cgn.CGN_BABA)
 
 class SymmLQ(krylovbase):
-    name = "SymmLQ"
     import symmlq
     method = staticmethod(symmlq.symmlq)
 
 class TFQMR(krylovbase):
-    name = "TFQMR"
     import tfqmr
     method = staticmethod(tfqmr.tfqmr)
 

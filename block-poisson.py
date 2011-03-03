@@ -1,39 +1,67 @@
 from __future__ import division
 
-"""This demo program solves the mixed formulation of Poisson's
-equation:
+"""This demo program shows the use of block preconditioners for Mixed
+Poisson. The original demo, with description of the mixed formulation of the
+variational problem, can be found in demo/pde/mixed_poisson/python.
 
-    sigma - grad(u) = 0
-         div(sigma) = f
+The algebraic system to be solved can be written as
 
-The corresponding weak (variational problem)
+  BB^ AA [sigma u]^T = BB^ [0 b]^T,
 
-    <sigma, tau> + <div(tau), u>   = 0       for all tau
-                   <div(sigma), v> = <f, v>  for all v
+where AA is a 2x2 block system with zero in the (2,2) block
 
-is solved using BDM (Brezzi-Douglas-Marini) elements of degree k for
-(sigma, tau) and DG (discontinuous Galerkin) elements of degree k - 1
-for (u, v).
+       | A   B |
+  AA = |       |,
+       | C   0 |
 
-Original implementation: ../cpp/main.cpp by Anders Logg and Marie Rognes
+and BB^ approximates the inverse of the block operator
+
+       | A   0 |
+  BB = |       |,
+       | 0   L |
+
+where L is the Laplace operator. Since the DG(0) approximation of L is zero, we
+calculate it instead as L = C*B.
+
+When forming the preconditioner BB^, we require approximate inverses of A and
+L. For A, this is straightforward: an ML multilevel preconditioner is used:
+
+  A^ = ML(A)
+
+For L, however, we never actually calculate the matrix product, we just create
+a composite operator so that
+
+  x = L*v
+            ==> w = B*v; x = C*w
+
+Hence, all preconditioners that require access to the matrix elements (which is
+most of them) are unavailable. Instead we use an inner iterative solver:
+
+  L^ = Richardson(L, precond=0.5, iter=40)
+
+This describes a solver using Richardson iterations, with damping 0.5 and a
+fixed number of iterations. It is not very efficient, but since it is a linear
+operator it is safe to use as inner solver for an outer Krylov solver. (It
+usually works fine to use ConjGrad as inner solver, but it may not always be
+safe.)
 """
 
-__author__    = "Kristian B. Oelgaard (k.b.oelgaard@tudelft.nl)"
-__date__      = "2007-11-14 -- 2008-12-19"
-__copyright__ = "Copyright (C) 2007 Kristian B. Oelgaard"
+__author__    = "Joachim B Haga <jobh@simula.no>"
+__date__      = "2011"
 __license__   = "GNU LGPL Version 2.1"
-
-# Modified by Marie E. Rognes 2010
-# Last changed: 31-08-2010
 
 # Begin demo
 
+# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
+# modules. This works around a bug with MPI initialisation/destruction order.
 import PyTrilinos
+
 from block import *
-from block.krylov import *
-from block.algebraic import *
+from block.krylov import Richardson, ConjGrad
+from block.algebraic import ML
 from dolfin import *
 
+# To be able to use ML we must instruct Dolfin to use the Epetra backend.
 parameters["linear_algebra_backend"] = "Epetra"
 
 # Create mesh
@@ -86,40 +114,44 @@ G = BoundarySource(mesh)
 def boundary(x, on_boundary):
     return on_boundary and near(x[1], 0) or near(x[1], 1)
 
-#=====================
-
+# Define and apply the boundary conditions to the block matrix. The input to
+# blockbc defines a Dirichlet condition on the first block, and no conditions
+# on the second block. The boundary conditions are applied in such a way that
+# the system remains symmetric, and the individual blocks remain positive or
+# negative definite.
 bc = blockbc([DirichletBC(BDM, G, boundary), None])
 bc.apply(AA, b)
 
+# Create a preconditioner for A (using the ML preconditioner from Trilinos)
 Ap = ML(A)
 
-L = assemble(u*v*dx)
-Lpre = LumpedInvDiag(L)
-#Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
+# Create an approximate inverse of L=C*B using inner Richardson iterations
+L = C*B
+Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 
-S = C*(InvDiag(A)-0.2)*B
-Sp = ConjGrad(S, precond=ML(explicit(S)))
+# Alternative b: Use inner Conjugate Gradient iterations. Not completely safe,
+# but faster (and does not require damping).
+#Lp = ConjGrad(L, maxiter=40, name='L^')
 
-prec = blockop([[Ap, B],
-                [C,  Sp]]).scheme('sgs')
+# Alternative c: Calculate the matrix product, so that a regular preconditioner
+# can be used. The "explicit" function collapses a composed operator into a
+# single matrix. For larger problems, and in particular on parallel computers,
+# this is a very expensive operation --- but here it works fine.
+#from block.algebraic import explicit
+#Lp = ML(explicit(L))
+
+# Define the block preconditioner
+AAp = blockop([[Ap, 0],
+               [0,  Lp]])
+
+# Define the block inverse, using an outer preconditioned Conjugated Gradient
+# solver
+AAinv = ConjGrad(AA, precond=AAp, show=2, name='AA^')
+
 #=====================
-
-AAinv = ConjGrad(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
-
-import time
-T = -time.time()
-
-#=====================
+# Solve the system
 x = AAinv * b
 #=====================
-
-T += time.time()
-msg = "%d outer iterations in %.2f seconds" % (AAinv.iterations, T)
-if AAinv.converged:
-    print "Converged [%s]"%msg
-else:
-    print "NOT CONVERGED [%s]"%msg
-
 
 # Plot sigma and u
 plot(Function(BDM, x[0]))
