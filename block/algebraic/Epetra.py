@@ -175,5 +175,3 @@ def explicit(x):
     res = _explicit(x)
     info('computed explicit matrix representation in %.2f s'%(time()-T))
     return res
-
-del diag_op, matrix_op

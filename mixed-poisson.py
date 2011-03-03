@@ -55,7 +55,7 @@ __license__   = "GNU LGPL Version 2.1"
 import PyTrilinos
 
 from block import *
-from block.iterative import Richardson, ConjGrad
+from block.iterative import Richardson, ConjGrad, MinRes
 from block.algebraic import ML
 from dolfin import *
 
@@ -88,7 +88,7 @@ B = assemble(a12)
 C = assemble(a21)
 
 AA = block_mat([[A, B],
-              [C, 0]])
+                [C, 0]])
 
 b1 = assemble(L2)
 b = block_vec([0, b1])
@@ -140,19 +140,22 @@ Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 
 # Define the block preconditioner
 AAp = block_mat([[Ap, 0],
-               [0,  Lp]])
+                 [0,  Lp]])
 
-# Define the block inverse, using an outer preconditioned Conjugated Gradient
-# solver
-AAinv = ConjGrad(AA, precond=AAp, show=2, name='AA^')
+# Define the block inverse using an outer Preconditioned Minimum Residual
+# method, suitable for symmetric indefinite problems. SymmLQ is a good
+# alternative (often slower, but more robust for ill-conditioned problems).
+# ConjGrad may be much faster and will often work fine, but it is not
+# guaranteed to converge since the matrix is not definite.
+AAinv = MinRes(AA, precond=AAp, show=2, name='AA^')
 
 #=====================
 # Solve the system
-x = AAinv * b
+Sigma, U = AAinv * b
 #=====================
 
 # Plot sigma and u
-plot(Function(BDM, x[0]))
-plot(Function(DG,  x[1]))
+plot(Function(BDM, Sigma))
+plot(Function(DG,  U))
 
 interactive()

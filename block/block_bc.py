@@ -45,6 +45,8 @@ class block_bc(list):
             if not self[i]:
                 # No BC on this block, sign doesn't matter
                 continue
+            if not isinstance(AA[i,i], Matrix):
+                raise TypeError, "can only set boundary conditions on matrices"
             # Do not use a constant vector, as that may be in the null space
             # before boundary conditions are applied
             x = bb[i].copy()
@@ -52,6 +54,7 @@ class block_bc(list):
             Ax = AA[i,i]*x
             xAx = x.inner(Ax)
             if xAx == 0:
+                from dolfin import warning
                 warning("block_bc: zero or semi-definite block (%d,%d), using sign +1"%(i,i))
             self.signs[i] = -1 if xAx < 0 else 1
         info('Calculated signs of diagonal blocks:' + str(self.signs))

@@ -38,19 +38,19 @@ def blockscheme(op_2x2, scheme='jacobi', reverse=False):
     if scheme == 'jacobi' or scheme == 'jac':
         Ainv,Dinv = op_2x2[0,0],op_2x2[1,1]
         return block_mat([[Ainv,  0  ],
-                              [0,    Dinv]])
+                          [0,    Dinv]])
 
     #bGS  = block_mat([[1,  0  ],
-    #                      [0, Dinv]]) * block_mat([[ 1,   0],
-    #                                                   [-C, 1]]) * block_mat([[Ainv, 0],
-    #                                                                              [ 0,   1]])
+    #                  [0, Dinv]]) * block_mat([[ 1,   0],
+    #                                           [-C, 1]]) * block_mat([[Ainv, 0],
+    #                                                                  [ 0,   1]])
     if scheme == 'gauss-seidel' or scheme == 'gs':
         #return bGS
         return BlockGaussSeidel_2x2(op_2x2, reverse)
 
     if scheme == 'symmetric gauss-seidel' or scheme == 'sgs':
         #return block_mat([[1, -Ainv*B],
-        #                      [0,  1     ]]) * bGS
+        #                  [0,  1     ]]) * bGS
         return BlockSymmetricGaussSeidel_2x2(op_2x2, reverse)
 
     raise TypeError('unknown scheme "%s"'%scheme)
