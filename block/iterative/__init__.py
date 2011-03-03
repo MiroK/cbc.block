@@ -3,7 +3,7 @@ from __future__ import division
 from block.blockbase import blockbase
 from dolfin import warning
 
-class krylovbase(blockbase):
+class iterative(blockbase):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, name=None, show=1, iter=None, **kwargs):
         self.B = precond
         self.A = A
@@ -74,34 +74,36 @@ class krylovbase(blockbase):
         e.sort()
         return e
 
-class ConjGrad(krylovbase):
+class ConjGrad(iterative):
     import conjgrad
     method = staticmethod(conjgrad.precondconjgrad)
 
-class BiCGStab(krylovbase):
+class BiCGStab(iterative):
     import bicgstab
     method = staticmethod(bicgstab.precondBiCGStab)
 
-class CGN(krylovbase):
+class CGN(iterative):
     import cgn
     method = staticmethod(cgn.CGN_BABA)
 
-class SymmLQ(krylovbase):
+class SymmLQ(iterative):
     import symmlq
     method = staticmethod(symmlq.symmlq)
 
-class TFQMR(krylovbase):
+class TFQMR(iterative):
     import tfqmr
     method = staticmethod(tfqmr.tfqmr)
 
-class MinRes(krylovbase):
+class MinRes(iterative):
     import minres
     method = staticmethod(minres.minres)
 
-class LGMRES(krylovbase):
+class LGMRES(iterative):
     import lgmres
     method = staticmethod(lgmres.lgmres)
 
-class Richardson(krylovbase):
+class Richardson(iterative):
     import richardson
     method = staticmethod(richardson.richardson)
+
+del iterative, blockbase, warning
