@@ -13,7 +13,7 @@ class diag_op(blockbase):
         if not isinstance(b, Vector):
             return NotImplemented
         x = Vector(len(b))
-        x.down_cast().vec().Multiply(1, self.v, b.down_cast().vec(), 0)
+        x.down_cast().vec().Multiply(1.0, self.v, b.down_cast().vec(), 0.0)
         return x
 
     def matmat(self, other):
@@ -30,8 +30,26 @@ class diag_op(blockbase):
                 C.LeftScale(self.v)
                 return matrix_op(C)
             else:
-                x = Epetra.Vector(other.vec().EpetraMap())
-                x.Multiply(1, self.v, other.vec(), 0)
+                x = Epetra.Vector(self.v.Map())
+                x.Multiply(1.0, self.v, other.vec(), 0.0)
+                return diag_op(x)
+        except AttributeError:
+            raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
+
+    def add(self, other, lscale=1.0, rscale=1.0):
+        try:
+            from numpy import isscalar
+            from PyTrilinos import Epetra
+            if isscalar(other):
+                x = Epetra.Vector(self.v.Map())
+                x.PutScalar(other)
+                other = diag_op(x)
+            other = other.down_cast()
+            if isinstance(other, matrix_op):
+                return other.add(self)
+            else:
+                x = Epetra.Vector(self.v)
+                x.Update(rscale, other.vec(), lscale)
                 return diag_op(x)
         except AttributeError:
             raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
@@ -76,6 +94,23 @@ class matrix_op(blockbase):
         except AttributeError:
             raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
 
+    def add(self, other, scale=1.0):
+        try:
+            from PyTrilinos import Epetra
+            other = other.down_cast()
+            if hasattr(other, 'mat'):
+                from PyTrilinos import EpetraExt
+                C = Epetra.CrsMatrix(Epetra.Copy, self.M.RowMap(), 100)
+                assert (0 == EpetraExt.Add(self.M,      False, 1.0, C, 0.0))
+                assert (0 == EpetraExt.Add(other.mat(), False, 1.0, C, 1.0))
+                C.FillComplete()
+                C.OptimizeStorage()
+                return matrix_op(C)
+            else:
+                raise NotImplementedError, "matrix-diagonal add not implemented (yet?)"
+        except AttributeError:
+            raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
+
     def down_cast(self):
         return self
     def mat(self):
@@ -102,27 +137,41 @@ class LumpedInvDiag(diag_op):
         A.InvRowSums(v)
         diag_op.__init__(self, v)
 
-class explicit(matrix_op):
-    def __init__(self, x):
-        from block.blockcompose import blockcompose
-        from numpy import isscalar
-        from dolfin import Matrix
-        if isinstance(x, blockcompose):
-            factors = x.chain
-            while len(factors) > 1:
-                A = factors.pop()
-                B = factors.pop()
-                if isinstance(A, Matrix):
-                    _A = A # postpone garbage collection
-                    A = matrix_op(A.down_cast().mat())
-                if isinstance(B, Matrix):
-                    _B = B # postpone garbage collection
-                    B = matrix_op(B.down_cast().mat())
-                if isscalar(A):
-                    C = B.matmat(A)
-                else:
-                    C = A.matmat(B)
-                factors.append(C)
-            matrix_op.__init__(self, factors[0].down_cast().mat())
-        else:
-            raise NotImplementedError, "explicit for type '%s'"%str(type(x))
+def _explicit(x):
+    from block.blockcompose import blockcompose, blockadd, blocksub
+    from numpy import isscalar
+    from dolfin import Matrix
+    if isinstance(x, (matrix_op, diag_op)):
+        return x
+    elif isinstance(x, Matrix):
+        return matrix_op(x.down_cast().mat())
+    elif isinstance(x, diag_op):
+        return x
+    elif isinstance(x, blockcompose):
+        factors = x.chain[:]
+        while len(factors) > 1:
+            A = _explicit(factors.pop())
+            B = _explicit(factors.pop())
+            C = B.matmat(A) if isscalar(A) else A.matmat(B)
+            factors.append(C)
+        return factors[0]
+    elif isinstance(x, blockadd):
+        A = _explicit(x.A)
+        B = _explicit(x.B)
+        return B.add(A) if isscalar(A) else A.add(B)
+    elif isinstance(x, blocksub):
+        A = _explicit(x.A)
+        B = _explicit(x.B)
+        return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
+    elif isscalar(x):
+        return x
+    else:
+        raise NotImplementedError, "_explicit for type '%s'"%str(type(x))
+
+def explicit(x):
+    from time import time
+    from dolfin import info
+    T = time()
+    res = _explicit(x)
+    info('computed explicit matrix representation in %.2f s'%(time()-T))
+    return res

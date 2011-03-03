@@ -20,6 +20,21 @@ class blockbase(object):
         from blockcompose import blockcompose
         return blockcompose(-1, self)
 
+    def __add__(self, other):
+        from blockcompose import blockadd
+        return blockadd(self, other)
+
+    def __radd__(self, other):
+        return other.__add__(self)
+
+    def __sub__(self, other):
+        from blockcompose import blocksub
+        return blocksub(self, other)
+
+    def __rsub__(self, other):
+        from blockcompose import blockcompose, blocksub
+        return blockcompose(-1, blocksub(other, self))
+
 class blockcontainer(blockbase):
     def __init__(self, mn=None, blocks=None):
         if mn:

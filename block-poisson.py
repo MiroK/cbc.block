@@ -94,18 +94,17 @@ bc.apply(AA, b)
 Ap = ML(A)
 
 L = assemble(u*v*dx)
-Lpre = LumpedJacobi(L)
+Lpre = LumpedInvDiag(L)
 #Linv = Richardson(L, precond=1e-2, maxiter=10, show=2, tolerance=1e-16, name="Linv")
 
-S = MatMult(C,B)
-Sp = ConjGrad(S, precond=ML(S))
+S = C*(InvDiag(A)-0.2)*B
+Sp = ConjGrad(S, precond=ML(explicit(S)))
 
 prec = blockop([[Ap, B],
                 [C,  Sp]]).scheme('sgs')
 #=====================
 
 AAinv = ConjGrad(AA, precond=prec, maxiter=1000, show=2, name='AAinv')
-
 
 import time
 T = -time.time()
