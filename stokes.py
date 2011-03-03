@@ -7,7 +7,10 @@ __author__ = "Joachim B Haga <jobh@simula.no>"
 __date__ = "2011"
 __license__  = "GNU LGPL Version 2.1"
 
+# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
+# modules. This works around a bug with MPI initialisation/destruction order.
 import PyTrilinos
+
 from dolfin import *
 from block import *
 from block.iterative import *

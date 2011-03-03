@@ -94,15 +94,15 @@ class matrix_op(block_base):
         except AttributeError:
             raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
 
-    def add(self, other, scale=1.0):
+    def add(self, other, lscale=1.0, rscale=1.0):
         try:
             from PyTrilinos import Epetra
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
                 C = Epetra.CrsMatrix(Epetra.Copy, self.M.RowMap(), 100)
-                assert (0 == EpetraExt.Add(self.M,      False, 1.0, C, 0.0))
-                assert (0 == EpetraExt.Add(other.mat(), False, 1.0, C, 1.0))
+                assert (0 == EpetraExt.Add(self.M,      False, lscale, C, 0.0))
+                assert (0 == EpetraExt.Add(other.mat(), False, rscale, C, 1.0))
                 C.FillComplete()
                 C.OptimizeStorage()
                 return matrix_op(C)
