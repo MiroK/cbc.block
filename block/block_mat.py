@@ -1,8 +1,8 @@
 from __future__ import division
-from blockbase import blockcontainer
-from blockvector import blockvec
+from block_base import block_container
+from block_vec import block_vec
 
-class blockop(blockcontainer):
+class block_mat(block_container):
     """Block of matrices or other operators. Empty blocks doesn't need to be set
     (they may be None or zero), but each row must have at least one non-empty block.
 
@@ -11,13 +11,13 @@ class blockop(blockcontainer):
 
     def __init__(self, m, n=None):
         if n is None:
-            blockcontainer.__init__(self, blocks=m)
+            block_container.__init__(self, blocks=m)
         else:
-            blockcontainer.__init__(self, mn=(m,n))
+            block_container.__init__(self, mn=(m,n))
 
     def matvec(self, x):
         m,n = self.blocks.shape
-        y = blockvec(m)
+        y = block_vec(m)
 
         for i in range(m):
             for j in range(n):
@@ -38,9 +38,8 @@ class blockop(blockcontainer):
         return y
 
     def transpmult(self, x, r):
-        # Probably incorrect, since BiCGStab and CGN both fail...
         m,n = self.blocks.shape
-        y = blockvec(len(r))
+        y = block_vec(len(r))
 
         for i in range(n):
             for j in range(m):
@@ -67,7 +66,7 @@ class blockop(blockcontainer):
     def copy(self):
         import copy
         m,n = self.blocks.shape
-        y = blockop(m,n)
+        y = block_mat(m,n)
         for i in range(m):
             for j in range(n):
                 obj = self[i,j]
@@ -87,6 +86,7 @@ class blockop(blockcontainer):
         handy, because it will usually return a PD matrix (negative Schur complement)."""
         if self.blocks.shape != (2,2):
             raise ValueError, "must be 2x2 blocks"
+        from dolfin import BlockMatrix
         bm = BlockMatrix(2,2)
         bm[0,0] = self[0,0]
         bm[0,1] = self[0,1]
@@ -98,6 +98,6 @@ class blockop(blockcontainer):
         return S
 
     def scheme(self, name, reverse=False):
-        from blockscheme import blockscheme
+        from block_scheme import blockscheme
         return blockscheme(self, name, reverse)
 

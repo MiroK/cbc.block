@@ -1,9 +1,9 @@
 from __future__ import division
 
-from block.blockbase import blockbase
+from block.block_base import block_base
 from dolfin import warning
 
-class iterative(blockbase):
+class iterative(block_base):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, name=None, show=1, iter=None, **kwargs):
         self.B = precond
         self.A = A
@@ -106,4 +106,4 @@ class Richardson(iterative):
     import richardson
     method = staticmethod(richardson.richardson)
 
-del iterative, blockbase, warning
+del iterative, block_base, warning

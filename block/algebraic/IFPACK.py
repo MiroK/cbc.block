@@ -1,9 +1,9 @@
 from __future__ import division
 
 from dolfin import Vector
-from block.blockbase import blockbase
+from block.block_base import block_base
 
-class IFPACK(blockbase):
+class IFPACK(block_base):
 
     errcode = {1 : "Generic Error (called method or function returned an error)",
                2 : "Input data not valid (wrong parameter, out-of-bounds, wrong dimensions, matrix is not square,...)",

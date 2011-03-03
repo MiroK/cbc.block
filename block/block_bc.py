@@ -1,10 +1,10 @@
 from __future__ import division
 from dolfin import Matrix, info
-from blockoperator import blockop
-from blockvector import blockvec
+from block_mat import block_mat
+from block_vec import block_vec
 import numpy
 
-class blockbc(list):
+class block_bc(list):
     """This class applies Dirichlet BCs to a block matrix. It is not a block operator itself."""
     def apply(self, A=None, b=None, symmetric=True, save_A=False, signs=None):
         # Clean up self, and check arguments
@@ -16,9 +16,9 @@ class blockbc(list):
 
         if A is None and b is None:
             raise TypeError('too few arguments to apply')
-        if b is None and isinstance(A, blockvec):
+        if b is None and isinstance(A, block_vec):
             A,b = None,A
-        if (A and not isinstance(A, blockop)) or (b and not isinstance(b, blockvec)):
+        if (A and not isinstance(A, block_mat)) or (b and not isinstance(b, block_vec)):
             raise TypeError('arguments of wrong type')
         if A is None:
             return self.apply_rhs(b, symmetric)
@@ -52,7 +52,7 @@ class blockbc(list):
             Ax = AA[i,i]*x
             xAx = x.inner(Ax)
             if xAx == 0:
-                warning("blockbc: zero or semi-definite block (%d,%d), using sign +1"%(i,i))
+                warning("block_bc: zero or semi-definite block (%d,%d), using sign +1"%(i,i))
             self.signs[i] = -1 if xAx < 0 else 1
         info('Calculated signs of diagonal blocks:' + str(self.signs))
 

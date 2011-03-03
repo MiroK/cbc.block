@@ -1,9 +1,9 @@
 from __future__ import division
 
 from dolfin import Vector
-from block.blockbase import blockbase
+from block.block_base import block_base
 
-class AztecSolver(blockbase):
+class AztecSolver(block_base):
     def __init__(self, A, tolerance=1e-5, maxiter=300, solver='cg', precond=None):
         from PyTrilinos import AztecOO
         self.A = A # Keep reference

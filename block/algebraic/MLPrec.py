@@ -1,9 +1,9 @@
 from __future__ import division
 
 from dolfin import Vector
-from block.blockbase import blockbase
+from block.block_base import block_base
 
-class ML(blockbase):
+class ML(block_base):
     def __init__(self, A, pdes=1):
         from PyTrilinos.ML import MultiLevelPreconditioner
         # create the ML preconditioner

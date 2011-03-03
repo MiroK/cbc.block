@@ -1,13 +1,13 @@
 from __future__ import division
-from blockbase import blockcontainer
+from block_base import block_container
 from dolfin import Vector
 
-class blockvec(blockcontainer):
+class block_vec(block_container):
     def __init__(self, m):
         if hasattr(m, '__iter__'):
-            blockcontainer.__init__(self, mn=len(m), blocks=m)
+            block_container.__init__(self, mn=len(m), blocks=m)
         else:
-            blockcontainer.__init__(self, mn=m)
+            block_container.__init__(self, mn=m)
 
     def allocate(self, AA):
         for i in range(len(self)):
@@ -32,7 +32,7 @@ class blockvec(blockcontainer):
             return pack(sum(unpack(x.norm(ntype)) for x in self))
 
     def _map_operator(self, operator):
-        y = blockvec(len(self))
+        y = block_vec(len(self))
         for i in range(len(self)):
             y[i] = getattr(self[i], operator)()
         return y
@@ -43,7 +43,7 @@ class blockvec(blockcontainer):
         except:
             return NotImplemented
         if y is None:
-            y = blockvec(len(self))
+            y = block_vec(len(self))
         for i in range(len(self)):
             y[i] = getattr(self[i], operator)(x)
             if y[i] == NotImplemented: return NotImplemented
@@ -51,7 +51,7 @@ class blockvec(blockcontainer):
 
     def _map_vector_operator(self, operator, x, y=None):
         if y is None:
-            y = blockvec(len(self))
+            y = block_vec(len(self))
         for i in range(len(self)):
             y[i] = getattr(self[i], operator)(x[i])
             if y[i] == NotImplemented: return NotImplemented

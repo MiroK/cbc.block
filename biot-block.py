@@ -4,13 +4,14 @@ __author__  = "Joachim B Haga <jobh@simula.no>"
 __date__    = "2011-01"
 __license__ = "Any"
 
-from MLPrec import *
+import PyTrilinos
+from block import *
+from block.iterative import *
+from block.algebraic import ML
 #========
 # Define mesh, spaces
 execfile('biot_head.py')
 #========
-from BlockStuff import *
-from BlockSolvers import *
 
 parameters["linear_algebra_backend"] = "Epetra"
 
@@ -34,13 +35,13 @@ b_p = assemble(L1)
 
 # Insert the matrices into blocks
 
-AA = BlockOperator([[A, B],
-                    [C, D]])
-bb = BlockVector([0, b_p])
+AA = block_mat([[A, B],
+                [C, D]])
+bb = block_vec([0, b_p])
 
 # Apply boundary conditions
 
-bcs = BlockBC(bcs)
+bcs = block_bc(bcs)
 bcs.apply(AA, bb, save_A=True)
 
 Ap = ML(A)
@@ -53,10 +54,10 @@ S = C*Ainv*B-D
 Sinv = ConjGrad(S, precond=Sp, name='Sinv')
 
 #=====================
-#AAinv = BlockOperator([[Ainv, B],
-#                       [C, -Sinv]]).scheme('sgs')
-AApre = blockop([[Ap, B],
-                 [C, -Sp]]).scheme('jac')
+#AAinv = block_mat([[Ainv, B],
+#                   [C, -Sinv]]).scheme('sgs')
+AApre = block_mat([[Ap, B],
+                   [C, -Sp]]).scheme('jac')
 AAinv = TFQMR(AA, precond=AApre)
 #=====================
 

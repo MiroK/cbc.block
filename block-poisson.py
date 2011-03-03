@@ -41,9 +41,7 @@ most of them) are unavailable. Instead we use an inner iterative solver:
 
 This describes a solver using Richardson iterations, with damping 0.5 and a
 fixed number of iterations. It is not very efficient, but since it is a linear
-operator it is safe to use as inner solver for an outer Krylov solver. (It
-usually works fine to use ConjGrad as inner solver, but it may not always be
-safe.)
+operator it is safe to use as inner solver for an outer Krylov solver.
 """
 
 __author__    = "Joachim B Haga <jobh@simula.no>"
@@ -89,11 +87,11 @@ A = assemble(a11)
 B = assemble(a12)
 C = assemble(a21)
 
-AA = blockop([[A, B],
+AA = block_mat([[A, B],
               [C, 0]])
 
 b1 = assemble(L2)
-b = blockvec([0, b1])
+b = block_vec([0, b1])
 
 # Define function G such that G \cdot n = g
 class BoundarySource(Expression):
@@ -115,11 +113,11 @@ def boundary(x, on_boundary):
     return on_boundary and near(x[1], 0) or near(x[1], 1)
 
 # Define and apply the boundary conditions to the block matrix. The input to
-# blockbc defines a Dirichlet condition on the first block, and no conditions
+# block_bc defines a Dirichlet condition on the first block, and no conditions
 # on the second block. The boundary conditions are applied in such a way that
 # the system remains symmetric, and the individual blocks remain positive or
 # negative definite.
-bc = blockbc([DirichletBC(BDM, G, boundary), None])
+bc = block_bc([DirichletBC(BDM, G, boundary), None])
 bc.apply(AA, b)
 
 # Create a preconditioner for A (using the ML preconditioner from Trilinos)
@@ -141,7 +139,7 @@ Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 #Lp = ML(explicit(L))
 
 # Define the block preconditioner
-AAp = blockop([[Ap, 0],
+AAp = block_mat([[Ap, 0],
                [0,  Lp]])
 
 # Define the block inverse, using an outer preconditioned Conjugated Gradient

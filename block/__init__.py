@@ -13,36 +13,28 @@ NOTE: Nested blocks SHOULD work but has not been tested.
 """
 
 import dolfin
-from blockoperator import blockop
-from blockvector import blockvec
-from blockcompose import blockcompose
-from blockbc import blockbc
+from block_mat import block_mat
+from block_vec import block_vec
+from block_compose import block_compose
+from block_bc import block_bc
 
 # To make stuff like L=C*B work when C and B are type dolfin.Matrix, we inject
 # methods into dolfin.Matrix
-def _rmul(self, other):
-    return blockcompose(other, self)
-def _neg(self):
-    return blockcompose(-1, self)
 
 _old_mat_mul = dolfin.Matrix.__mul__
 def _mat_mul(self, x):
     y = _old_mat_mul(self, x)
     if y == NotImplemented:
-        return blockcompose(self, x)
+        y = block_compose(self, x)
     return y
 dolfin.Matrix.__mul__  = _mat_mul
+del _mat_mul
 
-def _mat_rmul(self, other):
-    return blockcompose(other, self)
-dolfin.Matrix.__rmul__ = _mat_rmul
-
-def _mat_neg(self):
-    return blockcompose(-1, self)
-dolfin.Matrix.__neg__ = _mat_neg
+dolfin.Matrix.__rmul__ = lambda self, other: block_compose(other, self)
+dolfin.Matrix.__neg__  = lambda self       : block_compose(-1, self)
 
 # For the Trilinos stuff, it's much nicer if down_cast is a method on the object
-def _down_cast(self):
-    return dolfin.down_cast(self)
-dolfin.Matrix.down_cast = _down_cast
-dolfin.Vector.down_cast = _down_cast
+dolfin.Matrix.down_cast        = dolfin.down_cast
+dolfin.GenericMatrix.down_cast = dolfin.down_cast
+dolfin.Vector.down_cast        = dolfin.down_cast
+dolfin.GenericVector.down_cast = dolfin.down_cast

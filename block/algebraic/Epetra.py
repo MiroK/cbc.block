@@ -1,9 +1,9 @@
 from __future__ import division
 
 from dolfin import Vector
-from block.blockbase import blockbase
+from block.block_base import block_base
 
-class diag_op(blockbase):
+class diag_op(block_base):
     def __init__(self, v):
         from PyTrilinos import Epetra
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
@@ -59,7 +59,7 @@ class diag_op(blockbase):
     def vec(self):
         return self.v
 
-class matrix_op(blockbase):
+class matrix_op(block_base):
     def __init__(self, M):
         from PyTrilinos import Epetra
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
@@ -138,7 +138,7 @@ class LumpedInvDiag(diag_op):
         diag_op.__init__(self, v)
 
 def _explicit(x):
-    from block.blockcompose import blockcompose, blockadd, blocksub
+    from block.block_compose import block_compose, block_add, block_sub
     from numpy import isscalar
     from dolfin import Matrix
     if isinstance(x, (matrix_op, diag_op)):
@@ -147,7 +147,7 @@ def _explicit(x):
         return matrix_op(x.down_cast().mat())
     elif isinstance(x, diag_op):
         return x
-    elif isinstance(x, blockcompose):
+    elif isinstance(x, block_compose):
         factors = x.chain[:]
         while len(factors) > 1:
             A = _explicit(factors.pop())
@@ -155,11 +155,11 @@ def _explicit(x):
             C = B.matmat(A) if isscalar(A) else A.matmat(B)
             factors.append(C)
         return factors[0]
-    elif isinstance(x, blockadd):
+    elif isinstance(x, block_add):
         A = _explicit(x.A)
         B = _explicit(x.B)
         return B.add(A) if isscalar(A) else A.add(B)
-    elif isinstance(x, blocksub):
+    elif isinstance(x, block_sub):
         A = _explicit(x.A)
         B = _explicit(x.B)
         return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
@@ -175,3 +175,5 @@ def explicit(x):
     res = _explicit(x)
     info('computed explicit matrix representation in %.2f s'%(time()-T))
     return res
+
+del diag_op, matrix_op

@@ -2,40 +2,40 @@ from __future__ import division
 
 import numpy
 
-class blockbase(object):
+class block_base(object):
     # Convenience methods
     def __mul__(self, other):
-        from blockcompose import blockcompose
-        from blockvector import blockvec
+        from block_compose import block_compose
+        from block_vec import block_vec
         from dolfin import Vector
-        if not isinstance(other, (blockvec, Vector)):
-            return blockcompose(self, other)
+        if not isinstance(other, (block_vec, Vector)):
+            return block_compose(self, other)
         return self.matvec(other)
 
     def __rmul__(self, other):
-        from blockcompose import blockcompose
-        return blockcompose(other, self)
+        from block_compose import block_compose
+        return block_compose(other, self)
 
     def __neg__(self):
-        from blockcompose import blockcompose
-        return blockcompose(-1, self)
+        from block_compose import block_compose
+        return block_compose(-1, self)
 
     def __add__(self, other):
-        from blockcompose import blockadd
-        return blockadd(self, other)
+        from block_compose import block_add
+        return block_add(self, other)
 
     def __radd__(self, other):
         return other.__add__(self)
 
     def __sub__(self, other):
-        from blockcompose import blocksub
-        return blocksub(self, other)
+        from block_compose import block_sub
+        return block_sub(self, other)
 
     def __rsub__(self, other):
-        from blockcompose import blockcompose, blocksub
-        return blockcompose(-1, blocksub(other, self))
+        from block_compose import block_compose, block_sub
+        return block_compose(-1, block_sub(other, self))
 
-class blockcontainer(blockbase):
+class block_container(block_base):
     def __init__(self, mn=None, blocks=None):
         if mn:
             self.blocks = numpy.ndarray(mn, dtype=numpy.object)

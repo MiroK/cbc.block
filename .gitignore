@@ -5,3 +5,4 @@
 *.swp
 .emacs.desktop*
 .ropeproject
+data/
