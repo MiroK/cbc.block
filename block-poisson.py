@@ -2,7 +2,7 @@ from __future__ import division
 
 """This demo program shows the use of block preconditioners for Mixed
 Poisson. The original demo, with description of the mixed formulation of the
-variational problem, can be found in demo/pde/mixed_poisson/python.
+variational problem, can be found in demo/pde/mixed-poisson/python.
 
 The algebraic system to be solved can be written as
 
@@ -57,7 +57,7 @@ __license__   = "GNU LGPL Version 2.1"
 import PyTrilinos
 
 from block import *
-from block.krylov import Richardson, ConjGrad
+from block.iterative import Richardson, ConjGrad
 from block.algebraic import ML
 from dolfin import *
 
