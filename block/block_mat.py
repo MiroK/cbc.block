@@ -38,6 +38,8 @@ class block_mat(block_container):
         return y
 
     def transpmult(self, x, r):
+        import numpy
+        from dolfin import Vector
         m,n = self.blocks.shape
         y = block_vec(len(r))
 
@@ -100,4 +102,3 @@ class block_mat(block_container):
     def scheme(self, name, reverse=False):
         from block_scheme import blockscheme
         return blockscheme(self, name, reverse)
-

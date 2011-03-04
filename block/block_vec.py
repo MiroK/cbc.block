@@ -31,6 +31,14 @@ class block_vec(block_container):
             pack   = lambda x: pow(x, 1/p)
             return pack(sum(unpack(x.norm(ntype)) for x in self))
 
+    def randomize(self):
+        import numpy
+        for i in range(len(self)):
+            if numpy.isscalar(self[i]):
+                raise RuntimeError, \
+                    'block %d in block_vec not initalised -- use proper vector (or call block_bc.apply' % i
+            self[i][:] = numpy.random.random(len(self[i]))
+
     def _map_operator(self, operator):
         y = block_vec(len(self))
         for i in range(len(self)):
