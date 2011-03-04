@@ -56,11 +56,8 @@ import PyTrilinos
 
 from block import *
 from block.iterative import Richardson, ConjGrad, MinRes
-from block.algebraic import ML
+from block.algebraic.trilinos import ML
 from dolfin import *
-
-# To be able to use ML we must instruct Dolfin to use the Epetra backend.
-parameters["linear_algebra_backend"] = "Epetra"
 
 # Create mesh
 mesh = UnitSquare(32,32)

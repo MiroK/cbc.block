@@ -10,13 +10,10 @@ import PyTrilinos
 
 from block import *
 from block.iterative import *
-from block.algebraic import *
+from block.algebraic.trilinos import *
 from dolfin import *
 from dolfin_util import *
 import numpy
-
-# To be able to use ML we must instruct Dolfin to use the Epetra backend.
-parameters["linear_algebra_backend"] = "Epetra"
 
 # Function spaces, elements
 

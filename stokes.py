@@ -14,10 +14,7 @@ import PyTrilinos
 from dolfin import *
 from block import *
 from block.iterative import *
-from block.algebraic import *
-
-# To be able to use ML we must instruct Dolfin to use the Epetra backend.
-parameters["linear_algebra_backend"] = "Epetra"
+from block.algebraic.trilinos import *
 
 # Load mesh and subdomains
 mesh = Mesh("dolfin-2.xml.gz")
