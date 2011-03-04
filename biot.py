@@ -66,6 +66,8 @@ a11 = -(S*phi*q - dt*inner(grad(phi),v_D(q))) * dx
 
 L1 = b(u_prev,phi) * dx - (Q*dt + S*p_prev)*phi * dx
 
+# Create boundary conditions
+
 boundary = BoxBoundary(mesh)
 
 c = 0.25
@@ -80,11 +82,6 @@ bc_p_drained_source = DirichletBC(W,            0,              fluid_source_dom
 
 bcs = [[bc_u_topload, bc_u_bedrock], [bc_p_drained_source]]
 
-update.set_args(displacement={'mode': 'displacement', 'wireframe': True},
-                volumetric={'functionspace': FunctionSpace(mesh, "DG", 0)},
-                velocity={'functionspace': VectorFunctionSpace(mesh, "DG", 0)}
-                )
-
 # Assemble the matrices
 A   = assemble(a00)
 B   = assemble(a01)
@@ -98,11 +95,11 @@ AA = block_mat([[A, B],
                 [C, D]])
 bb = block_vec([0, b_p])
 
-# Apply boundary conditions
+# Apply boundary conditions. Because just the right-hand side is modified later
+# (in the time loop), and because the left-hand side is modified symmetrically,
+# we set the save_A flag.
 
 bcs = block_bc(bcs)
-
-# Must set save_A in order to do symmetric modification of bb in time loop
 bcs.apply(AA, bb, save_A=True)
 
 # Create preconditioner -- a generalised block Jacobi preconditioner, where the
@@ -118,10 +115,23 @@ AApre = block_mat([[Ap, 0],
 
 
 AAinv = SymmLQ(AA, precond=AApre, show=2, tolerance=1e-10)
+
+# An alternative could be to use an exact block decomposition of AAinv, like this:
+
+#Ainv = ConjGrad(A, precond=Ap, name='A^')
+#S = C*Ainv*B-D
+#Sinv = ConjGrad(S, precond=Sp, name='S^')
+#AAinv = block_mat([[Ainv, B],
+#                   [C, -Sinv]]).scheme('sgs')
+
 #=====================
 
-u = Function(V)
-p = Function(W)
+# Set arguments to plot/save functions
+
+update.set_args(displacement={'mode': 'displacement', 'wireframe': True},
+                volumetric={'functionspace': FunctionSpace(mesh, "DG", 0)},
+                velocity={'functionspace': VectorFunctionSpace(mesh, "DG", 0)}
+                )
 
 t = 0.0
 while t <= T:
@@ -133,10 +143,12 @@ while t <= T:
     bb[1] = assemble(L1)
     bcs.apply(bb)
 
-    U, P = AAinv * bb
+    x = AAinv * bb
+    print 'residual:', (AA*x-bb).norm('l2')
 
-    u.vector()[:] = U
-    p.vector()[:] = P
+    U,P = x
+    u = Function(V, U)
+    p = Function(W, P)
 
     update(time=t,
            displacement=u,
@@ -145,8 +157,8 @@ while t <= T:
 #           volumetric=tr(sigma(u)),
            )
 
-    u_prev.vector()[:] = u.vector()
-    p_prev.vector()[:] = p.vector()
+    u_prev.vector()[:] = U
+    p_prev.vector()[:] = P
     t += float(dt)
 
 interactive()
