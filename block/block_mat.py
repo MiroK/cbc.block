@@ -82,22 +82,12 @@ class block_mat(block_container):
                         y[i,j] = copy.copy(obj)
         return y
 
-    def schur_approximation(self, symmetry=1.0, scale=1):
-        """Create an explicit approximation of the Schur complement. The symmetry can be
-        declared, +1 for symmetric and -1 for antisymmetric blocks. Setting scale=-1 may be
-        handy, because it will usually return a PD matrix (negative Schur complement)."""
-        if self.blocks.shape != (2,2):
-            raise ValueError, "must be 2x2 blocks"
-        from dolfin import BlockMatrix
-        bm = BlockMatrix(2,2)
-        bm[0,0] = self[0,0]
-        bm[0,1] = self[0,1]
-        bm[1,0] = self[1,0]
-        bm[1,1] = self[1,1]
-        S = bm.schur_approximation(symmetry)
-        if scale != 1:
-            S *= scale
-        return S
+    def create_vec(self):
+        m,n = self.blocks.shape
+        xx = block_vec(n)
+        xx[:] = 0
+        xx.allocate(self)
+        return xx
 
     def scheme(self, name, reverse=False):
         from block_scheme import blockscheme

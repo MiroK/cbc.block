@@ -12,6 +12,7 @@ k_val=1
 
 import sys
 for s in sys.argv[1:]:
+    print s
     exec(s)
 
 class Boundary(SubDomain):

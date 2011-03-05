@@ -16,10 +16,21 @@ class iterative(block_base):
 
     def matvec(self, b):
         from time import time
+        from block.block_vec import block_vec
+
         T = time()
+
+        # If x and initial_guess are block_vecs, some of the blocks may be
+        # scalars (although block_bc.apply() converts these to vectors, so
+        # normally they are not). To be sure, call allocate() on them.
+
+        if isinstance(b, block_vec):
+            b.allocate(self.A)
 
         if self.initial_guess:
             x = self.initial_guess
+            if isinstance(x, block_vec):
+                x.allocate(self.A)
         else:
             x = b.copy()
             x.zero()

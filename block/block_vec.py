@@ -15,7 +15,9 @@ class block_vec(block_container):
                 continue
             for j in range(len(self)):
                 if hasattr(AA[i,j], 'size'):
-                    self[i] = Vector(AA[i,j].size(0))
+                    vec = Vector(AA[i,j].size(0))
+                    vec[:] = self[i]
+                    self[i] = vec
                     break
 
     def norm(self, ntype='l2'):
@@ -36,7 +38,7 @@ class block_vec(block_container):
         for i in range(len(self)):
             if numpy.isscalar(self[i]):
                 raise RuntimeError, \
-                    'block %d in block_vec not initalised -- use proper vector (or call block_bc.apply' % i
+                    'block %d in block_vec has no size -- use proper vector or call allocate(A)' % i
             self[i][:] = numpy.random.random(len(self[i]))
 
     def _map_operator(self, operator):
