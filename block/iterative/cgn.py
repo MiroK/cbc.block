@@ -47,8 +47,6 @@ def CGN_BABA(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200):
         rho    = inner(BVBr,VBr)
         beta   = rho/rho1
         rho1   = rho
-
-        rho1   = rho
         p      = BVBr+beta*p
 
         iter  += 1

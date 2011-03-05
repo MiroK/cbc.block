@@ -17,6 +17,8 @@ class block_compose(block_base):
         return block_sub(self, x)
     def __add__(self, x):
         return block_add(self, x)
+    def __radd__(self, x):
+        return block_add(x, self)
 
 # It's probably best if block_sub and block_add do not allow coercion into
 # block_compose, since that might mess up the operator precedence. Hence, they

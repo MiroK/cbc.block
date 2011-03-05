@@ -32,8 +32,8 @@ class block_base(object):
         return block_sub(self, other)
 
     def __rsub__(self, other):
-        from block_compose import block_compose, block_sub
-        return block_compose(-1, block_sub(other, self))
+        from block_compose import block_sub
+        return block_sub(other, self)
 
 class block_container(block_base):
     def __init__(self, mn=None, blocks=None):
