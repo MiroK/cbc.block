@@ -21,13 +21,13 @@ q,p = TestFunction(Q), TrialFunction(Q)
 A = assemble(dot(u,v)*dx + dot(curl(v), curl(u))*dx)
 B = assemble(dot(grad(p),v)*dx)
 C = assemble(dot(grad(q),u)*dx)
-D = assemble(-p*q*dx)
+D = assemble(p*q*dx)
 
-AA = block_mat([[A, B],
-                [C, D]])
+AA = block_mat([[A,  B],
+                [C, -D]])
 bb = block_vec([0,0])
 
-L = explicit(A-B*InvDiag(D)*C)
+L = explicit(A+B*InvDiag(D)*C)
 
 prec = block_mat([[ML(L),  0  ],
                   [0,    ML(D)]])

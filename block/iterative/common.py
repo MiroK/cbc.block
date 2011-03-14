@@ -9,5 +9,8 @@ def inner(x,y):
 def norm(v):
     return v.norm('l2')
 
+def transpmult(A, x):
+    return A.transpmult(x)
+
 eps = numpy.finfo(float).eps
 

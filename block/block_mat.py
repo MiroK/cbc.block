@@ -37,11 +37,11 @@ class block_mat(block_container):
                     y[i] += z
         return y
 
-    def transpmult(self, x, r):
+    def transpmult(self, x):
         import numpy
         from dolfin import Vector
         m,n = self.blocks.shape
-        y = block_vec(len(r))
+        y = block_vec(self.blocks.shape[0])
 
         for i in range(n):
             for j in range(m):
@@ -56,14 +56,13 @@ class block_mat(block_container):
                     z = self[j,i]*x[j]
                 else:
                     # Do the block multiply
-                    z = Vector()
-                    self[j,i].transpmult(x[j], z)
+                    z = self[j,i].transpmult(x[j])
                 if y[i] is None:
                     y[i] = z
                 else:
+                    assert len(z) == len(y[i])
                     y[i] += z
-        for i in range(m):
-            r[i] = y[i]
+        return y
 
     def copy(self):
         import copy

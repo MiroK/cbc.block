@@ -7,7 +7,8 @@ method, which either does its thing (typically if isinstance(other,
 BlockVector)), or returns a BlockCompose(self, other) object which defers the
 action until there is a BlockVector to work on.
 
-In addition, methods are injected into dolfin.Matrix / dolfin.Vector as needed.
+In addition, methods are injected into dolfin.Matrix / dolfin.Vector as
+needed. This should eventually be moved to Dolfin proper.
 
 NOTE: Nested blocks SHOULD work but has not been tested.
 """
@@ -28,6 +29,8 @@ def _wrap(cls, name, wrap_to):
         if y == NotImplemented:
             y = wrap_to(self, other)
         return y
+    setattr(cls, name, _new_method)
+
 _wrap(dolfin.Matrix, '__mul__', block_compose)
 _wrap(dolfin.Matrix, '__add__', block_add)
 _wrap(dolfin.Matrix, '__sub__', block_sub)
@@ -37,6 +40,16 @@ dolfin.Matrix.__rmul__ = lambda self, other: block_compose(other, self)
 dolfin.Matrix.__radd__ = lambda self, other: block_add(other, self)
 #dolfin.Matrix.__rsub__ = lambda self, other: block_sub(other, self)
 dolfin.Matrix.__neg__  = lambda self       : block_compose(-1, self)
+
+def _wrap_transpmult():
+    _old_transpmult = dolfin.Matrix.transpmult
+    def _transpmult(self, x):
+        y = dolfin.Vector()
+        _old_transpmult(self, x, y)
+        return y
+    dolfin.Matrix.transpmult = _transpmult
+_wrap_transpmult()
+del _wrap_transpmult
 
 # For the Trilinos stuff, it's much nicer if down_cast is a method on the object
 dolfin.Matrix.down_cast        = dolfin.down_cast
