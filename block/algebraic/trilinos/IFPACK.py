@@ -1,6 +1,5 @@
 from __future__ import division
 
-from dolfin import Vector
 from block.block_base import block_base
 
 class IFPACK(block_base):
@@ -37,9 +36,10 @@ class IFPACK(block_base):
         assert (0 == self.prec.Compute())
 
     def matvec(self, b):
-        if not isinstance(b, Vector):
+        from dolfin import GenericVector
+        if not isinstance(b, GenericVector):
             return NotImplemented
-        x = Vector(len(b))
+        x = self.A.create_vec()
         err = self.prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:
             raise RuntimeError('ApplyInverse returned error %d: %s'%(err, self.errcode.get(-err)))

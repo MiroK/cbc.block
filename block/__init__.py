@@ -41,6 +41,7 @@ dolfin.Matrix.__radd__ = lambda self, other: block_add(other, self)
 #dolfin.Matrix.__rsub__ = lambda self, other: block_sub(other, self)
 dolfin.Matrix.__neg__  = lambda self       : block_compose(-1, self)
 
+# Inject a new transpmult() method that returns the result vector (instead of output parameter)
 def _wrap_transpmult():
     _old_transpmult = dolfin.Matrix.transpmult
     def _transpmult(self, x):
@@ -51,8 +52,14 @@ def _wrap_transpmult():
 _wrap_transpmult()
 del _wrap_transpmult
 
+# Inject a create() method that returns the new vector (instead of resize() which uses out parameter)
+def _create_vec(self, dim=1):
+    vec = dolfin.Vector()
+    self.resize(vec, dim)
+    return vec
+dolfin.GenericMatrix.create_vec = _create_vec
+del _create_vec
+
 # For the Trilinos stuff, it's much nicer if down_cast is a method on the object
-dolfin.Matrix.down_cast        = dolfin.down_cast
 dolfin.GenericMatrix.down_cast = dolfin.down_cast
-dolfin.Vector.down_cast        = dolfin.down_cast
 dolfin.GenericVector.down_cast = dolfin.down_cast

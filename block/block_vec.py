@@ -1,6 +1,5 @@
 from __future__ import division
 from block_base import block_container
-from dolfin import Vector
 
 class block_vec(block_container):
     def __init__(self, m):
@@ -9,16 +8,18 @@ class block_vec(block_container):
         else:
             block_container.__init__(self, mn=m)
 
-    def allocate(self, AA):
+    def allocate(self, AA, dim=1):
+        from dolfin import GenericVector
         for i in range(len(self)):
-            if isinstance(self[i], Vector):
+            if isinstance(self[i], GenericVector):
                 continue
             for j in range(len(self)):
-                if hasattr(AA[i,j], 'size'):
-                    vec = Vector(AA[i,j].size(0))
-                    vec[:] = self[i]
-                    self[i] = vec
+                A = AA[i,j] if dim==0 else AA[j,i]
+                if hasattr(A, 'create_vec'):
+                    self[i] = A.create_vec(dim)
                     break
+            if not isinstance(self[i], GenericVector):
+                raise RuntimeError, "can't allocate vector - no Matrix (or equivalent) for block %d"%i
 
     def norm(self, ntype='l2'):
         if ntype == 'linf':
@@ -39,7 +40,8 @@ class block_vec(block_container):
             if numpy.isscalar(self[i]):
                 raise RuntimeError, \
                     'block %d in block_vec has no size -- use proper vector or call allocate(A)' % i
-            self[i][:] = numpy.random.random(len(self[i]))
+            ran = numpy.random.random(self[i].local_size())
+            self[i].set_local(ran)
 
     def _map_operator(self, operator):
         y = block_vec(len(self))

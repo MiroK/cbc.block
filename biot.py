@@ -141,7 +141,7 @@ while t <= T:
     bcs.apply(bb)
 
     x = AAinv * bb
-    print 'residual:', (AA*x-bb).norm('l2')
+    #print 'residual:', (AA*x-bb).norm('l2')
 
     U,P = x
     u = Function(V, U)

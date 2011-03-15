@@ -37,6 +37,7 @@ prec = block_mat([[ML(L),  0  ],
 x = AA.create_vec()
 x.randomize()
 AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=200)
+
 x = AAinv*bb
 
 print "Number of iterations ", AAinv.iterations

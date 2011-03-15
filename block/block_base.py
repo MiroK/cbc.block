@@ -7,8 +7,8 @@ class block_base(object):
     def __mul__(self, other):
         from block_compose import block_compose
         from block_vec import block_vec
-        from dolfin import Vector
-        if not isinstance(other, (block_vec, Vector)):
+        from dolfin import GenericVector
+        if not isinstance(other, (block_vec, GenericVector)):
             return block_compose(self, other)
         return self.matvec(other)
 

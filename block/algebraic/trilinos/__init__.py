@@ -12,4 +12,4 @@ from Epetra import *
 import dolfin
 dolfin.parameters["linear_algebra_backend"] = "Epetra"
 
-del dolfin, Vector, block_base
+del dolfin, block_base

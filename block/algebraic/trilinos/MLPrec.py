@@ -1,6 +1,5 @@
 from __future__ import division
 
-from dolfin import Vector
 from block.block_base import block_base
 
 class ML(block_base):
@@ -27,10 +26,11 @@ class ML(block_base):
             raise RuntimeError('ComputePreconditioner returned %d'%err)
 
     def matvec(self, b):
-        if not isinstance(b, Vector):
+        from dolfin import GenericVector
+        if not isinstance(b, GenericVector):
             return NotImplemented
         # apply the ML preconditioner
-        x = Vector(len(b))
+        x = self.A.create_vec()
         err = self.ml_prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:
             raise RuntimeError('ApplyInverse returned %d'%err)

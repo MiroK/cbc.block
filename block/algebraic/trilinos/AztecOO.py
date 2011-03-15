@@ -1,6 +1,5 @@
 from __future__ import division
 
-from dolfin import Vector
 from block.block_base import block_base
 
 class AztecSolver(block_base):
@@ -17,9 +16,10 @@ class AztecSolver(block_base):
 
     def matvec(self, b):
         from PyTrilinos import AztecOO
-        if not isinstance(b, Vector):
+        from dolfin import GenericVector
+        if not isinstance(b, GenericVector):
             return NotImplemented
-        x = Vector(len(b))
+        x = self.A.create_vec()
         solver = AztecOO.AztecOO(self.A.down_cast().mat(), x.down_cast().vec(), b.down_cast().vec())
         #solver.SetAztecDefaults()
         solver.SetAztecOption(AztecOO.AZ_solver, self.solver)

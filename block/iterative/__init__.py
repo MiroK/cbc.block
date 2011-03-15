@@ -19,7 +19,8 @@ class iterative(block_base):
     def matvec(self, b):
         from time import time
         from block.block_vec import block_vec
-        from dolfin import info, Progress, DEBUG
+        from dolfin import info, Progress
+        TRACE = 13 # dolfin.TRACE
 
         T = time()
 
@@ -38,9 +39,9 @@ class iterative(block_base):
             x = b.copy()
             x.zero()
         try:
-            info(self.__class__.__name__+' solve of '+str(self.A))
+            info(TRACE, self.__class__.__name__+' solve of '+str(self.A))
             if self.B != 1.0:
-                info('Using preconditioner: '+str(self.B))
+                info(TRACE, 'Using preconditioner: '+str(self.B))
             progress = Progress(self.name, self.maxiter)
             x = self.method(self.B, self.A, x, b, tolerance=self.tolerance, maxiter=self.maxiter,
                             progress=progress, **self.kwargs)
@@ -83,6 +84,8 @@ class iterative(block_base):
         import numpy
 
         n = len(self.alphas)
+        if n == 0:
+            raise RuntimeError, 'Eigenvalues can not be estimated, no alphas/betas'
         A = numpy.zeros([n,n])
         A[0,0] = 1/self.alphas[0]
         for k in range(1, n):

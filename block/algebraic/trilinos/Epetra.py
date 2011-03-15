@@ -1,25 +1,33 @@
 from __future__ import division
 
-from dolfin import Vector
 from block.block_base import block_base
+from PyTrilinos import Epetra
 
 class diag_op(block_base):
     def __init__(self, v):
-        from PyTrilinos import Epetra
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
         self.v = v
 
     def matvec(self, b):
-        if not isinstance(b, Vector):
+        try:
+            b_vec = b.down_cast().vec()
+        except AttributeError:
             return NotImplemented
-        x = Vector(len(b))
-        x.down_cast().vec().Multiply(1.0, self.v, b.down_cast().vec(), 0.0)
+
+        try:
+            x = self.create_vec()
+        except TypeError:
+            # FIXME: This implies an unnecessary vector copy, and can be
+            # removed when dolfin.EpetraVector is changed to accept BlockMap
+            # instead of just Map (patch posted)
+            x = Vector(b)
+
+        x.down_cast().vec().Multiply(1.0, self.v, b_vec, 0.0)
         return x
 
     def matmat(self, other):
         try:
             from numpy import isscalar
-            from PyTrilinos import Epetra
             if isscalar(other):
                 x = Epetra.Vector(self.v)
                 x.Scale(other)
@@ -34,12 +42,11 @@ class diag_op(block_base):
                 x.Multiply(1.0, self.v, other.vec(), 0.0)
                 return diag_op(x)
         except AttributeError:
-            raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
     def add(self, other, lscale=1.0, rscale=1.0):
         try:
             from numpy import isscalar
-            from PyTrilinos import Epetra
             if isscalar(other):
                 x = Epetra.Vector(self.v.Map())
                 x.PutScalar(other)
@@ -52,7 +59,13 @@ class diag_op(block_base):
                 x.Update(rscale, other.vec(), lscale)
                 return diag_op(x)
         except AttributeError:
-            raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
+
+    def create_vec(self, dim=1):
+        from dolfin import EpetraVector
+        if dim > 1:
+            raise ValueError, 'dim must be <= 1'
+        return EpetraVector(self.v.Map())
 
     def down_cast(self):
         return self
@@ -64,21 +77,20 @@ class diag_op(block_base):
 
 class matrix_op(block_base):
     def __init__(self, M):
-        from PyTrilinos import Epetra
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
 
     def matvec(self, b):
-        if not isinstance(b, Vector):
+        from dolfin import GenericVector
+        if not isinstance(b, GenericVector):
             return NotImplemented
-        x = Vector(len(b))
+        x = self.create_vec()
         self.M.Apply(b.down_cast().vec(), x.down_cast().vec())
         return x
 
     def matmat(self, other):
         try:
             from numpy import isscalar
-            from PyTrilinos import Epetra
             if isscalar(other):
                 C = Epetra.CrsMatrix(self.M)
                 C.Scale(other)
@@ -95,11 +107,10 @@ class matrix_op(block_base):
                 C.RightScale(other.vec())
                 return matrix_op(C)
         except AttributeError:
-            raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
     def add(self, other, lscale=1.0, rscale=1.0):
         try:
-            from PyTrilinos import Epetra
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
@@ -112,7 +123,17 @@ class matrix_op(block_base):
             else:
                 raise NotImplementedError, "matrix-diagonal add not implemented (yet?)"
         except AttributeError:
-            raise RuntimeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
+
+    def create_vec(self, dim=1):
+        from dolfin import EpetraVector
+        if dim == 0:
+            m = self.M.RangeMap()
+        elif dim == 1:
+            m = self.M.DomainMap()
+        else:
+            raise ValueError, 'dim must be <= 1'
+        return EpetraVector(m)
 
     def down_cast(self):
         return self
@@ -125,7 +146,6 @@ class matrix_op(block_base):
 
 class Diag(diag_op):
     def __init__(self, A):
-        from PyTrilinos import Epetra
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
         A.ExtractDiagonalCopy(v)
@@ -138,7 +158,6 @@ class InvDiag(Diag):
 
 class LumpedInvDiag(diag_op):
     def __init__(self, A):
-        from PyTrilinos import Epetra
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
         A.InvRowSums(v)
@@ -180,5 +199,5 @@ def explicit(x):
     from dolfin import info
     T = time()
     res = _explicit(x)
-    info('computed explicit matrix representation (%s) in %.2f s'%(str(res),time()-T))
+    info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
     return res

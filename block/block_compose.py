@@ -22,7 +22,6 @@ class block_compose(block_base):
 
     def transpmult(self, x):
         from numpy import isscalar
-        from dolfin import Vector
         for op in reversed(self.chain):
             if isscalar(op):
                 if op != 1:
@@ -47,8 +46,8 @@ class block_sub(object):
         self.B = B
     def __mul__(self, x):
         from block_mat import block_vec
-        from dolfin import Vector
-        if not isinstance(x, (Vector, block_vec)):
+        from dolfin import GenericVector
+        if not isinstance(x, (GenericVector, block_vec)):
             return NotImplemented
         y = self.A*x
         y -= self.B*x
@@ -65,8 +64,8 @@ class block_add(object):
         self.B = B
     def __mul__(self, x):
         from block_mat import block_vec
-        from dolfin import Vector
-        if not isinstance(x, (Vector, block_vec)):
+        from dolfin import GenericVector
+        if not isinstance(x, (GenericVector, block_vec)):
             return NotImplemented
         y = self.A*x
         y += self.B*x
