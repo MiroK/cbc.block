@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def tfqmr(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200):
+def tfqmr(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
     #####
     # Adapted from PyKrylov (https://github.com/dpo/pykrylov; LGPL license)
     #####
@@ -33,6 +33,7 @@ def tfqmr(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200):
     while k < maxiter:
 
         k += 1
+        progress += 1
         sigma = inner(r0,v)
         alpha = rho/sigma
 

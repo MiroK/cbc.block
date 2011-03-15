@@ -48,6 +48,9 @@ class IFPACK(block_base):
     def down_cast(self):
         return self.prec
 
+    def __str__(self):
+        return '<%s prec of %s>'%(self.__class__.__name__, str(self.A))
+
 # "point relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>
 # "block relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation>
 # "Amesos" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_Amesos>.

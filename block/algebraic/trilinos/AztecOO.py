@@ -37,3 +37,6 @@ class AztecSolver(block_base):
         solver.SetAztecOption(AztecOO.AZ_output, 0)
         solver.Iterate(self.maxiter, self.tolerance)
         return x
+
+    def __str__(self):
+        return '<%s solver for %s>'%(self.__class__.__name__, str(self.A))

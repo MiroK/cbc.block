@@ -58,4 +58,6 @@ class block_container(block_base):
     def __iter__(self):
         return self.blocks.__iter__()
     def __str__(self):
-        return str(type(self))+': '+str(self.blocks)
+        return '<%s %s:\n%s>'%(self.__class__.__name__,
+                               'x'.join(map(str, self.blocks.shape)),
+                               str(self.blocks))

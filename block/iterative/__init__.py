@@ -2,21 +2,24 @@ from __future__ import division
 
 from block.block_base import block_base
 class iterative(block_base):
-    def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, name=None, show=1, iter=None, **kwargs):
+    def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, iter=None, maxiter=200,
+                 name=None, show=1, **kwargs):
         self.B = precond
         self.A = A
         self.initial_guess = initial_guess
         self.show = show
         self.kwargs = kwargs
         self.name = name if name else self.__class__.__name__
-        self.tolerance = tolerance
         if iter is not None:
-            self.tolerance = 0
-            kwargs['maxiter'] = iter
+            tolerance = 0
+            maxiter = iter
+        self.tolerance = tolerance
+        self.maxiter = maxiter
 
     def matvec(self, b):
         from time import time
         from block.block_vec import block_vec
+        from dolfin import info, Progress, DEBUG
 
         T = time()
 
@@ -35,7 +38,13 @@ class iterative(block_base):
             x = b.copy()
             x.zero()
         try:
-            x = self.method(self.B, self.A, x, b, tolerance=self.tolerance, **self.kwargs)
+            info(self.__class__.__name__+' solve of '+str(self.A))
+            if self.B != 1.0:
+                info('Using preconditioner: '+str(self.B))
+            progress = Progress(self.name, self.maxiter)
+            x = self.method(self.B, self.A, x, b, tolerance=self.tolerance, maxiter=self.maxiter,
+                            progress=progress, **self.kwargs)
+            progress += self.maxiter # trigger final printout
         except Exception, e:
             from dolfin import warning
             warning("Error solving " + self.name)
@@ -50,11 +59,11 @@ class iterative(block_base):
             msg = "NOT CONV."
 
         if self.show == 1:
-            print '%s: %s [iter=%2d, time=%.2fs, res=%.1e]' \
-                % (self.name, msg, self.iterations, time()-T, self.residuals[-1])
+            info('%s: %s [iter=%2d, time=%.2fs, res=%.1e]' \
+                % (self.name, msg, self.iterations, time()-T, self.residuals[-1]))
         elif self.show == 2:
-            print '%s: %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
-                % (self.name, msg, self.iterations, time()-T, self.residuals[-1], (self.A*x-b).norm('l2'))
+            info('%s: %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
+                % (self.name, msg, self.iterations, time()-T, self.residuals[-1], (self.A*x-b).norm('l2')))
         return x
 
     @property

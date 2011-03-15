@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def minres(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0):
+def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0):
     #####
     # Adapted from PyKrylov (https://github.com/dpo/pykrylov; LGPL license)
     #####
@@ -58,7 +58,8 @@ def minres(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0)
     # Main iteration loop.
     # --------------------------------------------------------------------
     while itn < maxiter:
-        itn    = itn  +  1
+        itn    += 1
+        progress += 1
 
         # -------------------------------------------------------------
         # Obtain quantities for the next Lanczos vector vk+1, k=1,2,...

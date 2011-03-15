@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def precondBiCGStab(B, A, x, b, tolerance=1e-05, relativeconv=False, maxiter=200):
+def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
     #####
     # Adapted from code supplied by KAM (Simula PyCC; GPL license),
     #####
@@ -39,6 +39,7 @@ def precondBiCGStab(B, A, x, b, tolerance=1e-05, relativeconv=False, maxiter=200
         p     = r+beta*(p-w*ABp)
 
         iter += 1
+        progress += 1
         alphas.append(alpha)
         betas.append(beta)
         residuals.append(sqrt(inner(r,r)))

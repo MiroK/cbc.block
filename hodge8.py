@@ -4,7 +4,9 @@ from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *
 
-N = 2 
+dolfin.set_log_level(15)
+
+N = 2
 import sys
 for s in sys.argv[1:]:
     print s

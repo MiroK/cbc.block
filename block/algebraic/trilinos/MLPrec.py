@@ -38,3 +38,6 @@ class ML(block_base):
 
     def down_cast(self):
         return self.ml_prec
+
+    def __str__(self):
+        return '<%s prec of %s>'%(self.__class__.__name__, str(self.A))

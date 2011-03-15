@@ -59,6 +59,9 @@ class diag_op(block_base):
     def vec(self):
         return self.v
 
+    def __str__(self):
+        return '<%s %dx%d>'%(self.__class__.__name__,len(self.v),len(self.v))
+
 class matrix_op(block_base):
     def __init__(self, M):
         from PyTrilinos import Epetra
@@ -115,6 +118,10 @@ class matrix_op(block_base):
         return self
     def mat(self):
         return self.M
+
+    def __str__(self):
+        return '<%s %dx%d>'%(self.__class__.__name__,self.M.NumGlobalRows(),self.M.NumGlobalCols())
+
 
 class Diag(diag_op):
     def __init__(self, A):
@@ -173,5 +180,5 @@ def explicit(x):
     from dolfin import info
     T = time()
     res = _explicit(x)
-    info('computed explicit matrix representation in %.2f s'%(time()-T))
+    info('computed explicit matrix representation (%s) in %.2f s'%(str(res),time()-T))
     return res

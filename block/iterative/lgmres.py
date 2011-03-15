@@ -3,7 +3,7 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 #####
 
-def lgmres(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200,
+def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
            inner_m=30, outer_k=3, outer_v=[], store_outer_Av=True):
     """
     Solve a matrix equation using the LGMRES algorithm.
@@ -67,6 +67,8 @@ def lgmres(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200,
     residuals = [1]
 
     for k_outer in xrange(maxiter):
+        progress += 1
+
         r_outer = A*x - b
 
         # -- check stopping condition

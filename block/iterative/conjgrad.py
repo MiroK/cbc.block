@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def precondconjgrad(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=300):
+def precondconjgrad(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
     #####
     # Adapted from code supplied by KAM (Simula PyCC; GPL license),
     #####
@@ -43,6 +43,7 @@ def precondconjgrad(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=300)
         d = z + beta*d
 
         iter += 1
+        progress += 1
         alphas.append(alpha)
         betas.append(beta)
         residuals.append(sqrt(rz))

@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def symmlq(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0):
+def symmlq(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0):
     #####
     # Adapted from PyKrylov (https://github.com/dpo/pykrylov; LGPL license)
     #####
@@ -97,7 +97,8 @@ def symmlq(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200, shift=0)
     itn = 0
 
     while True:
-        itn    = itn  +  1
+        itn   += 1
+        progress += 1
         anorm  = sqrt(tnorm)
         ynorm  = sqrt(ynorm2)
         epsa   = anorm * eps

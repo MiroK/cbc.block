@@ -31,6 +31,10 @@ class block_compose(block_base):
                 x = op.transpmult(x)
         return x
 
+    def __str__(self):
+        return '{%s}'%(' * '.join(op.__str__() for op in reversed(self.chain)))
+
+
 # It's probably best if block_sub and block_add do not allow coercion into
 # block_compose, since that might mess up the operator precedence. Hence, they
 # do not inherit from block_base. As it is now, self.A*x and self.B*x must be
@@ -52,6 +56,9 @@ class block_sub(object):
     def __neg__(self):
         return block_sub(self.B, self.A)
 
+    def __str__(self):
+        return '{%s - %s}'%(self.A.__str__(), self.B.__str__())
+
 class block_add(object):
     def __init__(self, A, B):
         self.A = A
@@ -66,3 +73,6 @@ class block_add(object):
         return y
     def __neg__(self):
         return block_compose(-1, self)
+    def __str__(self):
+        return '{%s + %s}'%(self.A.__str__(), self.B.__str__())
+

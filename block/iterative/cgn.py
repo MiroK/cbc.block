@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def CGN_BABA(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200):
+def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
     #####
     # Adapted from code supplied by KAM (Simula PyCC; GPL license),
     #####
@@ -17,13 +17,15 @@ def CGN_BABA(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200):
 
 
     rho   = inner(BATBr,ATBr)
+    if rho < 0:
+        raise RuntimeError, 'CGN: Preconditioner not positive-definite'
     rho1  = rho
     p     = BATBr.copy()
 
     iter   = 0
     alphas = []
     betas  = []
-    residuals = [norm(r)]
+    residuals = [sqrt(rho)]
 
     if relativeconv:
         tolerance *= residuals[0]
@@ -40,14 +42,16 @@ def CGN_BABA(B, A, x, b, tolerance=1e-5, relativeconv=False, maxiter=200):
         BATBr  = B*ATBr
 
         rho    = inner(BATBr,ATBr)
+        if rho < 0:
+            raise RuntimeError, 'CGN: Preconditioner not positive-definite'
         beta   = rho/rho1
         rho1   = rho
         p      = BATBr+beta*p
 
-        iter  += 1
+        iter     += 1
+        progress += 1
         alphas.append(alpha)
         betas.append(beta)
-        residuals.append(norm(r))
-
+        residuals.append(sqrt(rho))
 
     return x, residuals, alphas, betas
