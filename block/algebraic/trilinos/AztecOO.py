@@ -20,6 +20,10 @@ class AztecSolver(block_base):
         if not isinstance(b, GenericVector):
             return NotImplemented
         x = self.A.create_vec()
+        if len(x) != len(b):
+            raise RuntimeError, \
+                'incompatible dimensions for AztecOO matvec, %d != %d'%(len(x),len(b))
+
         solver = AztecOO.AztecOO(self.A.down_cast().mat(), x.down_cast().vec(), b.down_cast().vec())
         #solver.SetAztecDefaults()
         solver.SetAztecOption(AztecOO.AZ_solver, self.solver)

@@ -40,6 +40,10 @@ class IFPACK(block_base):
         if not isinstance(b, GenericVector):
             return NotImplemented
         x = self.A.create_vec()
+        if len(x) != len(b):
+            raise RuntimeError, \
+                'incompatible dimensions for AztecOO matvec, %d != %d'%(len(x),len(b))
+
         err = self.prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:
             raise RuntimeError('ApplyInverse returned error %d: %s'%(err, self.errcode.get(-err)))

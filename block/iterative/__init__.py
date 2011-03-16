@@ -38,6 +38,7 @@ class iterative(block_base):
         else:
             x = b.copy()
             x.zero()
+
         try:
             info(TRACE, self.__class__.__name__+' solve of '+str(self.A))
             if self.B != 1.0:

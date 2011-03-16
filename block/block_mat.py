@@ -34,6 +34,9 @@ class block_mat(block_container):
                 if y[i] is None:
                     y[i]  = z
                 else:
+                    if len(y[i]) != len(z):
+                        raise RuntimeError, \
+                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i]))
                     y[i] += z
         return y
 
@@ -59,7 +62,9 @@ class block_mat(block_container):
                 if y[i] is None:
                     y[i] = z
                 else:
-                    assert len(z) == len(y[i])
+                    if len(y[i]) != len(z):
+                        raise RuntimeError, \
+                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i]))
                     y[i] += z
         return y
 

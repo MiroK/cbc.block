@@ -16,10 +16,14 @@ class diag_op(block_base):
 
         try:
             x = self.create_vec()
+            if len(x) != len(b):
+                raise RuntimeError, \
+                    'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b))
         except TypeError:
             # FIXME: This implies an unnecessary vector copy, and can be
             # removed when dolfin.EpetraVector is changed to accept BlockMap
-            # instead of just Map (patch posted)
+            # instead of just Map (patch posted at https://bugs.launchpad.net/dolfin/+bug/735785)
+            from dolfin import Vector
             x = Vector(b)
 
         x.down_cast().vec().Multiply(1.0, self.v, b_vec, 0.0)
@@ -84,6 +88,9 @@ class matrix_op(block_base):
         from dolfin import GenericVector
         if not isinstance(b, GenericVector):
             return NotImplemented
+        if len(b) != self.M.NumGlobalRows():
+            raise RuntimeError, \
+                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,self.M.NumGlobalRows(),len(b))
         x = self.create_vec()
         self.M.Apply(b.down_cast().vec(), x.down_cast().vec())
         return x
