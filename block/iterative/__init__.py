@@ -36,7 +36,7 @@ class iterative(block_base):
             if isinstance(x, block_vec):
                 x.allocate(self.A)
         else:
-            x = b.copy()
+            x = A.create_vec()
             x.zero()
 
         try:
@@ -46,7 +46,7 @@ class iterative(block_base):
             progress = Progress(self.name, self.maxiter)
             x = self.method(self.B, self.A, x, b, tolerance=self.tolerance, maxiter=self.maxiter,
                             progress=progress, **self.kwargs)
-            progress += self.maxiter # trigger final printout
+            del progress # trigger final printout
         except Exception, e:
             from dolfin import warning
             warning("Error solving " + self.name)
@@ -54,17 +54,17 @@ class iterative(block_base):
         x, self.residuals, self.alphas, self.betas = x
 
         if self.tolerance == 0:
-            msg = "Done"
+            msg = "done"
         elif self.converged:
-            msg = "Converged"
+            msg = "converged"
         else:
             msg = "NOT CONV."
 
         if self.show == 1:
-            info('%s: %s [iter=%2d, time=%.2fs, res=%.1e]' \
+            info('%s %s [iter=%2d, time=%.2fs, res=%.1e]' \
                 % (self.name, msg, self.iterations, time()-T, self.residuals[-1]))
         elif self.show == 2:
-            info('%s: %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
+            info('%s %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
                 % (self.name, msg, self.iterations, time()-T, self.residuals[-1], (self.A*x-b).norm('l2')))
         return x
 

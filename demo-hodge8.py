@@ -36,11 +36,11 @@ prec = block_mat([[ML(L),  0  ],
 
 x = AA.create_vec()
 x.randomize()
-AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=200)
+AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=2000)
 
 x = AAinv*bb
 
-print "Number of iterations ", AAinv.iterations
+print "Number of iterations: ", AAinv.iterations
 
 e = AAinv.eigenvalue_estimates()
-print "Sqrt of condition number of BABA  ", sqrt(e[len(e)-1]/e[0])
+print "Sqrt of condition number of BABA: ", sqrt(e[len(e)-1]/e[0])

@@ -16,6 +16,7 @@ class block_mat(block_container):
             block_container.__init__(self, mn=(m,n))
 
     def matvec(self, x):
+        from dolfin import GenericVector
         m,n = self.blocks.shape
         y = block_vec(m)
 
@@ -31,6 +32,18 @@ class block_mat(block_container):
                     # Do the block multiply
                     z = self[i,j] * x[j]
                     if z == NotImplemented: return NotImplemented
+                if not isinstance(z, (GenericVector, block_vec)):
+                    # Typically, this happens when for example a
+                    # block_vec([0,0]) is used without calling allocate() or
+                    # setting BCs. The result is a Matrix*scalar=Matrix. One
+                    # way to fix this issue is to convert all scalars to a
+                    # proxy class in block_vec.__init__, and let this proxy
+                    # class have a __rmul__ that converts to vector on demand.
+                    # (must also stop conversion anything->blockcompose for
+                    # this case)
+                    raise RuntimeError, \
+                        'unexpected result in matvec, %s\n-- possibly because RHS contains scalars ' \
+                        'instead of vectors, use create_vec() or allocate()' % type(z)
                 if y[i] is None:
                     y[i]  = z
                 else:
@@ -42,6 +55,8 @@ class block_mat(block_container):
 
     def transpmult(self, x):
         import numpy
+        from dolfin import GenericVector
+
         m,n = self.blocks.shape
         y = block_vec(self.blocks.shape[0])
 
@@ -59,6 +74,11 @@ class block_mat(block_container):
                 else:
                     # Do the block multiply
                     z = self[j,i].transpmult(x[j])
+                if not isinstance(z, (GenericVector, block_vec)):
+                    # see comment in matvec
+                    raise RuntimeError, \
+                        'unexpected result in matvec, %s\n-- possibly because RHS contains scalars ' \
+                        'instead of vectors, use create_vec() or allocate()' % type(z)
                 if y[i] is None:
                     y[i] = z
                 else:

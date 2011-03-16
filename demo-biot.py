@@ -45,7 +45,7 @@ t_n = Constant([0.0]*dim)
 f_n = Constant([0.0]*dim)
 
 dt = Constant(.02)
-T = 0.2
+T = 0.1
 
 Q = Constant(0)
 
@@ -113,22 +113,30 @@ AApre = block_mat([[Ap, 0],
 
 AAinv = SymmLQ(AA, precond=AApre, show=2, tolerance=1e-10)
 
-# An alternative could be to use an exact block decomposition of AAinv, like this:
+# An alternative could be to use an exact block decomposition of AAinv, like
+# the following. Since the AApre we define is exact, it can be solved using
+# AAinv=AApre, but we wrap it in a single-iteration Richardson solver as a
+# simple way to get the time and residual printout. A single iteration of
+# Richardson computes x=P*(b-A*x0), which equals P*b since the initial guess x0
+# is zero (default).
 
-#Ainv = ConjGrad(A, precond=Ap, name='A^')
+#Ainv = ConjGrad(A, precond=Ap, name='A^', tolerance=1e-7)
 #S = C*Ainv*B-D
-#Sinv = ConjGrad(S, precond=Sp, name='S^')
-#AAinv = block_mat([[Ainv, B],
+#Sinv = ConjGrad(S, precond=Sp, name='S^', tolerance=1e-4)
+#AApre = block_mat([[Ainv, B],
 #                   [C, -Sinv]]).scheme('sgs')
+#AAinv = Richardson(AA, precond=AApre, show=1, iter=1)
 
 #=====================
-
 # Set arguments to plot/save functions
 
 update.set_args(displacement={'mode': 'displacement', 'wireframe': True},
                 volumetric={'functionspace': FunctionSpace(mesh, "DG", 0)},
                 velocity={'functionspace': VectorFunctionSpace(mesh, "DG", 0)}
                 )
+
+#=====================
+# Time loop
 
 t = 0.0
 while t <= T:
