@@ -1,5 +1,9 @@
 from __future__ import division
 
+#####
+# Original author: Kent Andre Mardal <kent-and@simula.no>
+#####
+
 from block.block_base import block_base
 
 class ML(block_base):

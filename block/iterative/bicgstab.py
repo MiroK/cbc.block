@@ -3,7 +3,12 @@ from common import *
 
 def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
     #####
-    # Adapted from code supplied by KAM (Simula PyCC; GPL license),
+    # Adapted from code supplied by KAM (Simula PyCC; GPL license). This code
+    # relicensed under LGPL v2.1 or later, in agreement with the original
+    # authors:
+    # Kent Andre Mardal <kent-and@simula.no>
+    # Ola Skavhaug <skavhaug@simula.no>
+    # Gunnar Staff <gunnaran@simula.no>
     #####
 
     r = b - A*x

@@ -1,5 +1,9 @@
 from __future__ import division
 
+#####
+# Original author: Kent Andre Mardal <kent-and@simula.no>
+#####
+
 import PyTrilinos
 from dolfin import *
 from block import *
@@ -10,6 +14,7 @@ import numpy
 N=2
 k_val=1
 
+# Parse command-line arguments like "N=6" or "k_val=0.1"
 import sys
 for s in sys.argv[1:]:
     print s

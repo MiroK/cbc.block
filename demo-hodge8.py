@@ -1,3 +1,7 @@
+#####
+# Original author: Kent Andre Mardal <kent-and@simula.no>
+#####
+
 import PyTrilinos
 from dolfin import *
 from block import *
@@ -7,6 +11,8 @@ from block.algebraic.trilinos import *
 dolfin.set_log_level(15)
 
 N = 2
+
+# Parse command-line arguments like "N=6"
 import sys
 for s in sys.argv[1:]:
     print s
@@ -38,6 +44,7 @@ x = AA.create_vec()
 x.randomize()
 AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=2000)
 
+AA * block_vec([0,0])
 x = AAinv*bb
 
 print "Number of iterations: ", AAinv.iterations
