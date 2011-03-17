@@ -36,7 +36,7 @@ class iterative(block_base):
             if isinstance(x, block_vec):
                 x.allocate(self.A)
         else:
-            x = A.create_vec()
+            x = self.A.create_vec()
             x.zero()
 
         try:
@@ -87,13 +87,13 @@ class iterative(block_base):
         n = len(self.alphas)
         if n == 0:
             raise RuntimeError, 'Eigenvalues can not be estimated, no alphas/betas'
-        A = numpy.zeros([n,n])
-        A[0,0] = 1/self.alphas[0]
+        M = numpy.zeros([n,n])
+        M[0,0] = 1/self.alphas[0]
         for k in range(1, n):
-            A[k,k] = 1/self.alphas[k] + self.betas[k-1]/self.alphas[k-1]
-            A[k,k-1] = numpy.sqrt(self.betas[k-1])/self.alphas[k-1]
-            A[k-1,k] = A[k,k-1]
-        e,v = numpy.linalg.eig(A)
+            M[k,k] = 1/self.alphas[k] + self.betas[k-1]/self.alphas[k-1]
+            M[k,k-1] = numpy.sqrt(self.betas[k-1])/self.alphas[k-1]
+            M[k-1,k] = M[k,k-1]
+        e,v = numpy.linalg.eig(M)
         e.sort()
         return e
 

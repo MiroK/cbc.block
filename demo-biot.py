@@ -1,8 +1,45 @@
 from __future__ import division
 
-__author__  = "Joachim B Haga <jobh@simula.no>"
-__date__    = "2011"
-__license__  = "GNU LGPL Version 2.1"
+"""This demo program shows the use of block preconditioners with Biot's consolidation equations.
+
+The algebraic system to be solved can be written as
+
+  BB^ AA [u p]^T = BB^ [b c]^T,
+
+where AA is a 2x2 block system with a negative-definite (2,2) block D. The
+system as a whole is symmetric, with C=B'.
+
+       | A   B |
+  AA = |       |,
+       | C   D |
+
+and BB^ approximates the inverse of the block operator
+
+       | A   0 |
+  BB = |       |,
+       | 0   S |
+
+where S=C*A^*B-D is (an approximation of) the pressure Schur complement. This
+preconditioner is known as Generalized Jacobi. In this program, we use the
+approximation S=C*diag(A)^*B-D for the Schur complement, ML approximations of
+the inverses, and the SymmLQ iterative solver (suitable for indefinite
+symmetric systems).
+
+As an alternative solver (implemented below, but commented out), we can invert
+AA directly using the Schur complement:
+
+      | I    0 |   | A^  0 |   | I   A^*B |
+AA^ = |        | x |       | x |          |,
+      | C*A^ I |   | 0  -S^|   | 0   I    |
+
+where the inverses are taken as exact. We note that this AA^ is equivalent to a
+symmetric Gauss-Seidel block scheme, wherein the D block is replaced by -S.
+
+We use conjugated gradient inner solvers for A^ and S^, preconditioned with the
+ML approximations. Since the inverse is in principle exact, we do not need an
+outer iterative solver, but nevertheless we use a single iteration of the
+Richardson method just for reporting purposes.
+"""
 
 # Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
 # modules. This works around a bug with MPI initialisation/destruction order.
@@ -63,7 +100,7 @@ a11 = -(S*phi*q - dt*inner(grad(phi),v_D(q))) * dx
 
 L1 = b(u_prev,phi) * dx - (Q*dt + S*p_prev)*phi * dx
 
-# Create boundary conditions
+# Create boundary conditions.
 
 boundary = BoxBoundary(mesh)
 
@@ -80,17 +117,17 @@ bc_p_drained_source = DirichletBC(W,            0,              fluid_source_dom
 bcs = [[bc_u_topload, bc_u_bedrock], [bc_p_drained_source]]
 
 # Assemble the matrices
-A   = assemble(a00)
-B   = assemble(a01)
-C   = assemble(a10)
-D   = assemble(a11)
-b_p = assemble(L1)
+A = assemble(a00)
+B = assemble(a01)
+C = assemble(a10)
+D = assemble(a11)
+c = assemble(L1)
 
 # Insert the matrices into blocks
 
 AA = block_mat([[A, B],
                 [C, D]])
-bb = block_vec([0, b_p])
+bb = block_vec([0, c])
 
 # Apply boundary conditions. Because just the right-hand side is modified later
 # (in the time loop), and because the left-hand side is modified symmetrically,
@@ -100,7 +137,9 @@ bcs = block_bc(bcs)
 bcs.apply(AA, bb, save_A=True)
 
 # Create preconditioner -- a generalised block Jacobi preconditioner, where the
-# (2,2) approximates the pressure Schur complement.
+# (2,2) approximates the pressure Schur complement. Since the ML preconditioner
+# requires access to the matrix elements, we use the explicit() call to perform
+# the necessary matrix algebra to convert the operator S to a single matrix.
 
 Ap = ML(A)
 
@@ -125,7 +164,7 @@ AAinv = SymmLQ(AA, precond=AApre, show=2, tolerance=1e-10)
 #Sinv = ConjGrad(S, precond=Sp, name='S^', tolerance=1e-4)
 #AApre = block_mat([[Ainv, B],
 #                   [C, -Sinv]]).scheme('sgs')
-#AAinv = Richardson(AA, precond=AApre, show=1, iter=1)
+#AAinv = Richardson(AA, precond=AApre, iter=1)
 
 #=====================
 # Set arguments to plot/save functions
@@ -149,7 +188,6 @@ while t <= T:
     bcs.apply(bb)
 
     x = AAinv * bb
-    #print 'residual:', (AA*x-bb).norm('l2')
 
     U,P = x
     u = Function(V, U)
@@ -159,7 +197,6 @@ while t <= T:
            displacement=u,
            pressure=p,
            velocity=v_D(p),
-#           volumetric=tr(sigma(u)),
            )
 
     u_prev.vector()[:] = U

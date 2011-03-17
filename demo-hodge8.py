@@ -1,6 +1,30 @@
-#####
-# Original author: Kent Andre Mardal <kent-and@simula.no>
-#####
+from __future__ import division
+
+"""This demo shows the use of a non-trivial block preconditioner for the Hodge
+equations. It is adapted from the code described in the block preconditioning
+chapter of the FENiCS book, by Kent-Andre Mardal <kent-and@simula.no>.
+
+The block structure is as follows,
+
+       | A   B |
+  AA = |       |,
+       | C  -D |
+
+where C=B' and D is positive definite; hence, the system as a whole is
+symmetric indefinite.
+
+The block preconditioner is based on an approximation of the Schur complement
+of the (1,1) block, L=A+B*D^*C:
+
+        | L^  0 |
+  BB^ = |       |,
+        | 0   D^|
+
+where the L block is formed explicitly by matrix multiplication (using the
+explicit() method), and ML is used for the single-block preconditioners.  The
+CGN iterative solver in order to get eigenvalue estimates for the
+preconditioned systems.
+"""
 
 import PyTrilinos
 from dolfin import *
@@ -44,7 +68,6 @@ x = AA.create_vec()
 x.randomize()
 AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=2000)
 
-AA * block_vec([0,0])
 x = AAinv*bb
 
 print "Number of iterations: ", AAinv.iterations

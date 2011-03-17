@@ -44,12 +44,6 @@ fixed number of iterations. It is not very efficient, but since it is a linear
 operator it is safe to use as inner solver for an outer Krylov solver.
 """
 
-__author__    = "Joachim B Haga <jobh@simula.no>"
-__date__      = "2011"
-__license__   = "GNU LGPL Version 2.1"
-
-# Begin demo
-
 # Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
 # modules. This works around a bug with MPI initialisation/destruction order.
 import PyTrilinos

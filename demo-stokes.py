@@ -1,11 +1,23 @@
 """This demo solves the Stokes equations with block preconditioning.
 
 The original demo is found in demo/undocumented/stokes-taylor-hood/python.
-"""
 
-__author__ = "Joachim B Haga <jobh@simula.no>"
-__date__ = "2011"
-__license__  = "GNU LGPL Version 2.1"
+The algebraic system to be solved can be written as
+
+  BB^ AA [sigma u]^T = BB^ [0 b]^T,
+
+where AA is a 2x2 block system with zero in the (2,2) block
+
+       | A   B |
+  AA = |       |,
+       | C   0 |
+
+and BB^ approximates the inverse of the block operator
+
+       | A   0 |
+  BB = |       |.
+       | 0   L |
+"""
 
 # Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
 # modules. This works around a bug with MPI initialisation/destruction order.

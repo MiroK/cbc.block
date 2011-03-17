@@ -1,8 +1,27 @@
 from __future__ import division
 
-#####
-# Original author: Kent Andre Mardal <kent-and@simula.no>
-#####
+"""This demo shows the use of a non-trivial block preconditioner for the time
+dependent Stokes equations. It is adapted from the code described in the block
+preconditioning chapter of the FENiCS book, by Kent-Andre Mardal
+<kent-and@simula.no>.
+
+The block structure is as follows,
+
+       | A   B |
+  AA = |       |,
+       | C   0 |
+
+and the preconditioner to be used is
+
+        | A^  0   |
+  BB^ = |         |,
+        | 0  L^+M^|
+
+with M defined as the scaled mass matrix and L as the Laplace operator. We use
+the ML algebraic multigrid preconditioner for A, L, and M, and the CGN
+iterative solver in order to get eigenvalue estimates for the preconditioned
+systems.
+"""
 
 import PyTrilinos
 from dolfin import *
@@ -57,8 +76,8 @@ bc_func = BoundaryFunction()
 bc = block_bc([DirichletBC(V, bc_func, Boundary()), None])
 bc.apply(AA, bb)
 
-L = assemble(kinv*p*q*dx)
-M = assemble(dot(grad(p),grad(q))*dx)
+M = assemble(kinv*p*q*dx)
+L = assemble(dot(grad(p),grad(q))*dx)
 
 prec = block_mat([[ML(A),      0     ],
                   [0,     ML(L)+ML(M)]])
