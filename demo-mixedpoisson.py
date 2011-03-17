@@ -126,7 +126,7 @@ Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 # can be used. The "explicit" function collapses a composed operator into a
 # single matrix. For larger problems, and in particular on parallel computers,
 # this is a very expensive operation --- but here it works fine.
-#from block.algebraic import explicit
+#from block.algebraic.trilinos import explicit
 #Lp = ML(explicit(L))
 
 # Define the block preconditioner
