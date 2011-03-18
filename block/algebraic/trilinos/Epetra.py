@@ -8,6 +8,9 @@ class diag_op(block_base):
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
         self.v = v
 
+    def transpose(self):
+        return self
+
     def matvec(self, b):
         try:
             b_vec = b.down_cast().vec()
@@ -80,9 +83,13 @@ class diag_op(block_base):
         return '<%s %dx%d>'%(self.__class__.__name__,len(self.v),len(self.v))
 
 class matrix_op(block_base):
-    def __init__(self, M):
+    def __init__(self, M, transposed=False):
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
+        self.transposed = transposed
+
+    def transpose(self):
+        return matrix_op(self.M, not self.transposed)
 
     def matvec(self, b):
         from dolfin import GenericVector
@@ -92,7 +99,9 @@ class matrix_op(block_base):
             raise RuntimeError, \
                 'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,self.M.NumGlobalRows(),len(b))
         x = self.create_vec()
+        self.M.SetUseTranspose(self.transposed)
         self.M.Apply(b.down_cast().vec(), x.down_cast().vec())
+        self.M.SetUseTranspose(False) # May not be necessary?
         return x
 
     def matmat(self, other):
@@ -101,19 +110,22 @@ class matrix_op(block_base):
             if isscalar(other):
                 C = Epetra.CrsMatrix(self.M)
                 C.Scale(other)
-                return matrix_op(C)
+                return matrix_op(C, self.transposed)
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
-                C = Epetra.CrsMatrix(Epetra.Copy, self.M.RowMap(), 100)
-                assert (0 == EpetraExt.Multiply(self.M, False, other.mat(), False, C))
+                RowMap = self.M.ColMap() if self.transposed else self.M.RowMap()
+                C = Epetra.CrsMatrix(Epetra.Copy, RowMap, 100)
+                assert (0 == EpetraExt.Multiply(self.M,      self.transposed,
+                                                other.mat(), other.transposed,
+                                                C))
                 C.OptimizeStorage()
                 return matrix_op(C)
             else:
                 C = Epetra.CrsMatrix(self.M)
                 C.RightScale(other.vec())
-                return matrix_op(C)
-        except AttributeError:
+                return matrix_op(C, self.transposed)
+        except AttributeError,e:
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
     def add(self, other, lscale=1.0, rscale=1.0):
@@ -122,8 +134,8 @@ class matrix_op(block_base):
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
                 C = Epetra.CrsMatrix(Epetra.Copy, self.M.RowMap(), 100)
-                assert (0 == EpetraExt.Add(self.M,      False, lscale, C, 0.0))
-                assert (0 == EpetraExt.Add(other.mat(), False, rscale, C, 1.0))
+                assert (0 == EpetraExt.Add(self.M,      self.transposed,      lscale, C, 0.0))
+                assert (0 == EpetraExt.Add(other.mat(), other.transposed, rscale, C, 1.0))
                 C.FillComplete()
                 C.OptimizeStorage()
                 return matrix_op(C)
@@ -171,15 +183,13 @@ class LumpedInvDiag(diag_op):
         diag_op.__init__(self, v)
 
 def _explicit(x):
-    from block.block_compose import block_compose, block_add, block_sub
+    from block.block_compose import block_compose, block_add, block_sub, block_transpose
     from numpy import isscalar
     from dolfin import Matrix
     if isinstance(x, (matrix_op, diag_op)):
         return x
     elif isinstance(x, Matrix):
         return matrix_op(x.down_cast().mat())
-    elif isinstance(x, diag_op):
-        return x
     elif isinstance(x, block_compose):
         factors = x.chain[:]
         while len(factors) > 1:
@@ -196,10 +206,13 @@ def _explicit(x):
         A = _explicit(x.A)
         B = _explicit(x.B)
         return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
+    elif isinstance(x, block_transpose):
+        A = _explicit(x.A)
+        return A if isscalar(A) else A.transpose()
     elif isscalar(x):
         return x
     else:
-        raise NotImplementedError, "_explicit for type '%s'"%str(type(x))
+        raise NotImplementedError, "explicit() for type '%s'"%str(type(x))
 
 def explicit(x):
     from time import time

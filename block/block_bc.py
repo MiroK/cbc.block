@@ -1,5 +1,5 @@
 from __future__ import division
-from dolfin import Matrix, info
+from dolfin import Matrix, info, MPI
 from block_mat import block_mat
 from block_vec import block_vec
 import numpy
@@ -24,6 +24,8 @@ class block_bc(list):
             return self.apply_rhs(b, symmetric)
         if save_A and not symmetric:
             raise TypeError('no point in saving A if symmetric=False')
+        if symmetric and MPI.num_processes() > 1:
+            raise RuntimeError('symmetric BCs not supported in parallel (yet)')
 
         # Find signs of matrices. Robust for definite matrices. For indefinite matrices, the
         # sign doesn't matter. For semi-definite matrices, we may get wrong answer.
