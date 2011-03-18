@@ -29,6 +29,7 @@ The main points are:
 2) Zero the BC rows of B using DirichletBC.zero().
 3) To make L symmetric, create it using block_transpose(B)*B instead of C*B.
 4) Use TFQMR (or BiCGStab) rather than MinRes (or SymmLQ) solver.
+5) Plotting doesn't work in parallel with trilinos backend, so skip that.
 """
 
 # Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
@@ -36,8 +37,8 @@ The main points are:
 import PyTrilinos
 
 from block import *
-from block.iterative import TFQMR
-from block.algebraic.trilinos import ML, explicit
+from block.iterative import TFQMR, Richardson
+from block.algebraic.trilinos import ML
 from dolfin import *
 
 # Create mesh
@@ -98,10 +99,9 @@ b = block_vec([b0, b1])
 Ap = ML(A)
 
 # Create an ML preconditioner for L. Use block_transpose(B) rather than C,
-# because the result is then symmetric. ML requires access to the matrix
-# elements, so we use explicit() to perform the matrix-matrix multiplication.
-L = explicit(block_transpose(B)*B)
-Lp = ML(L)
+# because the result is then symmetric.
+L = block_transpose(B)*B
+Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 
 # Define the block preconditioner
 AAp = block_mat([[Ap, 0],
@@ -117,7 +117,7 @@ Sigma, U = AAinv * b
 #=====================
 
 # Plot sigma and u
-plot(Function(BDM, Sigma))
-plot(Function(DG,  U))
+#plot(Function(BDM, Sigma))
+#plot(Function(DG,  U))
 
-interactive()
+#interactive()

@@ -10,3 +10,4 @@ fi
 
 # hodge8 is the only one that runs in parallel, since it doesn't use Dirichlet BCs.
 mpirun -np 3 python demo-hodge8.py N=4
+mpirun -np 3 python demo-parallelmixedpoisson.py
