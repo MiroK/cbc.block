@@ -50,7 +50,7 @@ import PyTrilinos
 
 from block import *
 from block.iterative import Richardson, ConjGrad, MinRes
-from block.algebraic.trilinos import ML
+from block.algebraic.trilinos import ML, explicit
 from dolfin import *
 
 # Create mesh
@@ -120,13 +120,14 @@ Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 
 # Alternative b: Use inner Conjugate Gradient iterations. Not completely safe,
 # but faster (and does not require damping).
+#
 #Lp = ConjGrad(L, maxiter=40, name='L^')
 
 # Alternative c: Calculate the matrix product, so that a regular preconditioner
 # can be used. The "explicit" function collapses a composed operator into a
 # single matrix. For larger problems, and in particular on parallel computers,
 # this is a very expensive operation --- but here it works fine.
-#from block.algebraic.trilinos import explicit
+#
 #Lp = ML(explicit(L))
 
 # Define the block preconditioner

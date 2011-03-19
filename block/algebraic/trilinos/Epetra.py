@@ -114,7 +114,9 @@ class matrix_op(block_base):
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
-                RowMap = self.M.ColMap() if self.transposed else self.M.RowMap()
+                # Note: Tried ColMap for the transposed matrix, but that
+                # crashes when the result is used by ML in parallel
+                RowMap = self.M.DomainMap() if self.transposed else self.M.RowMap()
                 C = Epetra.CrsMatrix(Epetra.Copy, RowMap, 100)
                 assert (0 == EpetraExt.Multiply(self.M,      self.transposed,
                                                 other.mat(), other.transposed,
@@ -160,8 +162,8 @@ class matrix_op(block_base):
         return self.M
 
     def __str__(self):
-        return '<%s %dx%d>'%(self.__class__.__name__,self.M.NumGlobalRows(),self.M.NumGlobalCols())
-
+        format = '<%s transpose(%dx%d)>' if self.transposed else '<%s %dx%d>'
+        return format%(self.__class__.__name__, self.M.NumGlobalRows(), self.M.NumGlobalCols())
 
 class Diag(diag_op):
     def __init__(self, A):
@@ -216,8 +218,14 @@ def _explicit(x):
 
 def explicit(x):
     from time import time
-    from dolfin import info
+    from dolfin import info, warning
     T = time()
     res = _explicit(x)
+    if getattr(res, 'transposed', False):
+        # transposed matrices will normally be converted to a non-transposed
+        # one by matrix multiplication or addition, but if the transpose is the
+        # outermost operation then this doesn't work.
+        warning('Transposed matrix returned from explicit() -- this matrix can be used for multiplications, '
+                + 'but not (for example) as input to ML. Try to convert from (A*B)^T to B^T*A^T in your call.')
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
     return res

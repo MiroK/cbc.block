@@ -37,8 +37,8 @@ The main points are:
 import PyTrilinos
 
 from block import *
-from block.iterative import TFQMR, Richardson
-from block.algebraic.trilinos import ML
+from block.iterative import TFQMR, Richardson, ConjGrad
+from block.algebraic.trilinos import ML, explicit
 from dolfin import *
 
 # Create mesh
@@ -84,9 +84,14 @@ def boundary(x, on_boundary):
 BDM_bc = DirichletBC(BDM, G, boundary)
 
 # Assemble forms into block matrices, and combine
-A,b0 = assemble_system(a11, tau[0]*dx, BDM_bc) # symmetric BC modification
+
+ # Symmetric BC modification for the A block. Is there a simpler way to specify a zero RHS?
+A,b0 = assemble_system(a11, Constant(0)*tau[0]*dx, BDM_bc)
+# Zero the BC rows of the B block.
 B = assemble(a12)
-BDM_bc.zero(B) # zero BC rows
+BDM_bc.zero(B)
+
+# Assemble the second block-row normally.
 C = assemble(a21)
 b1 = assemble(L2)
 
@@ -98,10 +103,26 @@ b = block_vec([b0, b1])
 # Create a preconditioner for A (using the ML preconditioner from Trilinos)
 Ap = ML(A)
 
-# Create an ML preconditioner for L. Use block_transpose(B) rather than C,
-# because the result is then symmetric.
-L = block_transpose(B)*B
+# Create an approximate inverse of L=C*B using inner Richardson iterations. It
+# doesn't matter for Richardson iterations that C*B is non-symmetric...
+L = C*B
 Lp = Richardson(L, precond=0.5, iter=40, name='L^')
+
+# Alternative b: Use inner Conjugate Gradient iterations. Not completely safe,
+# but faster (and does not require damping). However, ConjGrad requires a
+# symmetric operator --- which we don't have, since the boundary conditions are
+# not applied symmetrically. We can create a symmetric L using the
+# block_transpose method:
+#
+#L = block_transpose(B)*B
+#Lp = ConjGrad(L, maxiter=40, name='L^')
+
+# Alternative c: Calculate the matrix product, so that a regular preconditioner
+# can be used. The "explicit" function collapses a composed operator into a
+# single matrix. This is normally too expensive to do in parallel, but it works
+# for small problems. In this case, L can be either C*B or block_transpose(B)*B.
+#
+#Lp = ML(explicit(L))
 
 # Define the block preconditioner
 AAp = block_mat([[Ap, 0],
@@ -116,7 +137,7 @@ AAinv = TFQMR(AA, precond=AAp, show=2, name='AA^')
 Sigma, U = AAinv * b
 #=====================
 
-# Plot sigma and u
+# Plotting doesn't seem to work in parallel with the Epetra backend
 #plot(Function(BDM, Sigma))
 #plot(Function(DG,  U))
 

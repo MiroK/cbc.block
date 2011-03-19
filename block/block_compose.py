@@ -46,6 +46,9 @@ class block_transpose(block_base):
     def transpmult(self, x):
         return self.A.__mul__(x)
 
+    def __str__(self):
+        return '<block_transpose of %s>'%str(self.A)
+
 # It's probably best if block_sub and block_add do not allow coercion into
 # block_compose, since that might mess up the operator precedence. Hence, they
 # do not inherit from block_base. As it is now, self.A*x and self.B*x must be

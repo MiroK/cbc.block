@@ -39,7 +39,7 @@ def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
         beta  = (rrn/rr0)*(alpha/w)
         if beta==0.0:
             print "BiCGStab breakdown, beta=0, at iter=",iter," with residual=",sqrt(inner(r,r))
-            return x, residuals
+            return x, residuals, alphas, betas
         rr0   = rrn
         p     = r+beta*(p-w*ABp)
 
