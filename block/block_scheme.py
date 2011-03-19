@@ -1,6 +1,10 @@
 from __future__ import division
+
+"""These classes are typically not used directly, but returned by a call to
+block_mat.scheme().
+"""
+
 from block_base import block_base
-from block_mat import block_mat
 from block_vec import block_vec
 
 class BlockPrecond_2x2(block_base):

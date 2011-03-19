@@ -4,13 +4,11 @@ from __future__ import division
 
 To make this work, all operators should define at least a __mul__(self, other)
 method, which either does its thing (typically if isinstance(other,
-BlockVector)), or returns a BlockCompose(self, other) object which defers the
-action until there is a BlockVector to work on.
+(block_vec, GenericVector))), or returns a block_compose(self, other) object which defers the
+action until there is a proper vector to work on.
 
 In addition, methods are injected into dolfin.Matrix / dolfin.Vector as
 needed. This should eventually be moved to Dolfin proper.
-
-NOTE: Nested blocks SHOULD work but has not been tested.
 """
 
 import dolfin

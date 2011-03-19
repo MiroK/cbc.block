@@ -2,6 +2,11 @@ from __future__ import division
 from block_base import block_container
 
 class block_vec(block_container):
+    """Class defining a block vector suitable for multiplication with a
+    block_mat of the right dimension. Many of the methods of dolfin.Vector are
+    made available by calling the equivalent method on the individual
+    vectors."""
+
     def __init__(self, m):
         if hasattr(m, '__iter__'):
             block_container.__init__(self, mn=len(m), blocks=m)

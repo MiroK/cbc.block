@@ -1,8 +1,6 @@
 from __future__ import division
 
-__author__  = "Joachim B Haga <jobh@simula.no>"
-__date__    = "2011-01"
-__license__ = "Any"
+"""Utility functions for plotting, boundaries, etc."""
 
 import os
 import dolfin as d

@@ -1,9 +1,15 @@
 from __future__ import division
 
+"""Module implementing algebraic operations on Epetra matrices: Diag, InvDiag
+etc, as well as the explicit() method which performs matrix addition and
+multiplication.
+"""
+
 from block.block_base import block_base
 from PyTrilinos import Epetra
 
 class diag_op(block_base):
+    """Base class for diagonal Epetra operators (represented by an Epetra vector)."""
     def __init__(self, v):
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
         self.v = v
@@ -83,6 +89,7 @@ class diag_op(block_base):
         return '<%s %dx%d>'%(self.__class__.__name__,len(self.v),len(self.v))
 
 class matrix_op(block_base):
+    """Base class for Epetra operators (represented by an Epetra matrix)."""
     def __init__(self, M, transposed=False):
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
@@ -166,6 +173,7 @@ class matrix_op(block_base):
         return format%(self.__class__.__name__, self.M.NumGlobalRows(), self.M.NumGlobalCols())
 
 class Diag(diag_op):
+    """Extract the diagonal entries of a matrix"""
     def __init__(self, A):
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
@@ -173,11 +181,14 @@ class Diag(diag_op):
         diag_op.__init__(self, v)
 
 class InvDiag(Diag):
+    """Extract the inverse of the diagonal entries of a matrix"""
     def __init__(self, A):
         Diag.__init__(self, A)
         self.v.Reciprocal(self.v)
 
 class LumpedInvDiag(diag_op):
+    """Extract the inverse of the lumped diagonal of a matrix (i.e., sum of the
+    absolute values in the row)"""
     def __init__(self, A):
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
@@ -185,6 +196,13 @@ class LumpedInvDiag(diag_op):
         diag_op.__init__(self, v)
 
 def _explicit(x):
+    # Works by calling the matmat(), transpose() and add() methods of
+    # diag_op/matrix_op, depending on the input types. The input is a tree
+    # structure of block.block_compose objects, which is collapsed recursively.
+
+    # This method knows too much about the internal variables of the
+    # block_compose objects... should convert to accessor functions.
+
     from block.block_compose import block_compose, block_add, block_sub, block_transpose
     from numpy import isscalar
     from dolfin import Matrix
@@ -217,6 +235,12 @@ def _explicit(x):
         raise NotImplementedError, "explicit() for type '%s'"%str(type(x))
 
 def explicit(x):
+    """Compute an explicit matrix representation of an operator. For example,
+    given a block_compose object M=A*B, explicit(M) performs the actual matrix
+    multiplication.
+    """
+    # Since _explicit works recursively, this method is a user-visible wrapper
+    # to print timing, and to check input/output arguments.
     from time import time
     from dolfin import info, warning
     T = time()

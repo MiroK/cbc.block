@@ -1,4 +1,25 @@
 from __future__ import division
+
+"""Classes that define algebraic operations on matrices by deferring the actual
+action until a vector is present. The classes are normally not used directly,
+but instead returned implicitly by mathematical notation. For example,
+
+M = A*B+C
+
+returns the object
+
+M = block_add(block_compose(A,B), C),
+
+and the actual calculation is done later, once w=M*v is called for a vector v:
+
+w=block_add.__mul__(M, v)
+--> a = block_compose.__mul__((A,B), v)
+----> b = Matrix.__mul__(B, v)
+----> a = Matrix.__mul__(A, b)
+--> b = Matrix.__mul__(C, v)
+--> w = a+b
+"""
+
 from block_base import block_base
 
 class block_compose(block_base):
