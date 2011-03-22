@@ -30,7 +30,13 @@ class block_compose(block_base):
         self.chain = B+A
     def __mul__(self, x):
         for op in self.chain:
-            x = op * x
+            from dolfin import GenericMatrix
+            if isinstance(op, GenericMatrix):
+                y = op.create_vec(dim=0)
+                op.mult(x, y)
+                x = y
+            else:
+                x = op * x
             if x == NotImplemented:
                 return NotImplemented
         return x

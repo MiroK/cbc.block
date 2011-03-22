@@ -16,7 +16,7 @@ class block_mat(block_container):
             block_container.__init__(self, mn=(m,n))
 
     def matvec(self, x):
-        from dolfin import GenericVector
+        from dolfin import GenericVector, GenericMatrix
         m,n = self.blocks.shape
         y = block_vec(m)
 
@@ -30,8 +30,12 @@ class block_mat(block_container):
                     z = x[j]
                 else:
                     # Do the block multiply
-                    z = self[i,j] * x[j]
-                    if z == NotImplemented: return NotImplemented
+                    if isinstance(self[i,j], GenericMatrix):
+                        z = self[i,j].create_vec(dim=0)
+                        self[i,j].mult(x[j], z)
+                    else:
+                        z = self[i,j] * x[j]
+                        if z == NotImplemented: return NotImplemented
                 if not isinstance(z, (GenericVector, block_vec)):
                     # Typically, this happens when for example a
                     # block_vec([0,0]) is used without calling allocate() or
