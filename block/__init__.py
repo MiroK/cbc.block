@@ -55,8 +55,9 @@ def _create_vec(self, dim=1):
     vec = dolfin.Vector()
     self.resize(vec, dim)
     return vec
-dolfin.GenericMatrix.create_vec = _create_vec
-del _create_vec
+from object_pool import vec_pool
+dolfin.GenericMatrix.create_vec = vec_pool(_create_vec)
+del _create_vec, vec_pool
 
 # For the Trilinos stuff, it's much nicer if down_cast is a method on the object
 dolfin.GenericMatrix.down_cast = dolfin.down_cast

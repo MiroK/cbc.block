@@ -7,6 +7,7 @@ multiplication.
 
 from block.block_base import block_base
 from PyTrilinos import Epetra
+from block.object_pool import vec_pool
 
 class diag_op(block_base):
     """Base class for diagonal Epetra operators (represented by an Epetra vector)."""
@@ -74,6 +75,7 @@ class diag_op(block_base):
         except AttributeError:
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
+    @vec_pool
     def create_vec(self, dim=1):
         from dolfin import EpetraVector
         if dim > 1:
@@ -153,6 +155,7 @@ class matrix_op(block_base):
         except AttributeError:
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
+    @vec_pool
     def create_vec(self, dim=1):
         from dolfin import EpetraVector
         if dim == 0:
