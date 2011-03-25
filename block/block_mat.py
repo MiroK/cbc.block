@@ -137,3 +137,27 @@ class block_mat(block_container):
             for i in range(n):
                 mat[i,i] = A
         return mat
+
+    def simplify(self):
+        # Try to convert to scalar
+        from numpy import isscalar
+        m,n = self.blocks.shape
+        for i in range(m):
+            for j in range(n):
+                if hasattr(self[i,j], 'simplify'):
+                    self[i,j] = self[i,j].simplify()
+        v0 = self.blocks[0,0]
+        if m != n:
+            return self
+        for i in range(m):
+            for j in range(n):
+                block = self.blocks[i,j]
+                if not isscalar(block):
+                    return self
+                if i==j:
+                    if block!=v0:
+                        return self
+                else:
+                    if block!=0:
+                        return self
+        return v0
