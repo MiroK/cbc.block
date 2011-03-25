@@ -27,9 +27,9 @@ class block_compose(block_base):
         """Args may be blockoperators or individual blocks (scalar or Matrix)"""
         A = A.chain if isinstance(A, block_compose) else [A]
         B = B.chain if isinstance(B, block_compose) else [B]
-        self.chain = B+A
+        self.chain = A+B
     def __mul__(self, x):
-        for op in self.chain:
+        for op in reversed(self.chain):
             from dolfin import GenericMatrix, GenericVector
             if isinstance(op, GenericMatrix) and isinstance(x, GenericVector):
                 y = op.create_vec(dim=0)
@@ -49,7 +49,7 @@ class block_compose(block_base):
 
     def transpmult(self, x):
         from numpy import isscalar
-        for op in reversed(self.chain):
+        for op in self.chain:
             if isscalar(op):
                 if op != 1:
                     x = op*x
@@ -59,11 +59,17 @@ class block_compose(block_base):
 
     def create_vec(self, dim=1):
         # dim is 0 or 1, use first or last operator in chain
-        return self.chain[dim-1].create_vec(dim)
+        return self.chain[-dim].create_vec(dim)
 
     def __str__(self):
-        return '{%s}'%(' * '.join(op.__str__() for op in reversed(self.chain)))
+        return '{%s}'%(' * '.join(op.__str__() for op in self.chain))
 
+    def __iter__(self):
+        return iter(self.chain)
+    def __len__(self):
+        return len(self.chain)
+    def __getitem__(self, i):
+        return self.chain[i]
 
 class block_transpose(block_base):
     def __init__(self, A):
@@ -75,6 +81,12 @@ class block_transpose(block_base):
 
     def __str__(self):
         return '<block_transpose of %s>'%str(self.A)
+    def __iter__(self):
+        return iter([self.A])
+    def __len__(self):
+        return 1
+    def __getitem__(self, i):
+        return [self.A][i]
 
 # It's probably best if block_sub and block_add do not allow coercion into
 # block_compose, since that might mess up the operator precedence. Hence, they
@@ -107,6 +119,13 @@ class block_sub(object):
     def __str__(self):
         return '{%s - %s}'%(self.A.__str__(), self.B.__str__())
 
+    def __iter__(self):
+        return iter([self.A, self.B])
+    def __len__(self):
+        return 2
+    def __getitem__(self, i):
+        return [self.A, self.B][i]
+
 class block_add(object):
     def __init__(self, A, B):
         self.A = A
@@ -132,3 +151,9 @@ class block_add(object):
     def __str__(self):
         return '{%s + %s}'%(self.A.__str__(), self.B.__str__())
 
+    def __iter__(self):
+        return iter([self.A, self.B])
+    def __len__(self):
+        return 2
+    def __getitem__(self, i):
+        return [self.A, self.B][i]

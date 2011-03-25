@@ -214,23 +214,21 @@ def _explicit(x):
     elif isinstance(x, Matrix):
         return matrix_op(x.down_cast().mat())
     elif isinstance(x, block_compose):
-        factors = x.chain[:]
+        factors = map(_explicit, reversed(x))
         while len(factors) > 1:
-            A = _explicit(factors.pop())
-            B = _explicit(factors.pop())
+            A = factors.pop()
+            B = factors.pop()
             C = B.matmat(A) if isscalar(A) else A.matmat(B)
             factors.append(C)
         return factors[0]
     elif isinstance(x, block_add):
-        A = _explicit(x.A)
-        B = _explicit(x.B)
+        A,B = map(_explicit, x)
         return B.add(A) if isscalar(A) else A.add(B)
     elif isinstance(x, block_sub):
-        A = _explicit(x.A)
-        B = _explicit(x.B)
+        A,B = map(_explicit, x)
         return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
     elif isinstance(x, block_transpose):
-        A = _explicit(x.A)
+        A = map(_explicit, x)
         return A if isscalar(A) else A.transpose()
     elif isscalar(x):
         return x
