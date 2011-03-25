@@ -29,7 +29,8 @@ class block_base(object):
         return block_add(self, other)
 
     def __radd__(self, other):
-        return other.__add__(self)
+        from block_compose import block_add
+        return block_add(other, self)
 
     def __sub__(self, other):
         from block_compose import block_sub

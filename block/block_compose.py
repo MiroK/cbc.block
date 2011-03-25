@@ -40,12 +40,6 @@ class block_compose(block_base):
             if x == NotImplemented:
                 return NotImplemented
         return x
-    def __sub__(self, x):
-        return block_sub(self, x)
-    def __add__(self, x):
-        return block_add(self, x)
-    def __radd__(self, x):
-        return block_add(x, self)
 
     def transpmult(self, x):
         from numpy import isscalar
@@ -112,6 +106,10 @@ class block_sub(object):
         return y
     def __neg__(self):
         return block_sub(self.B, self.A)
+    def __add__(self, x):
+        return block_add(self, x)
+    def __sub__(self, x):
+        return block_sub(self, x)
 
     def create_vec(self, dim=1):
         return self.A.create_vec(dim)
