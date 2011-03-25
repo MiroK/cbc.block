@@ -7,11 +7,11 @@ class block_vec(block_container):
     made available by calling the equivalent method on the individual
     vectors."""
 
-    def __init__(self, m):
+    def __init__(self, m, blocks=None):
         if hasattr(m, '__iter__'):
-            block_container.__init__(self, mn=len(m), blocks=m)
-        else:
-            block_container.__init__(self, mn=m)
+            blocks = m
+            m = len(m)
+        block_container.__init__(self, m, blocks)
 
     def allocate(self, AA, dim=1):
         from dolfin import GenericVector

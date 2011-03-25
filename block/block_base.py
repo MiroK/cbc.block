@@ -43,14 +43,9 @@ class block_base(object):
 class block_container(block_base):
     """Base class for block containers: block_mat and block_vec.
     """
-    def __init__(self, mn=None, blocks=None):
-        if mn:
-            self.blocks = numpy.ndarray(mn, dtype=numpy.object)
-            self.blocks[:] = blocks if blocks is not None else 0
-        elif blocks:
-            self.blocks = numpy.array(blocks, dtype=numpy.object)
-        else:
-            raise TypeError('must pass at least one argument')
+    def __init__(self, mn, blocks):
+        self.blocks = numpy.ndarray(mn, dtype=numpy.object)
+        self.blocks[:] = blocks
 
     def __setitem__(self, key, val):
         self.blocks[key] = val

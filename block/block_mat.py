@@ -9,11 +9,12 @@ class block_mat(block_container):
     As a special case, the diagonal may contain scalars which act as the
     (scaled) identity operators."""
 
-    def __init__(self, m, n=None):
+    def __init__(self, m, n=None, blocks=0):
         if n is None:
-            block_container.__init__(self, blocks=m)
-        else:
-            block_container.__init__(self, mn=(m,n))
+            blocks = m
+            m = len(blocks)
+            n = len(blocks[0]) if m else 0
+        block_container.__init__(self, (m,n), blocks)
 
     def matvec(self, x):
         from dolfin import GenericVector, GenericMatrix
