@@ -115,6 +115,6 @@ class block_mat(block_container):
         xx.allocate(self, dim)
         return xx
 
-    def scheme(self, name, reverse=False):
+    def scheme(self, name, **kwargs):
         from block_scheme import blockscheme
-        return blockscheme(self, name, reverse)
+        return blockscheme(self, name, **kwargs)

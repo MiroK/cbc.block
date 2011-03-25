@@ -5,56 +5,80 @@ block_mat.scheme().
 """
 
 from block_base import block_base
-from block_vec import block_vec
 
-class BlockPrecond_2x2(block_base):
-    def __init__(self, op_2x2, reverse=False):
-        """In typical use, Ainv and Dinv are preconditioners while B and C are matrices.
-        Any of them may also be preconditioners or inner solvers such as ConjGrad, as long
-        as each block implements __mul__ or matvec. (B is only used by SGS)."""
+def block_jacobi(op):
+    from block_mat import block_mat
+    m,n = op.blocks.shape
+    assert m==n
+    mat = block_mat(m,n)
+    for i in range(m):
+        mat[i,i] = op[i,i]
+    return mat
 
-        self.op   = op_2x2
-        self.idx  = [0,1] if not reverse else [1,0]
+class block_gs(block_base):
+    def __init__(self, op, reverse=False, truncated=False, symmetric=False, w=1.0):
+        self.op = op
+        self.range = range(len(op))
+        if reverse:
+            self.range.reverse()
+        if symmetric:
+            self.matvec = self.matvec_symmetric
+        elif truncated:
+            self.matvec = self.matvec_truncated
+        else:
+            self.matvec = self.matvec_full
+        self.weight = w
 
-class BlockGaussSeidel_2x2(BlockPrecond_2x2):
-    def matvec(self, x):
-        y = block_vec(2)
-        i0,i1 = self.idx
-        y[i0] = self.op[i0,i0] * x[i0]
-        y[i1] = self.op[i1,i1] * (x[i1] - self.op[i1,i0] * y[i0])
-        return y
+    def sor_weighting(self, b, x):
+        if self.weight != 1:
+            for i in self.range:
+                x[i] *= self.weight
+                x[i] += (1-self.weight) * b[i]
 
-class BlockSymmetricGaussSeidel_2x2(BlockGaussSeidel_2x2):
-    def matvec(self, x):
-        y = BlockGaussSeidel_2x2.matvec(self, x)
-        i0,i1 = self.idx
-        y[i0] -= self.op[i0,i0] * self.op[i0,i1] * y[i1]
-        return y
+    def matvec_full(self, b):
+        x = b.copy()
+        for i in self.range:
+            for j in self.range:
+                if j==i:
+                    continue
+                x[i] -= self.op[i,j]*x[j]
+            x[i] = self.op[i,i]*x[i]
+        self.sor_weighting(b, x)
+        return x
 
-def blockscheme(op_2x2, scheme='jacobi', reverse=False):
-    if isinstance(op_2x2, (list, tuple)):
-        op_2x2 = block_mat(op_2x2)
-    if not isinstance(op_2x2, block_mat) or op_2x2.blocks.shape != (2,2):
-        raise TypeError('expected 2x2 block_mat')
-    Ainv, B = op_2x2[0,:]
-    C, Dinv = op_2x2[1,:]
+    def matvec_truncated(self, b):
+        x = b.copy()
+        for k,i in enumerate(self.range):
+            for j in self.range[:k]:
+                x[i] -= self.op[i,j]*x[j]
+            x[i] = self.op[i,i]*x[i]
+        self.sor_weighting(b, x)
+        return x
 
+    def matvec_symmetric(self, b):
+        x = b.copy()
+        for k,i in enumerate(self.range):
+            for j in self.range[:k]:
+                x[i] -= self.op[i,j]*x[j]
+            x[i] = self.op[i,i]*x[i]
+        rev_range = list(reversed(self.range))
+        for k,i in enumerate(rev_range):
+            for j in rev_range[:k]:
+                x[i] -= self.op[i,i]*self.op[i,j]*x[j]
+        self.sor_weighting(b, x)
+        return x
+
+def blockscheme(op, scheme='jacobi', **kwargs):
     if scheme == 'jacobi' or scheme == 'jac':
-        Ainv,Dinv = op_2x2[0,0],op_2x2[1,1]
-        return block_mat([[Ainv,  0  ],
-                          [0,    Dinv]])
+        return block_jacobi(op)
 
-    #bGS  = block_mat([[1,  0  ],
-    #                  [0, Dinv]]) * block_mat([[ 1,   0],
-    #                                           [-C, 1]]) * block_mat([[Ainv, 0],
-    #                                                                  [ 0,   1]])
-    if scheme == 'gauss-seidel' or scheme == 'gs':
-        #return bGS
-        return BlockGaussSeidel_2x2(op_2x2, reverse)
+    if scheme in ('gauss-seidel', 'gs', 'SOR', 'sor'):
+        return block_gs(op, **kwargs)
 
-    if scheme == 'symmetric gauss-seidel' or scheme == 'sgs':
-        #return block_mat([[1, -Ainv*B],
-        #                  [0,  1     ]]) * bGS
-        return BlockSymmetricGaussSeidel_2x2(op_2x2, reverse)
+    if scheme in ('symmetric gauss-seidel', 'sgs', 'SSOR', 'ssor'):
+        return block_gs(op, symmetric=True, **kwargs)
+
+    if scheme in ('truncated gauss-seidel', 'tgs', 'TSOR', 'tsor'):
+        return block_gs(op, truncated=True, **kwargs)
 
     raise TypeError('unknown scheme "%s"'%scheme)
