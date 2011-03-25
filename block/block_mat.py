@@ -118,3 +118,21 @@ class block_mat(block_container):
     def scheme(self, name, **kwargs):
         from block_scheme import blockscheme
         return blockscheme(self, name, **kwargs)
+
+    @staticmethod
+    def diag(A, n=0):
+        """Create a diagonal block matrix, where the entries on the diagonal
+        are either the entries of the vector A (if n==0), or n copies of A (if
+        n>0). For the case of extracting the diagonal of an existing block
+        matrix, use D=A.scheme('jacobi') instead.
+        """
+        if n==0:
+            n = len(A)
+            mat = block_mat(n,n)
+            for i in range(n):
+                mat[i,i] = A[i]
+        else:
+            mat = block_mat(n,n)
+            for i in range(n):
+                mat[i,i] = A
+        return mat

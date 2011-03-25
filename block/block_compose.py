@@ -157,3 +157,41 @@ class block_add(object):
         return 2
     def __getitem__(self, i):
         return [self.A, self.B][i]
+
+def kronecker(A, B):
+    """Create the Kronecker (tensor) product of two matrices. The result is
+    returned as a product of two block matrices, (A x Ib) * (Ia x B), because
+    this will often limit the number of repeated applications of the inner
+    operators. However, it also means that A and B must be square since
+    otherwise the identities Ia and Ib are not defined.
+
+    To form the Kronecker sum, you can extract (A x Ib) and (Ia x B) like this:
+      C,D = kronecker(A,B); sum=C+D
+    Similarly, it may be wise to do the inverse separately:
+      C,D = kronecker(A,B); inverse = some_invert(D)*ConjGrad(C)
+    """
+
+    # A scalar can represent the scaled identity of any dimension, so no need
+    # to diagonal-expand it in the following.
+    from numpy import isscalar
+
+    if isinstance(B, block_mat) and not isscalar(A):
+        n = len(B.blocks)
+        C = block_mat.diag(A, n=n)
+    else:
+        C = A
+
+    if isinstance(A, block_mat) and not isscalar(B):
+        m = len(A.blocks)
+        if isinstance(B, block_mat):
+            D = block_mat(m,m)
+            for i in range(m):
+                for j in range(m):
+                    b = B[i,j]
+                    D[i,j] = b if isscalar(b) else block_mat.diag(b, n=m)
+        else:
+            D = block_mat.diag(B, n=m)
+    else:
+        D = B
+
+    return C*D

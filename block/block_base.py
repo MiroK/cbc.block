@@ -46,8 +46,7 @@ class block_container(block_base):
     def __init__(self, mn=None, blocks=None):
         if mn:
             self.blocks = numpy.ndarray(mn, dtype=numpy.object)
-            if blocks is not None:
-                self.blocks[:] = blocks
+            self.blocks[:] = blocks if blocks is not None else 0
         elif blocks:
             self.blocks = numpy.array(blocks, dtype=numpy.object)
         else:
