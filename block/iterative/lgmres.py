@@ -1,3 +1,7 @@
+from __future__ import division
+from common import *
+import numpy
+
 #####
 # Adapted from SciPy (BSD license)
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
@@ -58,22 +62,26 @@ def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
              http://amath.colorado.edu/activities/thesis/allisonb/Thesis.ps
 
     """
+    import sys
+    if 'PyTrilinos' in sys.modules and not 'scipy' in sys.modules:
+        print 'LGMRES: the next import may crash if scipy is not loaded before PyTrilinos.'
+        print 'Consider putting "import scipy" first in your script.'
+
     from scipy.linalg.basic import lstsq
 
-    b_norm = norm(b)
-    if b_norm == 0:
-        b_norm = 1
+    r_outer = A*x - b
+    r_norm = norm(r_outer)
 
-    residuals = [1]
+    if relativeconv:
+        tolerance *= r_norm
+    residuals = []
 
     for k_outer in xrange(maxiter):
         progress += 1
 
-        r_outer = A*x - b
-
         # -- check stopping condition
-        r_norm = norm(r_outer)
-        if r_norm < tolerance * b_norm or r_norm < tolerance:
+        residuals.append(r_norm)
+        if r_norm < tolerance:
             break
 
         # -- inner LGMRES iteration
@@ -173,20 +181,18 @@ def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
                 continue
 
             # -- GMRES optimization problem
-            hess  = np.zeros((j+1, j))
-            e1    = np.zeros((j+1,))
+            hess  = numpy.zeros((j+1, j))
+            e1    = numpy.zeros((j+1,))
             e1[0] = inner_res_0
             for q in xrange(j):
                 hess[:(q+2),q] = hs[q]
 
             y, resids, rank, s = lstsq(hess, e1)
-            inner_res = np.dot(hess, y) - e1
-            inner_res = sqrt(np.inner(inner_res, inner_res))
-
-            residuals.append(inner_res/inner_res_0)
+            inner_res = numpy.dot(hess, y) - e1
+            inner_res = sqrt(numpy.inner(inner_res, inner_res))
 
             # -- check for termination
-            if inner_res < tol * inner_res_0:
+            if inner_res < tolerance * inner_res_0:
                 break
 
         # -- GMRES terminated: eval solution
@@ -195,20 +201,22 @@ def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
             dx += w*yc
 
         # -- Store LGMRES augmentation vectors
-        nx = norm(dx)
+        nxi = 1/norm(dx)
         if store_outer_Av:
-            q = np.dot(hess, y)
+            q = numpy.dot(hess, y)
             ax = vs[0]*q[0]
             for v, qc in zip(vs[1:], q[1:]):
                 ax += v*qc
-            outer_v.append((dx/nx, ax/nx))
+            outer_v.append((nxi*dx, nxi*ax))
         else:
-            outer_v.append((dx/nx, None))
+            outer_v.append((nxi*dx, None))
 
         # -- Retain only a finite number of augmentation vectors
         outer_v = outer_v[-outer_k:]
 
         # -- Apply step
         x += dx
+        r_outer = A*x - b
+        r_norm = norm(r_outer)
 
     return x, residuals, [], []
