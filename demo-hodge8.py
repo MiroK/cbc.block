@@ -21,7 +21,7 @@ of the (1,1) block, L=A+B*D^*C:
         | 0   D^|
 
 where the L block is formed explicitly by matrix multiplication (using the
-explicit() method), and ML is used for the single-block preconditioners.  The
+collapse() method), and ML is used for the single-block preconditioners.  The
 CGN iterative solver in order to get eigenvalue estimates for the
 preconditioned systems.
 """
@@ -59,7 +59,7 @@ AA = block_mat([[A,  B],
                 [C, -D]])
 bb = block_vec([0,0])
 
-L = explicit(A+B*InvDiag(D)*C)
+L = collapse(A+B*InvDiag(D)*C)
 
 prec = block_mat([[ML(L),  0  ],
                   [0,    ML(D)]])

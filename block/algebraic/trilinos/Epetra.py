@@ -1,7 +1,7 @@
 from __future__ import division
 
 """Module implementing algebraic operations on Epetra matrices: Diag, InvDiag
-etc, as well as the explicit() method which performs matrix addition and
+etc, as well as the collapse() method which performs matrix addition and
 multiplication.
 """
 
@@ -202,7 +202,7 @@ class LumpedInvDiag(diag_op):
         A.InvRowSums(v)
         diag_op.__init__(self, v)
 
-def _explicit(x):
+def _collapse(x):
     # Works by calling the matmat(), transpose() and add() methods of
     # diag_op/matrix_op, depending on the input types. The input is a tree
     # structure of block.block_compose objects, which is collapsed recursively.
@@ -218,7 +218,7 @@ def _explicit(x):
     elif isinstance(x, GenericMatrix):
         return matrix_op(x.down_cast().mat(), reference=x)
     elif isinstance(x, block_compose):
-        factors = map(_explicit, reversed(x))
+        factors = map(_collapse, reversed(x))
         while len(factors) > 1:
             A = factors.pop()
             B = factors.pop()
@@ -226,35 +226,35 @@ def _explicit(x):
             factors.append(C)
         return factors[0]
     elif isinstance(x, block_add):
-        A,B = map(_explicit, x)
+        A,B = map(_collapse, x)
         return B.add(A) if isscalar(A) else A.add(B)
     elif isinstance(x, block_sub):
-        A,B = map(_explicit, x)
+        A,B = map(_collapse, x)
         return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
     elif isinstance(x, block_transpose):
-        A = map(_explicit, x)
+        A = map(_collapse, x)
         return A if isscalar(A) else A.transpose()
     elif isscalar(x):
         return x
     else:
-        raise NotImplementedError, "explicit() for type '%s'"%str(type(x))
+        raise NotImplementedError, "collapse() for type '%s'"%str(type(x))
 
-def explicit(x):
+def collapse(x):
     """Compute an explicit matrix representation of an operator. For example,
-    given a block_compose object M=A*B, explicit(M) performs the actual matrix
+    given a block_compose object M=A*B, collapse(M) performs the actual matrix
     multiplication.
     """
-    # Since _explicit works recursively, this method is a user-visible wrapper
+    # Since _collapse works recursively, this method is a user-visible wrapper
     # to print timing, and to check input/output arguments.
     from time import time
     from dolfin import info, warning
     T = time()
-    res = _explicit(x)
+    res = _collapse(x)
     if getattr(res, 'transposed', False):
         # transposed matrices will normally be converted to a non-transposed
         # one by matrix multiplication or addition, but if the transpose is the
         # outermost operation then this doesn't work.
-        warning('Transposed matrix returned from explicit() -- this matrix can be used for multiplications, '
+        warning('Transposed matrix returned from collapse() -- this matrix can be used for multiplications, '
                 + 'but not (for example) as input to ML. Try to convert from (A*B)^T to B^T*A^T in your call.')
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
     return res

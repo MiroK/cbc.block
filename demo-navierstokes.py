@@ -70,7 +70,7 @@ bcs.apply(AA, b)
 # Create preconditioners: An ILU preconditioner for A, and an ML inverse of the
 # Schur complement approximation for the (2,2) block.
 Ap = ILU(A)
-Dp = ML(explicit(C*InvDiag(A)*B))
+Dp = ML(collapse(C*InvDiag(A)*B))
 
 prec = block_mat([[Ap, B],
                   [C, -Dp]]).scheme('sgs')

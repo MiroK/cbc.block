@@ -138,13 +138,13 @@ bcs.apply(AA, bb, save_A=True)
 
 # Create preconditioner -- a generalised block Jacobi preconditioner, where the
 # (2,2) approximates the pressure Schur complement. Since the ML preconditioner
-# requires access to the matrix elements, we use the explicit() call to perform
+# requires access to the matrix elements, we use the collapse() call to perform
 # the necessary matrix algebra to convert the operator S to a single matrix.
 
 Ap = ML(A)
 
 S = C*InvDiag(A)*B-D
-Sp = ML(explicit(S))
+Sp = ML(collapse(S))
 
 AApre = block_mat([[Ap, 0],
                    [0, -Sp]])

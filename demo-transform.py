@@ -29,7 +29,7 @@ A = assemble(dot(grad(u),grad(v))*dx)
 K = kronecker(A,tensor1)
 L = kronecker(M,tensor2)
 
-AA = K + L 
+AA = K + L
 
 
 print '\n================='

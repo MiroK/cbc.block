@@ -38,7 +38,7 @@ import PyTrilinos
 
 from block import *
 from block.iterative import TFQMR, Richardson, ConjGrad
-from block.algebraic.trilinos import ML, explicit
+from block.algebraic.trilinos import ML, collapse
 from dolfin import *
 
 # Create mesh
@@ -118,11 +118,11 @@ Lp = Richardson(L, precond=0.5, iter=40, name='L^')
 #Lp = ConjGrad(L, maxiter=40, name='L^')
 
 # Alternative c: Calculate the matrix product, so that a regular preconditioner
-# can be used. The "explicit" function collapses a composed operator into a
+# can be used. The "collapse" function collapses a composed operator into a
 # single matrix. This is normally too expensive to do in parallel, but it works
 # for small problems. In this case, L can be either C*B or block_transpose(B)*B.
 #
-#Lp = ML(explicit(L))
+#Lp = ML(collapse(L))
 
 # Define the block preconditioner
 AAp = block_mat([[Ap, 0],
