@@ -92,10 +92,11 @@ class diag_op(block_base):
 
 class matrix_op(block_base):
     """Base class for Epetra operators (represented by an Epetra matrix)."""
-    def __init__(self, M, transposed=False):
+    def __init__(self, M, transposed=False, reference=None):
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
         self.transposed = transposed
+        self.reference = reference # To avoid early deletion of dolfin-generated matrices
 
     def transpose(self):
         return matrix_op(self.M, not self.transposed)
@@ -151,7 +152,10 @@ class matrix_op(block_base):
                 C.OptimizeStorage()
                 return matrix_op(C)
             else:
-                raise NotImplementedError, "matrix-diagonal add not implemented (yet?)"
+                lhs = Epetra.CrsMatrix(self.M) if lscale == 1 else self.matmat(lscale)
+                D = Diag(lhs).add(other, rscale=rscale)
+                lhs.M.ReplaceDiagonalValues(D.vec())
+                return lhs
         except AttributeError:
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
@@ -208,11 +212,11 @@ def _explicit(x):
 
     from block.block_compose import block_compose, block_add, block_sub, block_transpose
     from numpy import isscalar
-    from dolfin import Matrix
+    from dolfin import GenericMatrix
     if isinstance(x, (matrix_op, diag_op)):
         return x
-    elif isinstance(x, Matrix):
-        return matrix_op(x.down_cast().mat())
+    elif isinstance(x, GenericMatrix):
+        return matrix_op(x.down_cast().mat(), reference=x)
     elif isinstance(x, block_compose):
         factors = map(_explicit, reversed(x))
         while len(factors) > 1:
