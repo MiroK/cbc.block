@@ -97,6 +97,9 @@ class iterative(block_base):
         e.sort()
         return e
 
+    def __str__(self):
+        return '<%d %s iterations on %s>'%(self.maxiter, self.name, self.A)
+
 class ConjGrad(iterative):
     import conjgrad
     method = staticmethod(conjgrad.precondconjgrad)
