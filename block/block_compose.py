@@ -53,11 +53,11 @@ class block_compose(block_base):
 
     def create_vec(self, dim=1):
         if dim==0:
-            for op in reversed(self.chain):
+            for op in self.chain:
                 if hasattr(op, 'create_vec'):
                     return op.create_vec(dim)
         if dim==1:
-            for op in self.chain:
+            for op in reversed(self.chain):
                 if hasattr(op, 'create_vec'):
                     return op.create_vec(dim)
         raise RuntimeError, 'failed to create vec, no appropriate reference matrix'
