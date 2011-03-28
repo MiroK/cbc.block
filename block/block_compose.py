@@ -67,22 +67,20 @@ class block_compose(block_base):
         raise AttributeError, 'failed to create vec, no appropriate reference matrix'
 
     def inside_out(self):
-        """Create a block_mat of block_composes from a block_compose of block_mats"""
+        """Create a block_mat of block_composes from a block_compose of
+        block_mats. See block_transform.inside_out."""
         from block_mat import block_mat
         from numpy import isscalar
+        from block_transform import inside_out, simplify
 
         # Reduce all composed objects
-        ops = self.chain[:]
-        for i,op in enumerate(ops):
-            if hasattr(op, 'simplify'):
-                ops[i] = ops[i].simplify()
-        for i,op in enumerate(ops):
-            if hasattr(op, 'inside_out'):
-                ops[i] = ops[i].inside_out()
+        ops = map(inside_out, self.chain)
 
-        # Do the fandango
+        # Do the matrix multiply, blockwise. Note that we use
+        # block_compose(A,B) rather than A*B to avoid any implicit calculations
+        # (e.g., scalar*matrix->matrix) -- the result will be transformed by
+        # simplify() in the end to take care of any stray scalars.
         while len(ops) > 1:
-            factor = 1
             B = ops.pop()
             A = ops.pop()
 
@@ -93,39 +91,44 @@ class block_compose(block_base):
                 for row in range(m):
                     for col in range(q):
                         for i in range(n):
-                            C[row,col] += A[row,i]*B[i,col]
-            elif isinstance(A, block_mat):
+                            C[row,col] += block_compose(A[row,i],B[i,col])
+            elif isinstance(A, block_mat) and isscalar(B):
                 m,n = A.blocks.shape
                 C = block_mat(m,n)
                 for row in range(m):
                     for col in range(n):
-                        C[row,col] = A[row,col]*B
-            elif isinstance(B, block_mat):
+                        C[row,col] = block_compose(A[row,col],B)
+            elif isinstance(B, block_mat) and isscalar(A):
                 m,n = B.blocks.shape
                 C = block_mat(m,n)
                 for row in range(m):
                     for col in range(n):
-                        C[row,col] = A*B[row,col]
+                        C[row,col] = block_compose(A,B[row,col])
             else:
-                C = A*B
+                C = block_compose(A,B)
             ops.append(C)
-        return C
+        return simplify(ops[0])
 
     def simplify(self):
+        """Try to combine scalar terms and remove multiplicative identities,
+        recursively. A fuller explanation is found in block_transform.simplify.
+        """
         from numpy import isscalar
+        from block_transform import simplify
         operators = []
         scalar = 1.0
         for op in self.chain:
-            if hasattr(op, 'simplify'):
-                op = op.simplify()
+            op = simplify(op)
             if isscalar(op):
                 scalar *= op
             else:
                 operators.append(op)
         if scalar == 0:
             return 0
-        if scalar != 1:
+        if scalar != 1 or len(operators) == 0:
             operators.insert(0, scalar)
+        if len(operators) == 1:
+            return operators[0]
         ret = block_compose(None, None)
         ret.chain = operators
         return ret
@@ -149,24 +152,31 @@ class block_transpose(block_base):
         return self.A.__mul__(x)
 
     def inside_out(self):
-        A = self.A.inside_out() if hasattr(self.A, 'inside_out') else self.A
+        """See block_transform.inside_out."""
+        from block_transform import inside_out, simplify
+        from block_mat import block_mat
+        A = inside_out(self.A)
         if not isinstance(A, block_mat):
-            return self
+            return block_transpose(A)
         m,n = A.blocks.shape
         ret = block_mat(n,m)
         for i in range(m):
             for j in range(n):
                 ret[j,i] = block_transpose(A[i,j])
-        return ret
+        return simplify(ret)
 
     def simplify(self):
+        """Try to simplify the transpose, recursively. A fuller explanation is
+        found in block_transform.simplify.
+        """
         from numpy import isscalar
-        A = self.A.simplify() if hasattr(self.A, 'simplify') else self.A
+        from block_transform import simplify
+        A = simplify(self.A)
         if isscalar(A):
             return A
         if isinstance(A, block_transpose):
             return A.A
-        return self
+        return block_transpose(A)
 
     def __str__(self):
         return '<block_transpose of %s>'%str(self.A)
@@ -213,53 +223,52 @@ class block_sub(object):
             return self.B.create_vec(dim)
 
     def simplify(self):
+        """Try to combine scalar terms and remove additive identities,
+        recursively. A fuller explanation is found in block_transform.simplify.
+        """
         from numpy import isscalar
-        A = self.A.simplify() if hasattr(self.A, 'simplify') else self.A
-        B = self.B.simplify() if hasattr(self.B, 'simplify') else self.B
+        from block_transform import simplify
+        A = simplify(self.A)
+        B = simplify(self.B)
         if isscalar(A) and A==0:
             return -B
         if isscalar(B) and B==0:
             return A
         return A-B
 
-    def inside_out(self, _f=lambda a,b: a-b):
-        """Create a block_mat of block_subs from a block_sub of block_mats"""
+    def inside_out(self):
+        """Create a block_mat of block_adds from a block_add of block_mats. See block_transform.inside_out."""
         from block_mat import block_mat
         from numpy import isscalar
+        from block_transform import inside_out, simplify
 
-        A = self.A
-        B = self.B
-        # Reduce all composed objects
-        if hasattr(A, 'simplify'):
-            A = A.simplify()
-        if hasattr(B, 'simplify'):
-            B = B.simplify()
-        if hasattr(A, 'inside_out'):
-            A = A.inside_out()
-        if hasattr(B, 'inside_out'):
-            B = B.inside_out()
+        A = inside_out(self.A)
+        B = inside_out(self.B)
 
+        # The self.__class__(A,B) used below works for both block_sub and
+        # block_add, and any scalar terms are combined by the final call to
+        # simplify().
         if isinstance(A, block_mat) and isinstance(B, block_mat):
             m,n = A.blocks.shape
             C = block_mat(m,n)
             for row in range(m):
                 for col in range(n):
-                    C[row,col] = _f(A[row,col], B[row,col])
-        elif isinstance(A, block_mat):
+                    C[row,col] = self.__class__(A[row,col], B[row,col])
+        elif isinstance(A, block_mat) and isscalar(B):
             m,n = A.blocks.shape
             C = block_mat(m,n)
             for row in range(m):
                 for col in range(n):
-                    C[row,col] = _f(A[row,col], B) if row==col else A[row,col]
-        elif isinstance(B, block_mat):
+                    C[row,col] = self.__class__(A[row,col], B) if row==col else A[row,col]
+        elif isinstance(B, block_mat) and isscalar(A):
             m,n = B.blocks.shape
             C = block_mat(m,n)
             for row in range(m):
                 for col in range(n):
-                    C[row,col] = _f(A, B[row,col]) if row==col else B[row,col]
+                    C[row,col] = self.__class__(A, B[row,col]) if row==col else B[row,col]
         else:
-            C = _f(A, B)
-        return C
+            C = self.__class__(A, B)
+        return simplify(C)
 
     def __str__(self):
         return '{%s - %s}'%(self.A.__str__(), self.B.__str__())
@@ -286,59 +295,21 @@ class block_add(block_sub):
         return y
 
     def simplify(self):
+        """Try to combine scalar terms and remove additive identities,
+        recursively. A fuller explanation is found in block_transform.simplify.
+        """
         from numpy import isscalar
-        A = self.A.simplify() if hasattr(self.A, 'simplify') else self.A
-        B = self.B.simplify() if hasattr(self.B, 'simplify') else self.B
+        from block_transform import simplify
+        A = simplify(self.A)
+        B = simplify(self.B)
         if isscalar(A) and A==0:
             return B
         if isscalar(B) and B==0:
             return A
         return A+B
 
-    def inside_out(self):
-        return block_sub.inside_out(self, _f=lambda a,b: a+b)
-
     def __neg__(self):
         return block_compose(-1, self)
 
     def __str__(self):
         return '{%s + %s}'%(self.A.__str__(), self.B.__str__())
-
-
-def kronecker(A, B):
-    """Create the Kronecker (tensor) product of two matrices. The result is
-    returned as a product of two block matrices, (A x Ib) * (Ia x B), because
-    this will often limit the number of repeated applications of the inner
-    operators. However, it also means that A and B must be square since
-    otherwise the identities Ia and Ib are not defined.
-
-    To form the Kronecker sum, you can extract (A x Ib) and (Ia x B) like this:
-      C,D = kronecker(A,B); sum=C+D
-    Similarly, it may be wise to do the inverse separately:
-      C,D = kronecker(A,B); inverse = some_invert(D)*ConjGrad(C)
-    """
-
-    # A scalar can represent the scaled identity of any dimension, so no need
-    # to diagonal-expand it in the following.
-    from numpy import isscalar
-
-    if isinstance(B, block_mat) and not isscalar(A):
-        n = len(B.blocks)
-        C = block_mat.diag(A, n=n)
-    else:
-        C = A
-
-    if isinstance(A, block_mat) and not isscalar(B):
-        m = len(A.blocks)
-        if isinstance(B, block_mat):
-            D = block_mat(m,m)
-            for i in range(m):
-                for j in range(m):
-                    b = B[i,j]
-                    D[i,j] = b if isscalar(b) else block_mat.diag(b, n=m)
-        else:
-            D = block_mat.diag(B, n=m)
-    else:
-        D = B
-
-    return C*D
