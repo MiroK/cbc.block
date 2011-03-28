@@ -6,12 +6,13 @@ multiplication.
 """
 
 from block.block_base import block_base
-from PyTrilinos import Epetra
-from block.object_pool import vec_pool
 
 class diag_op(block_base):
     """Base class for diagonal Epetra operators (represented by an Epetra vector)."""
+    from block.object_pool import vec_pool
+
     def __init__(self, v):
+        from PyTrilinos import Epetra
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
         self.v = v
 
@@ -40,6 +41,7 @@ class diag_op(block_base):
         return x
 
     def matmat(self, other):
+        from PyTrilinos import Epetra
         try:
             from numpy import isscalar
             if isscalar(other):
@@ -59,8 +61,9 @@ class diag_op(block_base):
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
     def add(self, other, lscale=1.0, rscale=1.0):
+        from numpy import isscalar
+        from PyTrilinos import Epetra
         try:
-            from numpy import isscalar
             if isscalar(other):
                 x = Epetra.Vector(self.v.Map())
                 x.PutScalar(other)
@@ -92,7 +95,10 @@ class diag_op(block_base):
 
 class matrix_op(block_base):
     """Base class for Epetra operators (represented by an Epetra matrix)."""
+    from block.object_pool import vec_pool
+
     def __init__(self, M, transposed=False, reference=None):
+        from PyTrilinos import Epetra
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
         self.transposed = transposed
@@ -115,8 +121,9 @@ class matrix_op(block_base):
         return x
 
     def matmat(self, other):
+        from PyTrilinos import Epetra
+        from numpy import isscalar
         try:
-            from numpy import isscalar
             if isscalar(other):
                 C = Epetra.CrsMatrix(self.M)
                 C.Scale(other)
@@ -141,6 +148,7 @@ class matrix_op(block_base):
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
     def add(self, other, lscale=1.0, rscale=1.0):
+        from PyTrilinos import Epetra
         try:
             other = other.down_cast()
             if hasattr(other, 'mat'):
@@ -182,6 +190,7 @@ class matrix_op(block_base):
 class Diag(diag_op):
     """Extract the diagonal entries of a matrix"""
     def __init__(self, A):
+        from PyTrilinos import Epetra
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
         A.ExtractDiagonalCopy(v)
@@ -197,6 +206,7 @@ class LumpedInvDiag(diag_op):
     """Extract the inverse of the lumped diagonal of a matrix (i.e., sum of the
     absolute values in the row)"""
     def __init__(self, A):
+        from PyTrilinos import Epetra
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
         A.InvRowSums(v)

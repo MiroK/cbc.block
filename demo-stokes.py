@@ -28,6 +28,8 @@ from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *
 
+dolfin.set_log_level(15)
+
 # Load mesh and subdomains
 mesh = Mesh("dolfin-2.xml.gz")
 sub_domains = MeshFunction("uint", mesh, "subdomains.xml.gz")
