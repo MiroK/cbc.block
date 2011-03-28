@@ -20,11 +20,13 @@ class block_vec(block_container):
                 continue
             for j in range(len(self)):
                 A = AA[i,j] if dim==0 else AA[j,i]
-                if hasattr(A, 'create_vec'):
+                try:
                     self[i] = A.create_vec(dim)
                     break
+                except AttributeError:
+                    pass
             if not isinstance(self[i], GenericVector):
-                raise RuntimeError, "can't allocate vector - no Matrix (or equivalent) for block %d"%i
+                raise AttributeError, "can't allocate vector - no Matrix (or equivalent) for block %d"%i
 
     def norm(self, ntype='l2'):
         if ntype == 'linf':
