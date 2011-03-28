@@ -54,13 +54,17 @@ class block_compose(block_base):
     def create_vec(self, dim=1):
         if dim==0:
             for op in self.chain:
-                if hasattr(op, 'create_vec'):
+                try:
                     return op.create_vec(dim)
+                except AttributeError:
+                    pass
         if dim==1:
             for op in reversed(self.chain):
-                if hasattr(op, 'create_vec'):
+                try:
                     return op.create_vec(dim)
-        raise RuntimeError, 'failed to create vec, no appropriate reference matrix'
+                except AttributeError:
+                    pass
+        raise AttributeError, 'failed to create vec, no appropriate reference matrix'
 
     def inside_out(self):
         """Create a block_mat of block_composes from a block_compose of block_mats"""
@@ -277,8 +281,8 @@ class block_add(block_sub):
         z = self.B*x
         if len(y) != len(z):
             raise RuntimeError, \
-                'incompatible dimensions in matrix subtraction -- %d != %d'%(len(y),len(z))
-        y -= z
+                'incompatible dimensions in matrix addition -- %d != %d'%(len(y),len(z))
+        y += z
         return y
 
     def simplify(self):
