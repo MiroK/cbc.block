@@ -138,18 +138,18 @@ class block_mat(block_container):
                 mat[i,i] = A
         return mat
 
-    def simplify(self):
+    def block_simplify(self):
         """Try to convert identities to scalars, recursively. A fuller
-        explanation is found in block_transform.simplify.
+        explanation is found in block_transform.block_simplify.
         """
         from numpy import isscalar
-        from block_transform import simplify
+        from block_transform import block_simplify
         m,n = self.blocks.shape
         res = block_mat(m,n)
         # Recursive call
         for i in range(m):
             for j in range(n):
-                res[i,j] = simplify(self[i,j])
+                res[i,j] = block_simplify(self[i,j])
         # Check if result after recursive conversion is the (scaled) identity
         v0 = res.blocks[0,0]
         if m != n:

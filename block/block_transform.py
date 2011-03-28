@@ -1,7 +1,7 @@
 from block_mat import block_mat
 from block_compose import block_compose
 
-def kronecker(A, B):
+def block_kronecker(A, B):
     """Create the Kronecker (tensor) product of two matrices. The result is
     returned as a product of two block matrices, (A x Ib) * (Ia x B), because
     this will often limit the number of repeated applications of the inner
@@ -12,9 +12,9 @@ def kronecker(A, B):
     is returned instead of two block matrices.
 
     To form the Kronecker sum, you can extract (A x Ib) and (Ia x B) like this:
-      C,D = kronecker(A,B); sum=C+D
+      C,D = block_kronecker(A,B); sum=C+D
     Similarly, it may be wise to do the inverse separately:
-      C,D = kronecker(A,B); inverse = some_invert(D)*ConjGrad(C)
+      C,D = block_kronecker(A,B); inverse = some_invert(D)*ConjGrad(C)
     """
     from numpy import isscalar
 
@@ -45,7 +45,7 @@ def kronecker(A, B):
     return block_compose(C,D)
 
 
-def simplify(expr):
+def block_simplify(expr):
     """Return a simplified (if possible) representation of a block matrix or
     block composition. The simplification does the following basic steps:
     - Convert scaled identity matrices to scalars
@@ -53,16 +53,16 @@ def simplify(expr):
     - Eliminate additive and multiplicative identities (A+0=A, A*1=A)
     """
     try:
-        return expr.simplify()
+        return expr.block_simplify()
     except AttributeError:
         return expr
 
 
-def inside_out(expr):
+def block_collapse(expr):
     """Turn a composition /inside out/, i.e., turn a composition of block
     matrices into a block matrix of compositions.
     """
     try:
-        return expr.inside_out()
+        return expr.block_collapse()
     except AttributeError:
         return expr

@@ -66,20 +66,20 @@ class block_compose(block_base):
                     pass
         raise AttributeError, 'failed to create vec, no appropriate reference matrix'
 
-    def inside_out(self):
+    def block_collapse(self):
         """Create a block_mat of block_composes from a block_compose of
-        block_mats. See block_transform.inside_out."""
+        block_mats. See block_transform.block_collapse."""
         from block_mat import block_mat
         from numpy import isscalar
-        from block_transform import inside_out, simplify
+        from block_transform import block_collapse, block_simplify
 
         # Reduce all composed objects
-        ops = map(inside_out, self.chain)
+        ops = map(block_collapse, self.chain)
 
         # Do the matrix multiply, blockwise. Note that we use
         # block_compose(A,B) rather than A*B to avoid any implicit calculations
         # (e.g., scalar*matrix->matrix) -- the result will be transformed by
-        # simplify() in the end to take care of any stray scalars.
+        # block_simplify() in the end to take care of any stray scalars.
         while len(ops) > 1:
             B = ops.pop()
             A = ops.pop()
@@ -107,18 +107,18 @@ class block_compose(block_base):
             else:
                 C = block_compose(A,B)
             ops.append(C)
-        return simplify(ops[0])
+        return block_simplify(ops[0])
 
-    def simplify(self):
+    def block_simplify(self):
         """Try to combine scalar terms and remove multiplicative identities,
-        recursively. A fuller explanation is found in block_transform.simplify.
+        recursively. A fuller explanation is found in block_transform.block_simplify.
         """
         from numpy import isscalar
-        from block_transform import simplify
+        from block_transform import block_simplify
         operators = []
         scalar = 1.0
         for op in self.chain:
-            op = simplify(op)
+            op = block_simplify(op)
             if isscalar(op):
                 scalar *= op
             else:
@@ -151,11 +151,11 @@ class block_transpose(block_base):
     def transpmult(self, x):
         return self.A.__mul__(x)
 
-    def inside_out(self):
-        """See block_transform.inside_out."""
-        from block_transform import inside_out, simplify
+    def block_collapse(self):
+        """See block_transform.block_collapse."""
+        from block_transform import block_collapse, block_simplify
         from block_mat import block_mat
-        A = inside_out(self.A)
+        A = block_collapse(self.A)
         if not isinstance(A, block_mat):
             return block_transpose(A)
         m,n = A.blocks.shape
@@ -163,15 +163,15 @@ class block_transpose(block_base):
         for i in range(m):
             for j in range(n):
                 ret[j,i] = block_transpose(A[i,j])
-        return simplify(ret)
+        return block_simplify(ret)
 
-    def simplify(self):
+    def block_simplify(self):
         """Try to simplify the transpose, recursively. A fuller explanation is
-        found in block_transform.simplify.
+        found in block_transform.block_simplify.
         """
         from numpy import isscalar
-        from block_transform import simplify
-        A = simplify(self.A)
+        from block_transform import block_simplify
+        A = block_simplify(self.A)
         if isscalar(A):
             return A
         if isinstance(A, block_transpose):
@@ -222,32 +222,32 @@ class block_sub(object):
         except AttributeError:
             return self.B.create_vec(dim)
 
-    def simplify(self):
+    def block_simplify(self):
         """Try to combine scalar terms and remove additive identities,
-        recursively. A fuller explanation is found in block_transform.simplify.
+        recursively. A fuller explanation is found in block_transform.block_simplify.
         """
         from numpy import isscalar
-        from block_transform import simplify
-        A = simplify(self.A)
-        B = simplify(self.B)
+        from block_transform import block_simplify
+        A = block_simplify(self.A)
+        B = block_simplify(self.B)
         if isscalar(A) and A==0:
             return -B
         if isscalar(B) and B==0:
             return A
         return A-B
 
-    def inside_out(self):
-        """Create a block_mat of block_adds from a block_add of block_mats. See block_transform.inside_out."""
+    def block_collapse(self):
+        """Create a block_mat of block_adds from a block_add of block_mats. See block_transform.block_collapse."""
         from block_mat import block_mat
         from numpy import isscalar
-        from block_transform import inside_out, simplify
+        from block_transform import block_collapse, block_simplify
 
-        A = inside_out(self.A)
-        B = inside_out(self.B)
+        A = block_collapse(self.A)
+        B = block_collapse(self.B)
 
         # The self.__class__(A,B) used below works for both block_sub and
         # block_add, and any scalar terms are combined by the final call to
-        # simplify().
+        # block_simplify().
         if isinstance(A, block_mat) and isinstance(B, block_mat):
             m,n = A.blocks.shape
             C = block_mat(m,n)
@@ -268,7 +268,7 @@ class block_sub(object):
                     C[row,col] = self.__class__(A, B[row,col]) if row==col else B[row,col]
         else:
             C = self.__class__(A, B)
-        return simplify(C)
+        return block_simplify(C)
 
     def __str__(self):
         return '{%s - %s}'%(self.A.__str__(), self.B.__str__())
@@ -294,14 +294,14 @@ class block_add(block_sub):
         y += z
         return y
 
-    def simplify(self):
+    def block_simplify(self):
         """Try to combine scalar terms and remove additive identities,
-        recursively. A fuller explanation is found in block_transform.simplify.
+        recursively. A fuller explanation is found in block_transform.block_simplify.
         """
         from numpy import isscalar
-        from block_transform import simplify
-        A = simplify(self.A)
-        B = simplify(self.B)
+        from block_transform import block_simplify
+        A = block_simplify(self.A)
+        B = block_simplify(self.B)
         if isscalar(A) and A==0:
             return B
         if isscalar(B) and B==0:

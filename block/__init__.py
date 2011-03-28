@@ -15,7 +15,7 @@ import dolfin
 from block_mat import block_mat
 from block_vec import block_vec
 from block_compose import block_compose, block_add, block_sub, block_transpose
-from block_transform import kronecker, simplify, inside_out
+from block_transform import block_kronecker, block_simplify, block_collapse
 from block_bc import block_bc
 
 # To make stuff like L=C*B work when C and B are type dolfin.Matrix, we inject
