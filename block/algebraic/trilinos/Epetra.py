@@ -268,3 +268,27 @@ def collapse(x):
                 + 'but not (for example) as input to ML. Try to convert from (A*B)^T to B^T*A^T in your call.')
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
     return res
+
+
+def create_identity(rowmap, val=1):
+    import numpy
+    from PyTrilinos import Epetra
+    from dolfin import EpetraMatrix
+
+    graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1)
+    indices = numpy.array([0])
+    for row in rowmap.MyGlobalElements():
+        indices[0] = row
+        graph.InsertGlobalIndices(row, indices)
+    graph.FillComplete()
+
+    matrix = EpetraMatrix(graph)
+    indices = numpy.array(rowmap.MyGlobalElements(), dtype='I')
+    if val == 0:
+        matrix.zero(indices)
+    else:
+        matrix.ident(indices)
+        if val != 1:
+            matrix *= val
+
+    return matrix

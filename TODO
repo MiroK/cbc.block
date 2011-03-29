@@ -1,7 +1,3 @@
-* Create diagonal matrices on demand so that BCs can be set on zero (scalar)
-   blocks. This can be done in the LA backend (create a diagonal
-   Epetra_CrsMatrix, wrap it in a dolfin.EpetraMatrix).
-
 * Change dolfin.AssembleSystem so that it can replace the BC settings. The
    current scheme does not work in parallel. Requires: (1) Working on
    non-diagonal blocks (similar to DirichletBC::zero,

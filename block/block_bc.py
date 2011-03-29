@@ -1,5 +1,5 @@
 from __future__ import division
-from dolfin import Matrix, info, MPI
+import dolfin
 from block_mat import block_mat
 from block_vec import block_vec
 import numpy
@@ -24,7 +24,7 @@ class block_bc(list):
             return self.apply_rhs(b, symmetric)
         if save_A and not symmetric:
             raise TypeError('no point in saving A if symmetric=False')
-        if symmetric and MPI.num_processes() > 1:
+        if symmetric and dolfin.MPI.num_processes() > 1:
             raise RuntimeError('symmetric BCs not supported in parallel (yet)')
 
         # Find signs of matrices. Robust for definite matrices. For indefinite matrices, the
@@ -47,28 +47,31 @@ class block_bc(list):
             if not self[i]:
                 # No BC on this block, sign doesn't matter
                 continue
-            if not isinstance(AA[i,i], Matrix):
-                raise TypeError, "can only set boundary conditions on matrices"
+            if numpy.isscalar(AA[i,i]):
+                import block.algebraic
+                rowmap = bb[i].down_cast().vec().Map()
+                AA[i,i] = block.algebraic.active_backend().create_identity(rowmap, AA[i,i])
             # Do not use a constant vector, as that may be in the null space
             # before boundary conditions are applied
-            x = bb[i].copy()
-            x[:] = numpy.random.uniform(size=len(x))
+            x = AA[i,i].create_vec()
+            ran = numpy.random.random(x.local_size())
+            x.set_local(ran)
             Ax = AA[i,i]*x
             xAx = x.inner(Ax)
             if xAx == 0:
                 from dolfin import warning
                 warning("block_bc: zero or semi-definite block (%d,%d), using sign +1"%(i,i))
             self.signs[i] = -1 if xAx < 0 else 1
-        info('Calculated signs of diagonal blocks:' + str(self.signs))
+        dolfin.info('Calculated signs of diagonal blocks:' + str(self.signs))
 
     def apply_matvec(self, A, b, symmetric):
         b.allocate(A)
         for i in range(len(self)):
             for bc in self[i]:
                 for j in range(len(self)):
-                    if not isinstance(A[i,j], Matrix):
+                    if not isinstance(A[i,j], dolfin.GenericMatrix):
                         if i==j or A[i,j] not in (0, None):
-                            error("can't modify scalar block (%d,%d) for BC" % (i,j))
+                            dolfin.error("can't modify scalar block (%d,%d) for BC" % (i,j))
                         continue
                     if i==j:
                         if symmetric:

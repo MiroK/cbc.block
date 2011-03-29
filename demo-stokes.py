@@ -62,17 +62,13 @@ C  = assemble(div(u)*q*dx)
 I  = assemble(p*q*dx)
 b0 = assemble(inner(v, f)*dx)
 
-# Create the block matrix/vector. We need a matrix in the (2,2) block instead
-# of just zero, because it must be modified for the Dirichlet boundary
-# conditions. At the moment there is no simple way to create a diagonal matrix
-# in Dolfin, so we use the "trick" of right-multiplying the suitably sized mass
-# matrix by zero. (Note that 0*I would not work, since that creates a
-# composed operator instead of a matrix.)
+# Create the block matrix/vector.
 AA = block_mat([[A, B],
-                [C, I*0]])
+                [C, 0]])
 b  = block_vec([b0, 0])
 
-# Apply boundary conditions
+# Apply boundary conditions. A diagonal matrix is automatically created to
+# replace the (2,2) block in AA, since bc2 makes the block non-zero.
 bcs = block_bc([[bc0, bc1], [bc2]])
 bcs.apply(AA, b)
 
