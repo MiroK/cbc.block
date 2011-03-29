@@ -270,10 +270,20 @@ def collapse(x):
     return res
 
 
-def create_identity(rowmap, val=1):
+def create_identity(vec=None, mat=None, dim=None, val=1):
+    """Create an identity matrix from a given matrix or vector. The arguments
+    must be EITHER vec OR mat + dim."""
     import numpy
     from PyTrilinos import Epetra
     from dolfin import EpetraMatrix
+
+    if vec:
+        assert mat is None and dim is None
+        rowmap = vec.down_cast().vec().Map()
+    elif mat:
+        assert vec is None and dim in (0,1)
+        mat = mat.down_cast().mat()
+        rowmap = mat.RowMap() if dim==0 else mat.RangeMap()
 
     graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1)
     indices = numpy.array([0])

@@ -49,8 +49,7 @@ class block_bc(list):
                 continue
             if numpy.isscalar(AA[i,i]):
                 import block.algebraic
-                rowmap = bb[i].down_cast().vec().Map()
-                AA[i,i] = block.algebraic.active_backend().create_identity(rowmap, AA[i,i])
+                AA[i,i] = block.algebraic.active_backend().create_identity(vec=bb[i], val=AA[i,i])
             # Do not use a constant vector, as that may be in the null space
             # before boundary conditions are applied
             x = AA[i,i].create_vec()
