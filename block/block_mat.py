@@ -117,6 +117,38 @@ class block_mat(block_container):
         return xx
 
     def scheme(self, name, **kwargs):
+        """Return a block scheme (block relaxation method). The input block_mat
+        must be defined with inverses (or preconditioners) on the diagonal, and
+        the normal blocks off-diagonal. For example, given a coefficient matrix
+
+          A = block_mat([[A, B],
+                         [C, D]]),
+
+        the Gauss-Seidel block preconditioner may be defined as
+
+          AApre = block_mat([[pre(A), B],
+                             [C, pre(D)]]).scheme('gs')
+
+        for some single-block preconditioner "pre".
+
+        The returned block operator may be a block_mat itself (this is the case
+        for Jacobi), or a procedural operator (this is the case for the
+        Gauss-Seidel variants).
+
+        The scheme may be one of the following (aliases in brackets):
+
+          jacobi [jac]
+          gauss-seidel [gs]
+          symmetric gauss-seidel [sgs]
+          truncated gauss-seidel [tgs]
+          SOR [sor]
+          SSOR [ssor]
+          TSOR [tsor]
+
+        and they may take keyword arguments. For the Gauss-Seidel-like methods,
+        'reverse' and 'w' (weight) are supported, as well as 'truncated' and
+        'symmetric'.
+        """
         from block_scheme import blockscheme
         return blockscheme(self, name, **kwargs)
 
