@@ -2,7 +2,7 @@
 
 from dolfin import *
 from block import *
-from block.iterative import ConjGrad, LGMRES
+from block.iterative import *
 
 mesh = UnitSquare(2,2)
 V    = FunctionSpace(mesh, "CG", 1)
@@ -19,9 +19,10 @@ print '\nI =',I
 print '\nB =',B
 print '\nBx=',block_collapse(B)
 
-A = assemble(u*v*dx)
-K = block_kronecker(A,tensor)
+A = assemble(inner(grad(u),grad(v))*dx)
+M = assemble(u*v*dx)
 b = assemble(v*dx)
+K = block_kronecker(A,tensor)
 
 print '\n================='
 print 'Block matrix multiplication: Kronecker product and its result'
@@ -39,10 +40,24 @@ Di  = block_mat(numpy.linalg.inv(tensor.blocks))
 print '\nKinv1=', block_kronecker(Di,ConjGrad(A))
 print '\nKinv2=', Di*ConjGrad(C)
 
-AAinv = LGMRES(K, precond=Di)
+print '\n================='
+print 'Repeated solution of similar equations. This type of construct'
+print 'may turn up in the solution of inverse problems.'
 
-b0 = b.copy()
-bb = block_vec([b, b0])
+AA  = block_mat.diag([0, M+A, -M], n=5)
+AAp = block_mat.diag([0, ConjGrad(M+A), -M], n=5).scheme('gs', reverse=True)
+bb = block_vec([b]*5)
 
-XX = AAinv*bb
+xx = Richardson(AA, precond=AAp)*bb
 
+# Or equivalently, using the Kronecker product. Note that block_collapse is
+# required here to turn the product into a single block matrix. The
+# Gauss-Seidel scheme is only defined on block_mat.
+
+tensor1 = block_mat.diag(1, n=5)
+tensor2 = block_mat.diag([0,1,-1], n=5)
+
+AA = block_collapse(block_kronecker(A, tensor1) + block_kronecker(M, tensor2))
+AAp = AA.scheme('gs', inverse=ConjGrad, reverse=True)
+
+xx = Richardson(AA, precond=AAp)*bb

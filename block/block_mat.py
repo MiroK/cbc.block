@@ -116,20 +116,27 @@ class block_mat(block_container):
         xx.allocate(self, dim)
         return xx
 
-    def scheme(self, name, **kwargs):
+    def scheme(self, name, inverse=None, **kwargs):
         """Return a block scheme (block relaxation method). The input block_mat
-        must be defined with inverses (or preconditioners) on the diagonal, and
-        the normal blocks off-diagonal. For example, given a coefficient matrix
+        is normally expected to be defined with inverses (or preconditioners)
+        on the diagonal, and the normal blocks off-diagonal. For example, given
+        a coefficient matrix
 
-          A = block_mat([[A, B],
-                         [C, D]]),
+          AA = block_mat([[A, B],
+                          [C, D]]),
 
-        the Gauss-Seidel block preconditioner may be defined as
+        the Gauss-Seidel block preconditioner may be defined as for example
 
-          AApre = block_mat([[pre(A), B],
-                             [C, pre(D)]]).scheme('gs')
+          AApre = block_mat([[ML(A), B],
+                             [C, ML(D)]]).scheme('gs')
 
-        for some single-block preconditioner "pre".
+        However, for the common case of using the same preconditioner for each
+        block, the block preconditioner may be specified in a simpler way as
+
+          AApre = AA.scheme('gs', inverse=ML)
+
+        where "inverse" defines a class or method that may be applied to each
+        diagonal block to form its (approximate) inverse.
 
         The returned block operator may be a block_mat itself (this is the case
         for Jacobi), or a procedural operator (this is the case for the
@@ -150,7 +157,15 @@ class block_mat(block_container):
         'symmetric'.
         """
         from block_scheme import blockscheme
-        return blockscheme(self, name, **kwargs)
+        if inverse is not None:
+            m,n = self.blocks.shape
+            mat = block_mat(m,n)
+            mat[:] = self[:]
+            for i in range(m):
+                mat[i,i] = inverse(mat[i,i])
+        else:
+            mat = self
+        return blockscheme(mat, name, **kwargs)
 
     @staticmethod
     def diag(A, n=0):
@@ -158,6 +173,10 @@ class block_mat(block_container):
         are either the entries of the vector A (if n==0), or n copies of A (if
         n>0). For the case of extracting the diagonal of an existing block
         matrix, use D=A.scheme('jacobi') instead.
+
+        If n>0 and A is a list (or tuple), the entries of A define a banded
+        diagonal. In this case, len(A) must be odd, with the diagonal in the
+        middle.
         """
         if n==0:
             n = len(A)
@@ -165,9 +184,19 @@ class block_mat(block_container):
             for i in range(n):
                 mat[i,i] = A[i]
         else:
+            if isinstance(A, (list, tuple)):
+                if len(A)%2 != 1:
+                    raise ValueError, 'The number of entries in the banded diagonal must be odd'
+            else:
+                A = [A]
             mat = block_mat(n,n)
+            m = len(A)
             for i in range(n):
-                mat[i,i] = A
+                for k in range(m):
+                    j = i-m//2+k
+                    if not 0 <= j < n:
+                        continue
+                    mat[i,j] = A[k]
         return mat
 
     def block_simplify(self):

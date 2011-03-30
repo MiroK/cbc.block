@@ -6,3 +6,6 @@
 * Missing doc strings.
 
 * Documentation.
+
+* Consider removing the __add__ method on Dolfin matrices that does the matrix
+   addition and replacing it with block_add.
