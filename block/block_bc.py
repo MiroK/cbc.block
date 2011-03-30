@@ -48,15 +48,15 @@ class block_bc(list):
                 # No BC on this block, sign doesn't matter
                 continue
             if numpy.isscalar(AA[i,i]):
-                import block.algebraic
-                AA[i,i] = block.algebraic.active_backend().create_identity(vec=bb[i], val=AA[i,i])
-            # Do not use a constant vector, as that may be in the null space
-            # before boundary conditions are applied
-            x = AA[i,i].create_vec()
-            ran = numpy.random.random(x.local_size())
-            x.set_local(ran)
-            Ax = AA[i,i]*x
-            xAx = x.inner(Ax)
+                xAx = AA[i,i]
+            else:
+                # Do not use a constant vector, as that may be in the null space
+                # before boundary conditions are applied
+                x = AA[i,i].create_vec()
+                ran = numpy.random.random(x.local_size())
+                x.set_local(ran)
+                Ax = AA[i,i]*x
+                xAx = x.inner(Ax)
             if xAx == 0:
                 from dolfin import warning
                 warning("block_bc: zero or semi-definite block (%d,%d), using sign +1"%(i,i))
@@ -68,16 +68,20 @@ class block_bc(list):
         for i in range(len(self)):
             for bc in self[i]:
                 for j in range(len(self)):
-                    if not isinstance(A[i,j], dolfin.GenericMatrix):
-                        if i==j or A[i,j] not in (0, None):
-                            dolfin.error("can't modify scalar block (%d,%d) for BC" % (i,j))
-                        continue
                     if i==j:
+                        if numpy.isscalar(A[i,i]):
+                            # Convert to a diagonal matrix, so that the individual rows can be modified
+                            import block.algebraic
+                            A[i,i] = block.algebraic.active_backend().create_identity(b[i], val=A[i,i])
                         if symmetric:
                             bc.zero_columns(A[i,i], b[i], self.signs[i])
                         else:
                             bc.apply(A[i,i], b[i])
                     else:
+                        if numpy.isscalar(A[i,j]):
+                            if A[i,j] != 0:
+                                dolfin.error("can't modify block (%d,%d) for BC, expected a GenericMatrix" % (i,j))
+                            continue
                         bc.zero(A[i,j])
                         if symmetric:
                             bc.zero_columns(A[j,i], b[j])
