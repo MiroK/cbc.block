@@ -40,6 +40,8 @@ class diag_op(block_base):
         x.down_cast().vec().Multiply(1.0, self.v, b_vec, 0.0)
         return x
 
+    transpmult = matvec
+
     def matmat(self, other):
         from PyTrilinos import Epetra
         try:
@@ -119,13 +121,20 @@ class matrix_op(block_base):
         self.M.SetUseTranspose(False) # May not be necessary?
         return x
 
+    def transpmult(self, b):
+        self.transposed = not self.transposed
+        result = self.matvec(b)
+        self.transposed = not self.transposed
+        return result
+
     def matmat(self, other):
         from PyTrilinos import Epetra
         from numpy import isscalar
         try:
             if isscalar(other):
                 C = Epetra.CrsMatrix(self.M)
-                C.Scale(other)
+                if other != 1:
+                    C.Scale(other)
                 return matrix_op(C, self.transposed)
             other = other.down_cast()
             if hasattr(other, 'mat'):
@@ -143,7 +152,7 @@ class matrix_op(block_base):
                 C = Epetra.CrsMatrix(self.M)
                 C.RightScale(other.vec())
                 return matrix_op(C, self.transposed)
-        except AttributeError,e:
+        except AttributeError:
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
     def add(self, other, lscale=1.0, rscale=1.0):
@@ -159,7 +168,7 @@ class matrix_op(block_base):
                 C.OptimizeStorage()
                 return matrix_op(C)
             else:
-                lhs = Epetra.CrsMatrix(self.M) if lscale == 1 else self.matmat(lscale)
+                lhs = self.matmat(lscale)
                 D = Diag(lhs).add(other, rscale=rscale)
                 lhs.M.ReplaceDiagonalValues(D.vec())
                 return lhs
