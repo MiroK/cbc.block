@@ -97,12 +97,11 @@ class matrix_op(block_base):
     """Base class for Epetra operators (represented by an Epetra matrix)."""
     from block.object_pool import vec_pool
 
-    def __init__(self, M, transposed=False, reference=None):
+    def __init__(self, M, transposed=False):
         from PyTrilinos import Epetra
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
         self.transposed = transposed
-        self.reference = reference # To avoid early deletion of dolfin-generated matrices
 
     def transpose(self):
         return matrix_op(self.M, not self.transposed)
@@ -226,7 +225,7 @@ def _collapse(x):
     if isinstance(x, (matrix_op, diag_op)):
         return x
     elif isinstance(x, GenericMatrix):
-        return matrix_op(x.down_cast().mat(), reference=x)
+        return matrix_op(x.down_cast().mat())
     elif isinstance(x, block_compose):
         factors = map(_collapse, reversed(x))
         while len(factors) > 1:
