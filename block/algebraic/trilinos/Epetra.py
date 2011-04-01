@@ -9,7 +9,7 @@ from block.block_base import block_base
 
 class diag_op(block_base):
     """Base class for diagonal Epetra operators (represented by an Epetra vector)."""
-    from block.object_pool import vec_pool
+    from block.object_pool import shared_vec_pool
 
     def __init__(self, v):
         from PyTrilinos import Epetra
@@ -80,7 +80,7 @@ class diag_op(block_base):
         except AttributeError:
             raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
 
-    @vec_pool
+    @shared_vec_pool
     def create_vec(self, dim=1):
         from dolfin import EpetraVector
         if dim > 1:
@@ -112,10 +112,15 @@ class matrix_op(block_base):
         from dolfin import GenericVector
         if not isinstance(b, GenericVector):
             return NotImplemented
-        if len(b) != self.M.NumGlobalRows():
+        if self.transposed:
+            domainlen = self.M.NumGlobalRows()
+            x = self.create_vec(dim=1)
+        else:
+            domainlen = self.M.NumGlobalCols()
+            x = self.create_vec(dim=0)
+        if len(b) != domainlen:
             raise RuntimeError, \
-                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,self.M.NumGlobalRows(),len(b))
-        x = self.create_vec()
+                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,domainlen,len(b))
         self.M.SetUseTranspose(self.transposed)
         self.M.Apply(b.down_cast().vec(), x.down_cast().vec())
         self.M.SetUseTranspose(False) # May not be necessary?

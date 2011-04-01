@@ -25,9 +25,26 @@ class object_pool(object):
                 # 3 references: self.all, obj, getrefcount() parameter
                 self.free.append(obj)
 
+def shared_vec_pool(func):
+    """Decorator for create_vec, which creates a per-object pool of (memoized)
+    returned vectors, shared for all dimensions. To be used only on objects
+    where it is known that the row and columns are distributed equally.
+    """
+    def pooled_create_vec(self, dim=1):
+        if not hasattr(self, '_vec_pool'):
+            self._vec_pool = object_pool()
+        try:
+            vec = self._vec_pool.get()
+        except IndexError:
+            vec = func(self, dim)
+            self._vec_pool.add(vec)
+        return vec
+    pooled_create_vec.__doc__ = func.__doc__
+    return pooled_create_vec
+
 def vec_pool(func):
     """Decorator for create_vec, which creates a per-object pool of (memoized)
-    returned vectors.
+    returned vectors per dimension.
     """
     from collections import defaultdict
     def pooled_create_vec(self, dim=1):

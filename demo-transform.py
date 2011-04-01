@@ -45,7 +45,7 @@ print 'Repeated solution of similar equations. This type of construct'
 print 'may turn up in the solution of inverse problems.'
 
 AA  = block_mat.diag([0, M+A, -M], n=5)
-AAp = block_mat.diag([0, ConjGrad(M+A), -M], n=5).scheme('gs', reverse=True)
+AAp = AA.scheme('gs', inverse=ConjGrad, reverse=True)
 bb = block_vec([b]*5)
 
 xx = Richardson(AA, precond=AAp)*bb

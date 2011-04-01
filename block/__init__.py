@@ -51,9 +51,10 @@ def _init():
 
     # Inject a new transpmult() method that returns the result vector (instead of output parameter)
     old_transpmult = dolfin.Matrix.transpmult
-    def transpmult(self, x):
+    def transpmult(self, x, y=None):
         check_type(self, x)
-        y = dolfin.Vector()
+        if y is None:
+            y = self.create_vec(dim=0)
         old_transpmult(self, x, y)
         return y
     dolfin.Matrix.transpmult = transpmult
