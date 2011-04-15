@@ -9,3 +9,5 @@
 
 * Consider removing the __add__ method on Dolfin matrices that does the matrix
    addition and replacing it with block_add.
+
+* Many of the iterative solvers do (or at least report) one iteration too many.
