@@ -48,6 +48,7 @@ class block_vec(block_container):
                 raise RuntimeError, \
                     'block %d in block_vec has no size -- use proper vector or call allocate(A)' % i
             ran = numpy.random.random(self[i].local_size())
+            ran -= sum(ran)/len(ran)
             self[i].set_local(ran)
 
     def _map_operator(self, operator):

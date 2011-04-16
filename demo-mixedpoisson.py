@@ -146,6 +146,10 @@ AAinv = MinRes(AA, precond=AAp, show=2, name='AA^')
 Sigma, U = AAinv * b
 #=====================
 
+# Print norms that can be compared with those reported by demo-parallelmixedpoisson
+print 'norm Sigma:', Sigma.norm('l2')
+print 'norm U    :', U.norm('l2')
+
 # Plot sigma and u
 plot(Function(BDM, Sigma))
 plot(Function(DG,  U))
