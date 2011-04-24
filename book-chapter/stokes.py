@@ -52,7 +52,8 @@ b1 = assemble(q*g*dx)
 
 AA = block_mat([[A, B],
                 [C, D]])
-bc = block_bc([DirichletBC(V, BoundaryFunction(), Boundary()), None])
+bc_func = BoundaryFunction()
+bc = block_bc([DirichletBC(V, bc_func, Boundary()), None])
 b = block_vec([b0, b1])
 bc.apply(AA, b)
 
