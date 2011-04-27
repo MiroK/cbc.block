@@ -49,7 +49,7 @@ from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *
 from dolfin import *
-from dolfin_util import *
+from block.dolfin_util import *
 import numpy
 
 # Function spaces, elements
