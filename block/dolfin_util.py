@@ -89,25 +89,25 @@ class update():
         else:
             self.files[name] << data
 
-    def plot(self, name, data, time):
+    def plot(self, name, title, data, time):
         if not name in self.plots:
             kwargs = self.kwargs.get(name, {})
-            self.plots[name] = d.plot(data, title=name, size=(400,400),
+            self.plots[name] = d.plot(data, title=title, size=(400,400),
                                       axes=True, warpscalar=False,
                                       **kwargs)
         else:
             self.plots[name].update(data)
 
-    def __call__(self, time=None, **functionals):
+    def __call__(self, time=None, postfix="", **functionals):
         for name,func in sorted(functionals.iteritems()):
             args = self.kwargs.get(name, {})
             if 'functionspace' in args or not isinstance(func, d.Function):
                 func = self.project(func, args.get('functionspace'))
             if hasattr(func, 'rename'):
-                func.rename(name, name)
+                func.rename(name+postfix, name+postfix)
             if args.get('plot', True):
-                self.plot(name, func, time)
+                self.plot(name, name+postfix, func, time)
             if args.get('save', True):
-                self.save_to_file(name, func, time)
+                self.save_to_file(name+postfix, func, time)
 
 update = update() # singleton
