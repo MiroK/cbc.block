@@ -23,9 +23,9 @@ b = assemble(L)
 
 B = ML(A)
 
-Ainv = ConjGrad(A, precond=B, tolerance=1e-10, show=2) 
+Ainv = ConjGrad(A, precond=B, tolerance=1e-10, show=3) 
 
-x = A*b 
+x = Ainv*b 
 
 u = Function(V)
 u.vector()[:] = x[:]
