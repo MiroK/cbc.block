@@ -30,20 +30,18 @@ def _init():
             raise TypeError, 'cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2)
         return True
 
-    def wrap(cls, name, wrap_to):
-        _old_method = getattr(cls, name)
-        def _new_method(self, other):
+    old_mul = dolfin.Matrix.__mul__
+    def wrap_mul(self, other):
+        if isinstance(other, dolfin.GenericVector):
+            return old_mul(self, other)
+        else:
             check_type(self, other)
-            y = _old_method(self, other)
-            if y == NotImplemented:
-                y = wrap_to(self, other)
-            return y
-        setattr(cls, name, _new_method)
+            return block_mul(self, other)
 
-    wrap(dolfin.Matrix, '__mul__', block_mul)
-    wrap(dolfin.Matrix, '__add__', block_add)
-    wrap(dolfin.Matrix, '__sub__', block_sub)
+    dolfin.Matrix.__mul__ = wrap_mul
 
+    dolfin.Matrix.__add__  = lambda self, other: check_type(self, other) and block_add(self, other)
+    dolfin.Matrix.__sub__  = lambda self, other: check_type(self, other) and block_sub(self, other)
     dolfin.Matrix.__rmul__ = lambda self, other: check_type(self, other) and block_mul(other, self)
     dolfin.Matrix.__radd__ = lambda self, other: check_type(self, other) and block_add(other, self)
     #dolfin.Matrix.__rsub__ = lambda self, other: check_type(self, other) and block_sub(other, self)
@@ -70,7 +68,8 @@ def _init():
     # object. Also do some fixup so that the down-casted object is not deleted
     # just because the owning object goes out of scope, by creating a hidden
     # backwards reference. (Python garbage collects circular references as long
-    # as custom __del__ methods are not in use.)
+    # as custom __del__ methods are not in use.) NOTE this is fixed now in recent
+    # dolfin, may be simplified.
     def la_object(self):
         obj = self.la_object()
         obj.reference = self
