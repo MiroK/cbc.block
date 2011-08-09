@@ -50,20 +50,15 @@ mu = Constant(1e-2)
 A  = assemble(mu*inner(grad(v), grad(u))*dx + inner(dot(grad(u),w),v)*dx)
 B  = assemble(div(v)*p*dx)
 C  = assemble(div(u)*q*dx)
-I  = assemble(p*q*dx)
 b0 = assemble(inner(v, f)*dx)
 
-# Create the block matrix/vector. We need a matrix in the (2,2) block instead
-# of just zero, because it must be modified for the Dirichlet boundary
-# conditions. At the moment there is no simple way to create a diagonal matrix
-# in Dolfin, so we use the "trick" of right-multiplying the suitably sized mass
-# matrix by zero. (Note that 0*I would not work, since that creates a
-# composed operator instead of a matrix.)
+# Create the block matrix/vector.
 AA = block_mat([[A, B],
-                [C, I*0]])
+                [C, 0]])
 b  = block_vec([b0, 0])
 
-# Apply boundary conditions
+# Apply boundary conditions. The zeroes in A[1,1] and b[1] are automatically
+# converted to matrices/vectors to be able to apply bc2.
 bcs = block_bc([[bc0, bc1], [bc2]])
 bcs.apply(AA, b)
 
