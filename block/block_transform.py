@@ -1,5 +1,5 @@
 from block_mat import block_mat
-from block_compose import block_compose
+from block_compose import block_mul
 
 def block_kronecker(A, B):
     """Create the Kronecker (tensor) product of two matrices. The result is
@@ -42,7 +42,7 @@ def block_kronecker(A, B):
     else:
         D = B
 
-    return block_compose(C,D)
+    return block_mul(C,D)
 
 
 def block_simplify(expr):

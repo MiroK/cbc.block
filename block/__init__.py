@@ -4,7 +4,7 @@ from __future__ import division
 
 To make this work, all operators should define at least a __mul__(self, other)
 method, which either does its thing (typically if isinstance(other,
-(block_vec, GenericVector))), or returns a block_compose(self, other) object which defers the
+(block_vec, GenericVector))), or returns a block_mul(self, other) object which defers the
 action until there is a proper vector to work on.
 
 In addition, methods are injected into dolfin.Matrix / dolfin.Vector as
@@ -13,7 +13,7 @@ needed. This should eventually be moved to Dolfin proper.
 
 from block_mat import block_mat
 from block_vec import block_vec
-from block_compose import block_compose, block_add, block_sub, block_transpose
+from block_compose import block_mul, block_add, block_sub, block_transpose
 from block_transform import block_kronecker, block_simplify, block_collapse
 from block_bc import block_bc
 
@@ -40,14 +40,14 @@ def _init():
             return y
         setattr(cls, name, _new_method)
 
-    wrap(dolfin.Matrix, '__mul__', block_compose)
+    wrap(dolfin.Matrix, '__mul__', block_mul)
     wrap(dolfin.Matrix, '__add__', block_add)
     wrap(dolfin.Matrix, '__sub__', block_sub)
 
-    dolfin.Matrix.__rmul__ = lambda self, other: check_type(self, other) and block_compose(other, self)
+    dolfin.Matrix.__rmul__ = lambda self, other: check_type(self, other) and block_mul(other, self)
     dolfin.Matrix.__radd__ = lambda self, other: check_type(self, other) and block_add(other, self)
     #dolfin.Matrix.__rsub__ = lambda self, other: check_type(self, other) and block_sub(other, self)
-    dolfin.Matrix.__neg__  = lambda self       : block_compose(-1, self)
+    dolfin.Matrix.__neg__  = lambda self       : block_mul(-1, self)
 
     # Inject a new transpmult() method that returns the result vector (instead of output parameter)
     old_transpmult = dolfin.Matrix.transpmult

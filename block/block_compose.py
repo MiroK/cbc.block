@@ -8,12 +8,12 @@ M = A*B+C
 
 returns the object
 
-M = block_add(block_compose(A,B), C),
+M = block_add(block_mul(A,B), C),
 
 and the actual calculation is done later, once w=M*v is called for a vector v:
 
 w=block_add.__mul__(M, v)
---> a = block_compose.__mul__((A,B), v)
+--> a = block_mul.__mul__((A,B), v)
 ----> b = Matrix.__mul__(B, v)
 ----> a = Matrix.__mul__(A, b)
 --> b = Matrix.__mul__(C, v)
@@ -22,11 +22,11 @@ w=block_add.__mul__(M, v)
 
 from block_base import block_base
 
-class block_compose(block_base):
+class block_mul(block_base):
     def __init__(self, A, B):
         """Args may be blockoperators or individual blocks (scalar or Matrix)"""
-        A = A.chain if isinstance(A, block_compose) else [A]
-        B = B.chain if isinstance(B, block_compose) else [B]
+        A = A.chain if isinstance(A, block_mul) else [A]
+        B = B.chain if isinstance(B, block_mul) else [B]
         self.chain = A+B
     def __mul__(self, x):
         for op in reversed(self.chain):
@@ -67,7 +67,7 @@ class block_compose(block_base):
         raise AttributeError, 'failed to create vec, no appropriate reference matrix'
 
     def block_collapse(self):
-        """Create a block_mat of block_composes from a block_compose of
+        """Create a block_mat of block_muls from a block_mul of
         block_mats. See block_transform.block_collapse."""
         from block_mat import block_mat
         from numpy import isscalar
@@ -77,7 +77,7 @@ class block_compose(block_base):
         ops = map(block_collapse, self.chain)
 
         # Do the matrix multiply, blockwise. Note that we use
-        # block_compose(A,B) rather than A*B to avoid any implicit calculations
+        # block_mul(A,B) rather than A*B to avoid any implicit calculations
         # (e.g., scalar*matrix->matrix) -- the result will be transformed by
         # block_simplify() in the end to take care of any stray scalars.
         while len(ops) > 1:
@@ -91,21 +91,21 @@ class block_compose(block_base):
                 for row in range(m):
                     for col in range(q):
                         for i in range(n):
-                            C[row,col] += block_compose(A[row,i],B[i,col])
+                            C[row,col] += block_mul(A[row,i],B[i,col])
             elif isinstance(A, block_mat) and isscalar(B):
                 m,n = A.blocks.shape
                 C = block_mat(m,n)
                 for row in range(m):
                     for col in range(n):
-                        C[row,col] = block_compose(A[row,col],B)
+                        C[row,col] = block_mul(A[row,col],B)
             elif isinstance(B, block_mat) and isscalar(A):
                 m,n = B.blocks.shape
                 C = block_mat(m,n)
                 for row in range(m):
                     for col in range(n):
-                        C[row,col] = block_compose(A,B[row,col])
+                        C[row,col] = block_mul(A,B[row,col])
             else:
-                C = block_compose(A,B)
+                C = block_mul(A,B)
             ops.append(C)
         return block_simplify(ops[0])
 
@@ -129,7 +129,7 @@ class block_compose(block_base):
             operators.insert(0, scalar)
         if len(operators) == 1:
             return operators[0]
-        ret = block_compose(None, None)
+        ret = block_mul(None, None)
         ret.chain = operators
         return ret
 
@@ -188,7 +188,7 @@ class block_transpose(block_base):
         return [self.A][i]
 
 # It's probably best if block_sub and block_add do not allow coercion into
-# block_compose, since that might mess up the operator precedence. Hence, they
+# block_mul, since that might mess up the operator precedence. Hence, they
 # do not inherit from block_base. As it is now, self.A*x and self.B*x must be
 # reduced to vectors, which means all composed multiplies are finished before
 # __mul__ does anything.
@@ -309,7 +309,7 @@ class block_add(block_sub):
         return A+B
 
     def __neg__(self):
-        return block_compose(-1, self)
+        return block_mul(-1, self)
 
     def __str__(self):
         return '{%s + %s}'%(self.A.__str__(), self.B.__str__())

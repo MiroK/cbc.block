@@ -228,19 +228,19 @@ class LumpedInvDiag(diag_op):
 def _collapse(x):
     # Works by calling the matmat(), transpose() and add() methods of
     # diag_op/matrix_op, depending on the input types. The input is a tree
-    # structure of block.block_compose objects, which is collapsed recursively.
+    # structure of block.block_mul objects, which is collapsed recursively.
 
     # This method knows too much about the internal variables of the
-    # block_compose objects... should convert to accessor functions.
+    # block_mul objects... should convert to accessor functions.
 
-    from block.block_compose import block_compose, block_add, block_sub, block_transpose
+    from block.block_compose import block_mul, block_add, block_sub, block_transpose
     from numpy import isscalar
     from dolfin import GenericMatrix
     if isinstance(x, (matrix_op, diag_op)):
         return x
     elif isinstance(x, GenericMatrix):
         return matrix_op(x.down_cast().mat())
-    elif isinstance(x, block_compose):
+    elif isinstance(x, block_mul):
         factors = map(_collapse, reversed(x))
         while len(factors) > 1:
             A = factors.pop()
@@ -264,7 +264,7 @@ def _collapse(x):
 
 def collapse(x):
     """Compute an explicit matrix representation of an operator. For example,
-    given a block_compose object M=A*B, collapse(M) performs the actual matrix
+    given a block_ mul object M=A*B, collapse(M) performs the actual matrix
     multiplication.
     """
     # Since _collapse works recursively, this method is a user-visible wrapper

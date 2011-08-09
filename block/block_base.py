@@ -9,20 +9,20 @@ class block_base(object):
     matvec(self, other) method.
     """
     def __mul__(self, other):
-        from block_compose import block_compose
+        from block_compose import block_mul
         from block_vec import block_vec
         from dolfin import GenericVector
         if not isinstance(other, (block_vec, GenericVector)):
-            return block_compose(self, other)
+            return block_mul(self, other)
         return self.matvec(other)
 
     def __rmul__(self, other):
-        from block_compose import block_compose
-        return block_compose(other, self)
+        from block_compose import block_mul
+        return block_mul(other, self)
 
     def __neg__(self):
-        from block_compose import block_compose
-        return block_compose(-1, self)
+        from block_compose import block_mul
+        return block_mul(-1, self)
 
     def __add__(self, other):
         from block_compose import block_add
