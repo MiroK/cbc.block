@@ -37,7 +37,7 @@ class ML(block_base):
         x = self.A.create_vec()
         if len(x) != len(b):
             raise RuntimeError, \
-                'incompatible dimensions for AztecOO matvec, %d != %d'%(len(x),len(b))
+                'incompatible dimensions for ML matvec, %d != %d'%(len(x),len(b))
 
         err = self.ml_prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:
