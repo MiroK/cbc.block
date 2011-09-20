@@ -27,9 +27,9 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
     #------------------------------------------------------------------
-    r1 = b
-    y = B*b
-    beta1 = inner(b,y)
+    r1 = b - A*x 
+    y = B*r1
+    beta1 = inner(r1,y)
 
     #  Test for an indefinite preconditioner.
     #  If b = 0 exactly, stop with x = 0.
