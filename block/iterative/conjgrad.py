@@ -34,7 +34,8 @@ def precondconjgrad(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
             break
         alpha = rz/dz
         x += alpha*d
-        r -= alpha*z
+        r = b - A*x
+#        r -= alpha*z
         z = B*r
         rz_prev = rz
         rz = inner(r,z)

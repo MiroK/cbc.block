@@ -42,9 +42,9 @@ class iterative(block_base):
             x.zero()
 
         try:
-            info(TRACE, self.__class__.__name__+' solve of '+str(self.A))
+            info(self.__class__.__name__+' solve of '+str(self.A), TRACE)
             if self.B != 1.0:
-                info(TRACE, 'Using preconditioner: '+str(self.B))
+                info('Using preconditioner: '+str(self.B), TRACE)
             progress = Progress(self.name, self.maxiter)
             x = self.method(self.B, self.A, x, b, tolerance=self.tolerance, maxiter=self.maxiter,
                             progress=progress, **self.kwargs)
