@@ -25,17 +25,10 @@ class diag_op(block_base):
         except AttributeError:
             return NotImplemented
 
-        try:
-            x = self.create_vec()
-            if len(x) != len(b):
-                raise RuntimeError, \
-                    'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b))
-        except TypeError:
-            # FIXME: This implies an unnecessary vector copy, and can be
-            # removed when dolfin.EpetraVector is changed to accept BlockMap
-            # instead of just Map (patch posted at https://bugs.launchpad.net/dolfin/+bug/735785)
-            from dolfin import Vector
-            x = Vector(b)
+        x = self.create_vec()
+        if len(x) != len(b):
+            raise RuntimeError, \
+                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b))
 
         x.down_cast().vec().Multiply(1.0, self.v, b_vec, 0.0)
         return x
@@ -291,14 +284,14 @@ def create_identity(vec, val=1):
     from dolfin import EpetraMatrix
     rowmap = vec.down_cast().vec().Map()
     graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1)
-    indices = numpy.array([0])
+    indices = numpy.array([0], dtype=numpy.int32)
     for row in rowmap.MyGlobalElements():
         indices[0] = row
         graph.InsertGlobalIndices(row, indices)
     graph.FillComplete()
 
     matrix = EpetraMatrix(graph)
-    indices = numpy.array(rowmap.MyGlobalElements(), dtype='I')
+    indices = numpy.array(rowmap.MyGlobalElements(), dtype=numpy.uint32)
     if val == 0:
         matrix.zero(indices)
     else:
