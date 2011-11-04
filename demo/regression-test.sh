@@ -10,7 +10,6 @@ export DOLFIN_NOPLOT=1
 
 cd ${0%/*}
 demos=$(find . -name \*.py)
-demos=mixedpoisson.py
 
 if which parallel &>/dev/null; then
     parallel -j +0 --halt-on-error=2 -v -n 1 python ::: $demos
