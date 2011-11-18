@@ -1,4 +1,3 @@
-import PyTrilinos
 from dolfin import *
 from block import *
 from block.iterative import *

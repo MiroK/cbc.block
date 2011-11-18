@@ -19,10 +19,6 @@ and BB^ approximates the inverse of the block operator
        | 0   L |
 """
 
-# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
-# modules. This works around a bug with MPI initialisation/destruction order.
-import PyTrilinos
-
 from dolfin import *
 from block import *
 from block.iterative import *
