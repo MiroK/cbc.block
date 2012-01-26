@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0):
+def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0, callback=None):
     #####
     # Adapted from PyKrylov (https://github.com/dpo/pykrylov; LGPL license)
     #####
@@ -188,6 +188,10 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
             if test1 <= tolerance: istop = 1
 
         residuals.append(test1)
+
+        # Call user provided callback with solution
+        if callable(callback):
+            callback(k=itn, x=x, r=test1)
 
         if istop != 0:
             break
