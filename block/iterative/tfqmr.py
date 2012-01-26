@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def tfqmr(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
+def tfqmr(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, callback=None):
     #####
     # Adapted from PyKrylov (https://github.com/dpo/pykrylov; LGPL license)
     #####
@@ -67,8 +67,14 @@ def tfqmr(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
         eta = c * c * alpha
         x += eta * d
 
-        residuals.append(residNorm * sqrt(m+1))
-        if residuals[-1] < tolerance or k >= maxiter:
+        residual = residNorm * sqrt(m+1)
+
+        # Call user provided callback with solution
+        if callable(callback):
+            callback(k=k, x=x, r=residual)
+
+        residuals.append(residual)
+        if residual < tolerance or k >= maxiter:
             break
 
         # Final updates

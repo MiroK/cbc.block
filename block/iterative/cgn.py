@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
+def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, callback=None):
     #####
     # Adapted from code supplied by KAM (Simula PyCC; GPL license). This code
     # relicensed under LGPL v2.1 or later, in agreement with the original
@@ -53,10 +53,16 @@ def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
         rho1   = rho
         p      = BATBr+beta*p
 
+        residual = sqrt(rho)
+
+        # Call user provided callback with solution
+        if callable(callback):
+            callback(k=iter, x=x, r=residual)
+
         iter     += 1
         progress += 1
         alphas.append(alpha)
         betas.append(beta)
-        residuals.append(sqrt(rho))
+        residuals.append(residual)
 
     return x, residuals, alphas, betas
