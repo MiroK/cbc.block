@@ -23,7 +23,7 @@ def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
 
     rho   = inner(BATBr,ATBr)
     if rho < 0:
-        raise RuntimeError, 'CGN: Preconditioner not positive-definite'
+        raise RuntimeError('CGN: Preconditioner not positive-definite')
     rho1  = rho
     p     = BATBr.copy()
 
@@ -48,7 +48,7 @@ def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
 
         rho    = inner(BATBr,ATBr)
         if rho < 0:
-            raise RuntimeError, 'CGN: Preconditioner not positive-definite'
+            raise RuntimeError('CGN: Preconditioner not positive-definite')
         beta   = rho/rho1
         rho1   = rho
         p      = BATBr+beta*p
