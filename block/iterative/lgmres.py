@@ -8,7 +8,7 @@ import numpy
 #####
 
 def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
-           inner_m=30, outer_k=3, outer_v=[], store_outer_Av=True):
+           inner_m=30, outer_k=3, outer_v=[], store_outer_Av=True, callback=None):
     """
     Solve a matrix equation using the LGMRES algorithm.
 
@@ -218,5 +218,9 @@ def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
         x += dx
         r_outer = A*x - b
         r_norm = norm(r_outer)
+
+        # Call user provided callback with solution
+        if callable(callback):
+            callback(k=k_outer, x=x, r=r_norm)
 
     return x, residuals, [], []

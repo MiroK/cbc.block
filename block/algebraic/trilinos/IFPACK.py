@@ -25,7 +25,7 @@ class IFPACK(block_base):
 
         self.prec = Factory().Create(prectype, A.down_cast().mat(), overlap)
         if not self.prec:
-            raise RuntimeError, "Unknown IFPACK preconditioner '%s'"%prectype
+            raise RuntimeError("Unknown IFPACK preconditioner '%s'"%prectype)
 
         paramlist = {'schwartz: combine mode' : 'Add'} # Slower than 'Zero', but symmetric
         paramlist.update(self.params)
@@ -41,8 +41,8 @@ class IFPACK(block_base):
             return NotImplemented
         x = self.A.create_vec()
         if len(x) != len(b):
-            raise RuntimeError, \
-                'incompatible dimensions for AztecOO matvec, %d != %d'%(len(x),len(b))
+            raise RuntimeError(
+                'incompatible dimensions for AztecOO matvec, %d != %d'%(len(x),len(b)))
 
         err = self.prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:

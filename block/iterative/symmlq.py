@@ -34,7 +34,7 @@ def symmlq(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
     # If b = 0 exactly, stop with x = 0.
 
     if beta1 < 0:
-        raise ValueError, 'B does not define a pos-def preconditioner'
+        raise ValueError('B does not define a pos-def preconditioner')
     if beta1 == 0:
         x *= 0
         return x, [0], [], []
@@ -65,7 +65,7 @@ def symmlq(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
     oldb   = beta1
     beta   = inner(r2, y)
     if beta < 0:
-        raise ValueError, 'B does not define a pos-def preconditioner'
+        raise ValueError('B does not define a pos-def preconditioner')
 
     #  Cause termination (later) if beta is essentially zero.
 
@@ -163,7 +163,7 @@ def symmlq(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
         betas.append(beta)
 
         if beta < 0:
-            raise ValueError, 'A does not define a symmetric matrix'
+            raise ValueError('A does not define a symmetric matrix')
 
         beta  = sqrt(beta);
         tnorm = tnorm  +  alfa**2  +  oldb**2  +  beta**2;

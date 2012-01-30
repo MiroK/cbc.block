@@ -59,15 +59,15 @@ class block_mat(block_container):
                     # class have a __rmul__ that converts to vector on demand.
                     # (must also stop conversion anything->blockcompose for
                     # this case)
-                    raise RuntimeError, \
+                    raise RuntimeError(
                         'unexpected result in matvec, %s\n-- possibly because RHS contains scalars ' \
-                        'instead of vectors, use create_vec() or allocate()' % type(z)
+                        'instead of vectors, use create_vec() or allocate()' % type(z))
                 if y[i] is None:
                     y[i]  = z
                 else:
                     if len(y[i]) != len(z):
-                        raise RuntimeError, \
-                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i]))
+                        raise RuntimeError(
+                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i])))
                     y[i] += z
         return y
 
@@ -94,15 +94,15 @@ class block_mat(block_container):
                     z = self[j,i].transpmult(x[j])
                 if not isinstance(z, (GenericVector, block_vec)):
                     # see comment in matvec
-                    raise RuntimeError, \
+                    raise RuntimeError(
                         'unexpected result in matvec, %s\n-- possibly because RHS contains scalars ' \
-                        'instead of vectors, use create_vec() or allocate()' % type(z)
+                        'instead of vectors, use create_vec() or allocate()' % type(z))
                 if y[i] is None:
                     y[i] = z
                 else:
                     if len(y[i]) != len(z):
-                        raise RuntimeError, \
-                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i]))
+                        raise RuntimeError(
+                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i])))
                     y[i] += z
         return y
 
@@ -199,7 +199,7 @@ class block_mat(block_container):
         else:
             if isinstance(A, (list, tuple)):
                 if len(A)%2 != 1:
-                    raise ValueError, 'The number of entries in the banded diagonal must be odd'
+                    raise ValueError('The number of entries in the banded diagonal must be odd')
             else:
                 A = [A]
             mat = block_mat(n,n)

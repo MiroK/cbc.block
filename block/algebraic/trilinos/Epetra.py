@@ -27,8 +27,8 @@ class diag_op(block_base):
 
         x = self.create_vec()
         if len(x) != len(b):
-            raise RuntimeError, \
-                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b))
+            raise RuntimeError(
+                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b)))
 
         x.down_cast().vec().Multiply(1.0, self.v, b_vec, 0.0)
         return x
@@ -53,7 +53,7 @@ class diag_op(block_base):
                 x.Multiply(1.0, self.v, other.vec(), 0.0)
                 return diag_op(x)
         except AttributeError:
-            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
 
     def add(self, other, lscale=1.0, rscale=1.0):
         from numpy import isscalar
@@ -71,13 +71,13 @@ class diag_op(block_base):
                 x.Update(rscale, other.vec(), lscale)
                 return diag_op(x)
         except AttributeError:
-            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
 
     @shared_vec_pool
     def create_vec(self, dim=1):
         from dolfin import EpetraVector
         if dim > 1:
-            raise ValueError, 'dim must be <= 1'
+            raise ValueError('dim must be <= 1')
         return EpetraVector(self.v.Map())
 
     def down_cast(self):
@@ -112,8 +112,8 @@ class matrix_op(block_base):
             domainlen = self.M.NumGlobalCols()
             x = self.create_vec(dim=0)
         if len(b) != domainlen:
-            raise RuntimeError, \
-                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,domainlen,len(b))
+            raise RuntimeError(
+                'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,domainlen,len(b)))
         self.M.SetUseTranspose(self.transposed)
         self.M.Apply(b.down_cast().vec(), x.down_cast().vec())
         self.M.SetUseTranspose(False) # May not be necessary?
@@ -151,7 +151,7 @@ class matrix_op(block_base):
                 C.RightScale(other.vec())
                 return matrix_op(C, self.transposed)
         except AttributeError:
-            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
 
     def add(self, other, lscale=1.0, rscale=1.0):
         from PyTrilinos import Epetra
@@ -171,7 +171,7 @@ class matrix_op(block_base):
                 lhs.M.ReplaceDiagonalValues(D.vec())
                 return lhs
         except AttributeError:
-            raise TypeError, "can't extract matrix data from type '%s'"%str(type(other))
+            raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
 
     @vec_pool
     def create_vec(self, dim=1):
@@ -181,7 +181,7 @@ class matrix_op(block_base):
         elif dim == 1:
             m = self.M.DomainMap()
         else:
-            raise ValueError, 'dim must be <= 1'
+            raise ValueError('dim must be <= 1')
         return EpetraVector(m)
 
     def down_cast(self):
@@ -253,7 +253,7 @@ def _collapse(x):
     elif isscalar(x):
         return x
     else:
-        raise NotImplementedError, "collapse() for type '%s'"%str(type(x))
+        raise NotImplementedError("collapse() for type '%s'"%str(type(x)))
 
 def collapse(x):
     """Compute an explicit matrix representation of an operator. For example,
