@@ -284,14 +284,14 @@ def create_identity(vec, val=1):
     from dolfin import EpetraMatrix
     rowmap = vec.down_cast().vec().Map()
     graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1)
-    indices = numpy.array([0], dtype=numpy.int32)
+    indices = numpy.array([0], dtype=numpy.intc)
     for row in rowmap.MyGlobalElements():
         indices[0] = row
         graph.InsertGlobalIndices(row, indices)
     graph.FillComplete()
 
     matrix = EpetraMatrix(graph)
-    indices = numpy.array(rowmap.MyGlobalElements(), dtype=numpy.uint32)
+    indices = numpy.array(rowmap.MyGlobalElements(), dtype=numpy.uintc)
     if val == 0:
         matrix.zero(indices)
     else:
