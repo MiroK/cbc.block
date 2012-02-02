@@ -50,9 +50,47 @@ class update():
     kwargs = {}
     projectors = {}
 
-    def project(self, f, V):
+    def _extract_function_space(self, expression, mesh=None):
+        """Try to extract a suitable function space for projection of
+        given expression. Copied from dolfin/fem/projection.py"""
+        import ufl
+
+        # Extract functions
+        functions = ufl.algorithms.extract_coefficients(expression)
+
+        # Extract mesh from functions
+        if mesh is None:
+            for f in functions:
+                if isinstance(f, d.Function):
+                    mesh = f.function_space().mesh()
+                    if mesh is not None:
+                        break
+                    if mesh is None:
+                        raise RuntimeError, "Unable to project expression, no suitable mesh."
+
+        # Create function space
+        shape = expression.shape()
+        if shape == ():
+            V = d.FunctionSpace(mesh, "CG", 1)
+        elif len(shape) == 1:
+            V = d.VectorFunctionSpace(mesh, "CG", 1, dim=shape[0])
+        elif len(shape) == 2:
+            V = d.TensorFunctionSpace(mesh, "CG", 1, shape=shape)
+        else:
+            raise RuntimeError, "Unable to project expression, unhandled rank, shape is %s." % (shape,)
+
+        return V
+
+    def project(self, f, V, mesh=None):
         if V is None:
-            V = d.fem.project.func_globals['_extract_function_space'](f)
+            # If trying to project an Expression
+            if isinstance(f, d.Expression):
+                if isinstance(mesh, cpp.Mesh):
+                    V = FunctionSpaceBase(mesh, v.ufl_element())
+                else:
+                    raise TypeError, "expected a mesh when projecting an Expression"
+            else:
+                V = self._extract_function_space(f, mesh)
         key = str(V)
         v = d.TestFunction(V)
         if not key in self.projectors:
