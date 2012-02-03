@@ -49,6 +49,7 @@ class update():
     plots = {}
     kwargs = {}
     projectors = {}
+    solvers = {}
 
     def _extract_function_space(self, expression, mesh=None):
         """Try to extract a suitable function space for projection of
@@ -97,13 +98,16 @@ class update():
             # Create mass matrix
             u = d.TrialFunction(V)
             a = d.inner(v,u) * d.dx
-            self.projectors[key] = (d.assemble(a), d.Function(V))
+            solver = d.LinearSolver("cg", "none")
+            solver.set_operator(d.assemble(a))
+            solver.parameters['preconditioner']['reuse'] = True
+            self.projectors[key] = (solver, d.Function(V))
 
-        A,Pf = self.projectors[key]
+        solver,Pf = self.projectors[key]
         b = d.assemble(d.inner(v,f) * d.dx)
 
         # Solve linear system for projection
-        d.solve(A, Pf.vector(), b, "cg")
+        solver.solve(Pf.vector(), b)
 
         return Pf
 
