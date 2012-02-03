@@ -41,7 +41,8 @@ class block_gs(block_base):
             for j in self.range:
                 if j==i:
                     continue
-                x[i] -= self.op[i,j]*x[j]
+                if self.op[i,j]:
+                    x[i] -= self.op[i,j]*x[j]
             x[i] = self.op[i,i]*x[i]
         self.sor_weighting(b, x)
         return x
@@ -50,7 +51,8 @@ class block_gs(block_base):
         x = b.copy()
         for k,i in enumerate(self.range):
             for j in self.range[:k]:
-                x[i] -= self.op[i,j]*x[j]
+                if self.op[i,j]:
+                    x[i] -= self.op[i,j]*x[j]
             x[i] = self.op[i,i]*x[i]
         self.sor_weighting(b, x)
         return x
@@ -59,26 +61,29 @@ class block_gs(block_base):
         x = b.copy()
         for k,i in enumerate(self.range):
             for j in self.range[:k]:
-                x[i] -= self.op[i,j]*x[j]
+                if self.op[i,j]:
+                    x[i] -= self.op[i,j]*x[j]
             x[i] = self.op[i,i]*x[i]
         rev_range = list(reversed(self.range))
         for k,i in enumerate(rev_range):
             for j in rev_range[:k]:
-                x[i] -= self.op[i,i]*self.op[i,j]*x[j]
+                if self.op[i,j]:
+                    x[i] -= self.op[i,i]*self.op[i,j]*x[j]
         self.sor_weighting(b, x)
         return x
 
 def blockscheme(op, scheme='jacobi', **kwargs):
+    scheme = scheme.lower()
     if scheme == 'jacobi' or scheme == 'jac':
         return block_jacobi(op)
 
-    if scheme in ('gauss-seidel', 'gs', 'SOR', 'sor'):
+    if scheme in ('gauss-seidel', 'gs', 'sor'):
         return block_gs(op, **kwargs)
 
-    if scheme in ('symmetric gauss-seidel', 'sgs', 'SSOR', 'ssor'):
+    if scheme in ('symmetric gauss-seidel', 'sgs', 'ssor'):
         return block_gs(op, symmetric=True, **kwargs)
 
-    if scheme in ('truncated gauss-seidel', 'tgs', 'TSOR', 'tsor'):
+    if scheme in ('truncated gauss-seidel', 'tgs', 'tsor'):
         return block_gs(op, truncated=True, **kwargs)
 
     raise TypeError('unknown scheme "%s"'%scheme)
