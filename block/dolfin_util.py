@@ -49,7 +49,7 @@ class update():
     plots = {}
     kwargs = {}
     projectors = {}
-    solvers = {}
+    functions = {}
 
     def _extract_function_space(self, expression, mesh=None):
         """Try to extract a suitable function space for projection of
@@ -82,7 +82,7 @@ class update():
 
         return V
 
-    def project(self, f, V, mesh=None):
+    def project(self, f, V, name, mesh=None):
         if V is None:
             # If trying to project an Expression
             if isinstance(f, d.Expression):
@@ -101,14 +101,19 @@ class update():
             solver = d.LinearSolver("cg", "none")
             solver.set_operator(d.assemble(a))
             solver.parameters['preconditioner']['reuse'] = True
-            self.projectors[key] = (solver, d.Function(V))
+            self.projectors[key] = solver
+        # Use separate function objects for separate quantities, since this
+        # object is used as key by viper
+        if not name in self.functions:
+            self.functions[name] = d.Function(V)
 
-        solver,Pf = self.projectors[key]
+        solver, Pf = self.projectors[key], self.functions[name]
         b = d.assemble(d.inner(v,f) * d.dx)
 
         # Solve linear system for projection
         solver.solve(Pf.vector(), b)
 
+        print Pf
         return Pf
 
 
@@ -144,7 +149,7 @@ class update():
         for name,func in sorted(functionals.iteritems()):
             args = self.kwargs.get(name, {})
             if 'functionspace' in args or not isinstance(func, d.Function):
-                func = self.project(func, args.get('functionspace'))
+                func = self.project(func, args.get('functionspace'), name)
             if hasattr(func, 'rename'):
                 func.rename(name+postfix, name+postfix)
             if args.get('plot', True):
