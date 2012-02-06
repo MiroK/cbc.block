@@ -113,7 +113,6 @@ class update():
         # Solve linear system for projection
         solver.solve(Pf.vector(), b)
 
-        print Pf
         return Pf
 
 
