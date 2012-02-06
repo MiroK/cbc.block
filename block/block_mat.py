@@ -28,7 +28,7 @@ class block_mat(block_container):
                 if type(self[i,j]) == numpy.ndarray or type(self[i,j]) == numpy.matrix:  
                     z = numpy.matrix(self[i,j]) * numpy.matrix(x[j].array()).transpose()
                     z =  numpy.array(z).flatten()
-		    if y[i] is None: 
+                    if y[i] is None: 
                         y[i] = x[j].copy()
                         y[i].resize(len(z))
            
