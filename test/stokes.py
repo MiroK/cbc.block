@@ -69,12 +69,12 @@ class Stokes(unittest.TestCase):
 
 	e = AAi.eigenvalue_estimates()
 	c =  sqrt(e[-1]/e[0])
-        self.assertAlmostEqual(c, 13.5086, places=3)
+        self.assertAlmostEqual(c, 13.5086, places=2)
 
 
-if __name__ == "__main__" : 
+if __name__ == "__main__" :
     print ""
-    print "Testing Stokes preconditioner" 
+    print "Testing Stokes preconditioner"
     print "---------------------------------------------------------------------------"
     unittest.main()
 
