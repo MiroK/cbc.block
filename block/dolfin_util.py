@@ -82,7 +82,7 @@ class update():
 
         return V
 
-    def project(self, f, V, name, mesh=None):
+    def project(self, f, name, V, mesh=None):
         if V is None:
             # If trying to project an Expression
             if isinstance(f, d.Expression):
@@ -136,19 +136,19 @@ class update():
             self.files[name] << data
 
     def plot(self, name, title, data, time):
+        kwargs = self.kwargs.get(name, {})
         if not name in self.plots:
-            kwargs = self.kwargs.get(name, {})
             self.plots[name] = d.plot(data, title=title, size=(400,400),
                                       axes=True, warpscalar=False,
                                       **kwargs)
         else:
-            self.plots[name].update(data)
+            self.plots[name].update(data, title=title, **kwargs)
 
     def __call__(self, time=None, postfix="", **functionals):
         for name,func in sorted(functionals.iteritems()):
             args = self.kwargs.get(name, {})
             if 'functionspace' in args or not isinstance(func, d.Function):
-                func = self.project(func, args.get('functionspace'), name)
+                func = self.project(func, name, args.get('functionspace'))
             if hasattr(func, 'rename'):
                 func.rename(name+postfix, name+postfix)
             if args.get('plot', True):
