@@ -88,7 +88,7 @@ class iterative(block_base):
 
         n = len(self.alphas)
         if n == 0:
-            raise RuntimeError, 'Eigenvalues can not be estimated, no alphas/betas'
+            raise RuntimeError('Eigenvalues can not be estimated, no alphas/betas')
         M = numpy.zeros([n,n])
         M[0,0] = 1/self.alphas[0]
         for k in range(1, n):

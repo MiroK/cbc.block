@@ -27,7 +27,7 @@ def _init():
 
     def check_type(obj1, obj2):
         if isinstance(obj2, block_container):
-            raise TypeError, 'cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2)
+            raise TypeError('cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2))
         return True
 
     old_mul = dolfin.Matrix.__mul__

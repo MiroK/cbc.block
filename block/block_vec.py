@@ -26,7 +26,7 @@ class block_vec(block_container):
                 except AttributeError:
                     pass
             if not isinstance(self[i], GenericVector):
-                raise AttributeError, "can't allocate vector - no Matrix (or equivalent) for block %d"%i
+                raise AttributeError("can't allocate vector - no Matrix (or equivalent) for block %d"%i)
 
     def norm(self, ntype='l2'):
         if ntype == 'linf':
@@ -45,8 +45,8 @@ class block_vec(block_container):
         import numpy
         for i in range(len(self)):
             if numpy.isscalar(self[i]):
-                raise RuntimeError, \
-                    'block %d in block_vec has no size -- use proper vector or call allocate(A)' % i
+                raise RuntimeError(
+                    'block %d in block_vec has no size -- use proper vector or call allocate(A)' % i)
             ran = numpy.random.random(self[i].local_size())
             ran -= sum(ran)/len(ran)
             self[i].set_local(ran)

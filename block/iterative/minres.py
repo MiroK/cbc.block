@@ -1,7 +1,7 @@
 from __future__ import division
 from common import *
 
-def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0):
+def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0, callback=None):
     #####
     # Adapted from PyKrylov (https://github.com/dpo/pykrylov; LGPL license)
     #####
@@ -34,7 +34,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
     #  Test for an indefinite preconditioner.
     #  If b = 0 exactly, stop with x = 0.
     if beta1 < 0:
-        raise ValueError, 'B does not define a pos-def preconditioner'
+        raise ValueError('B does not define a pos-def preconditioner')
     if beta1 == 0:
         x *= 0
         return x, [0], [], []
@@ -93,7 +93,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
         oldb   = beta               # oldb = betak
         beta   = inner(r2,y)          # beta = betak+1^2
         if beta < 0:
-            raise ValueError, 'B does not define a pos-def preconditioner'
+            raise ValueError('B does not define a pos-def preconditioner')
         beta   = sqrt(beta)
         tnorm2 += alfa**2 + oldb**2 + beta**2
 
@@ -188,6 +188,10 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
             if test1 <= tolerance: istop = 1
 
         residuals.append(test1)
+
+        # Call user provided callback with solution
+        if callable(callback):
+            callback(k=itn, x=x, r=test1)
 
         if istop != 0:
             break
