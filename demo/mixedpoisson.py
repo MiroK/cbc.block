@@ -44,10 +44,6 @@ fixed number of iterations. It is not very efficient, but since it is a linear
 operator it is safe to use as inner solver for an outer Krylov solver.
 """
 
-# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
-# modules. This works around a bug with MPI initialisation/destruction order.
-import PyTrilinos
-
 from block import *
 from block.iterative import Richardson, ConjGrad, MinRes
 from block.algebraic.trilinos import ML, collapse

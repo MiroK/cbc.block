@@ -1,9 +1,4 @@
 def _init():
-    import sys
-    if 'dolfin' in sys.modules and not 'PyTrilinos' in sys.modules:
-        raise RuntimeError('must be imported before dolfin -- add "import PyTrilinos" first in your script')
-    del sys
-
     import block.algebraic
     class active_backend(object):
         name = 'trilinos'

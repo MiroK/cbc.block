@@ -1,4 +1,3 @@
-import PyTrilinos
 from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *
