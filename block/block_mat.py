@@ -24,18 +24,14 @@ class block_mat(block_container):
 
         for i in range(m):
             for j in range(n):
-
-                if type(self[i,j]) == numpy.ndarray or type(self[i,j]) == numpy.matrix:  
+                if isinstance(self[i,j], (numpy.ndarray, numpy.matrix)):
                     z = numpy.matrix(self[i,j]) * numpy.matrix(x[j].array()).transpose()
-                    z =  numpy.array(z).flatten()
+                    z = numpy.array(z).flatten()
                     if y[i] is None: 
                         y[i] = x[j].copy()
                         y[i].resize(len(z))
-           
                     y[i][:] += z[:]
-
                     continue
-                    
                 if self[i,j] is None or self[i,j]==0:
                     # Skip multiply if zero
                     continue
@@ -60,7 +56,7 @@ class block_mat(block_container):
                     # (must also stop conversion anything->blockcompose for
                     # this case)
                     raise RuntimeError(
-                        'unexpected result in matvec, %s\n-- possibly because RHS contains scalars ' \
+                        'unexpected result in matvec, %s\n-- possibly because a block_vec contains scalars ' \
                         'instead of vectors, use create_vec() or allocate()' % type(z))
                 if y[i] is None:
                     y[i]  = z
@@ -161,9 +157,9 @@ class block_mat(block_container):
           gauss-seidel [gs]
           symmetric gauss-seidel [sgs]
           truncated gauss-seidel [tgs]
-          SOR [sor]
-          SSOR [ssor]
-          TSOR [tsor]
+          sor
+          ssor
+          tsor
 
         and they may take keyword arguments. For the Gauss-Seidel-like methods,
         'reverse' and 'w' (weight) are supported, as well as 'truncated' and
@@ -183,11 +179,12 @@ class block_mat(block_container):
     @staticmethod
     def diag(A, n=0):
         """Create a diagonal block matrix, where the entries on the diagonal
-        are either the entries of the vector A (if n==0), or n copies of A (if
-        n>0). For the case of extracting the diagonal of an existing block
-        matrix, use D=A.scheme('jacobi') instead.
+        are either the entries of the block_vec or list A (if n==0), or n
+        copies of A (if n>0). For the case of extracting the diagonal of an
+        existing block matrix, use D=A.scheme('jacobi') instead.
 
-        If n>0 and A is a list (or tuple), the entries of A define a banded
+        If n>0, A is replicated n times and may be either an operator or a
+        block_vec/list. If it is a list, the entries of A define a banded
         diagonal. In this case, len(A) must be odd, with the diagonal in the
         middle.
         """
@@ -197,7 +194,7 @@ class block_mat(block_container):
             for i in range(n):
                 mat[i,i] = A[i]
         else:
-            if isinstance(A, (list, tuple)):
+            if isinstance(A, (list, tuple, block_vec)):
                 if len(A)%2 != 1:
                     raise ValueError('The number of entries in the banded diagonal must be odd')
             else:

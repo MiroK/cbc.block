@@ -64,6 +64,7 @@ class block_mul(block_base):
                     return op.create_vec(dim)
                 except AttributeError:
                     pass
+        # Use AttributeError, because that's what the individual operators use
         raise AttributeError('failed to create vec, no appropriate reference matrix')
 
     def block_collapse(self):
