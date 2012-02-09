@@ -41,10 +41,6 @@ outer iterative solver, but nevertheless we use a single iteration of the
 Richardson method just for reporting purposes.
 """
 
-# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
-# modules. This works around a bug with MPI initialisation/destruction order.
-import PyTrilinos
-
 from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *

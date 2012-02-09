@@ -27,7 +27,7 @@ def _init():
 
     def check_type(obj1, obj2):
         if isinstance(obj2, block_container):
-            raise TypeError, 'cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2)
+            raise TypeError('cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2))
         return True
 
     old_mul = dolfin.Matrix.__mul__
@@ -65,28 +65,8 @@ def _init():
     dolfin.GenericMatrix.create_vec = vec_pool(create_vec)
 
     # For the Trilinos stuff, it's much nicer if down_cast is a method on the
-    # object. Also do some fixup so that the down-casted object is not deleted
-    # just because the owning object goes out of scope, by creating a hidden
-    # backwards reference. (Python garbage collects circular references as long
-    # as custom __del__ methods are not in use.) NOTE this is fixed now in recent
-    # dolfin, may be simplified.
-    def la_object(self):
-        obj = self.la_object()
-        obj.reference = self
-        return obj
-    def down_cast(self):
-        obj = dolfin.down_cast(self)
-        if not hasattr(obj, 'la_object'):
-            cls = obj.__class__
-            if hasattr(cls, 'vec'):
-                cls.vec, cls.la_object = la_object, cls.vec
-            elif hasattr(cls, 'mat'):
-                cls.mat, cls.la_object = la_object, cls.mat
-            else:
-                raise RuntimeError, 'down_cast on unknown object'
-        return obj
-
-    dolfin.GenericMatrix.down_cast = down_cast
-    dolfin.GenericVector.down_cast = down_cast
+    # object.
+    dolfin.GenericMatrix.down_cast = dolfin.down_cast
+    dolfin.GenericVector.down_cast = dolfin.down_cast
 
 _init()

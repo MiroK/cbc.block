@@ -1,8 +1,8 @@
 from __future__ import division
 
 """This demo program shows the use of block preconditioners for Mixed
-Poisson. The original demo, with description of the mixed formulation of the
-variational problem, can be found in demo/pde/mixed-poisson/python.
+Poisson. The original DOLFIN demo, with description of the mixed formulation of
+the variational problem, can be found in $DOLFIN_DIR/demo/pde/mixed-poisson/python.
 
 The algebraic system to be solved can be written as
 
@@ -43,10 +43,6 @@ This describes a solver using Richardson iterations, with damping 0.5 and a
 fixed number of iterations. It is not very efficient, but since it is a linear
 operator it is safe to use as inner solver for an outer Krylov solver.
 """
-
-# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
-# modules. This works around a bug with MPI initialisation/destruction order.
-import PyTrilinos
 
 from block import *
 from block.iterative import Richardson, ConjGrad, MinRes

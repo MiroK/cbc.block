@@ -18,7 +18,7 @@ class ML(block_base):
             #"cycle applications"        : 2,
             #"prec type"                 : "MGW",
             "aggregation: type"         : "Uncoupled" ,
-            #"PDE equations"             : pdes,
+            "PDE equations"             : pdes,
             "ML validate parameter list": True,
             }
         self.A = A # Prevent matrix being deleted
@@ -36,8 +36,8 @@ class ML(block_base):
         # apply the ML preconditioner
         x = self.A.create_vec()
         if len(x) != len(b):
-            raise RuntimeError, \
-                'incompatible dimensions for ML matvec, %d != %d'%(len(x),len(b))
+            raise RuntimeError(
+                'incompatible dimensions for ML matvec, %d != %d'%(len(x),len(b)))
 
         err = self.ml_prec.ApplyInverse(b.down_cast().vec(), x.down_cast().vec())
         if err:

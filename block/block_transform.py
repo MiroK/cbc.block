@@ -52,9 +52,9 @@ def block_simplify(expr):
     - Combine scalar terms in compositions (2*2==4)
     - Eliminate additive and multiplicative identities (A+0=A, A*1=A)
     """
-    try:
+    if hasattr(expr, 'block_simplify'):
         return expr.block_simplify()
-    except AttributeError:
+    else:
         return expr
 
 
@@ -62,7 +62,7 @@ def block_collapse(expr):
     """Turn a composition /inside out/, i.e., turn a composition of block
     matrices into a block matrix of compositions.
     """
-    try:
+    if hasattr(expr, 'block_collapse'):
         return expr.block_collapse()
-    except AttributeError:
+    else:
         return expr

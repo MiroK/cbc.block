@@ -49,23 +49,69 @@ class update():
     plots = {}
     kwargs = {}
     projectors = {}
+    functions = {}
 
-    def project(self, f, V):
+    def _extract_function_space(self, expression, mesh=None):
+        """Try to extract a suitable function space for projection of
+        given expression. Copied from dolfin/fem/projection.py"""
+        import ufl
+
+        # Extract functions
+        functions = ufl.algorithms.extract_coefficients(expression)
+
+        # Extract mesh from functions
+        if mesh is None:
+            for f in functions:
+                if isinstance(f, d.Function):
+                    mesh = f.function_space().mesh()
+                    if mesh is not None:
+                        break
+                    if mesh is None:
+                        raise RuntimeError, "Unable to project expression, no suitable mesh."
+
+        # Create function space
+        shape = expression.shape()
+        if shape == ():
+            V = d.FunctionSpace(mesh, "CG", 1)
+        elif len(shape) == 1:
+            V = d.VectorFunctionSpace(mesh, "CG", 1, dim=shape[0])
+        elif len(shape) == 2:
+            V = d.TensorFunctionSpace(mesh, "CG", 1, shape=shape)
+        else:
+            raise RuntimeError, "Unable to project expression, unhandled rank, shape is %s." % (shape,)
+
+        return V
+
+    def project(self, f, name, V, mesh=None):
         if V is None:
-            V = d.fem.project.func_globals['_extract_function_space'](f)
+            # If trying to project an Expression
+            if isinstance(f, d.Expression):
+                if isinstance(mesh, cpp.Mesh):
+                    V = FunctionSpaceBase(mesh, v.ufl_element())
+                else:
+                    raise TypeError, "expected a mesh when projecting an Expression"
+            else:
+                V = self._extract_function_space(f, mesh)
         key = str(V)
         v = d.TestFunction(V)
         if not key in self.projectors:
             # Create mass matrix
             u = d.TrialFunction(V)
             a = d.inner(v,u) * d.dx
-            self.projectors[key] = (d.assemble(a), d.Function(V))
+            solver = d.LinearSolver("cg", "none")
+            solver.set_operator(d.assemble(a))
+            solver.parameters['preconditioner']['reuse'] = True
+            self.projectors[key] = solver
+        # Use separate function objects for separate quantities, since this
+        # object is used as key by viper
+        if not name in self.functions:
+            self.functions[name] = d.Function(V)
 
-        A,Pf = self.projectors[key]
+        solver, Pf = self.projectors[key], self.functions[name]
         b = d.assemble(d.inner(v,f) * d.dx)
 
         # Solve linear system for projection
-        d.solve(A, Pf.vector(), b, "cg")
+        solver.solve(Pf.vector(), b)
 
         return Pf
 
@@ -90,19 +136,19 @@ class update():
             self.files[name] << data
 
     def plot(self, name, title, data, time):
+        kwargs = self.kwargs.get(name, {})
         if not name in self.plots:
-            kwargs = self.kwargs.get(name, {})
             self.plots[name] = d.plot(data, title=title, size=(400,400),
                                       axes=True, warpscalar=False,
                                       **kwargs)
         else:
-            self.plots[name].update(data)
+            self.plots[name].update(data, title=title, **kwargs)
 
     def __call__(self, time=None, postfix="", **functionals):
         for name,func in sorted(functionals.iteritems()):
             args = self.kwargs.get(name, {})
             if 'functionspace' in args or not isinstance(func, d.Function):
-                func = self.project(func, args.get('functionspace'))
+                func = self.project(func, name, args.get('functionspace'))
             if hasattr(func, 'rename'):
                 func.rename(name+postfix, name+postfix)
             if args.get('plot', True):

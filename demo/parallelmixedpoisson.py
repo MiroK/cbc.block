@@ -32,10 +32,6 @@ The main points are:
 Alternatively, a non-symmetric solver such as TFQMR or BiCGStab may be used.
 """
 
-# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
-# modules. This works around a bug with MPI initialisation/destruction order.
-import PyTrilinos
-
 from block import *
 from block.iterative import TFQMR, Richardson, ConjGrad, MinRes
 from block.algebraic.trilinos import ML, collapse

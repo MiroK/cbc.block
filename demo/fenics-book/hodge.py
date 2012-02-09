@@ -26,7 +26,6 @@ CGN iterative solver in order to get eigenvalue estimates for the
 preconditioned systems.
 """
 
-import PyTrilinos
 from dolfin import *
 from block import *
 from block.iterative import *

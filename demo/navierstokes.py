@@ -5,12 +5,8 @@ NOTE: Needs work. Must define a better precond, this one doesn't work for smalle
 It is a modification of the Stokes demo (demo-stokes.py).
 """
 
-# Since we use ML from Trilinos, we must import PyTrilinos before any dolfin
-# modules. This works around a bug with MPI initialisation/destruction order.
-# Furthermore, scipy (in LGMRES) seems to crash unless it's loaded before
-# PyTrilinos.
+# Scipy (in LGMRES) seems to crash unless it's loaded before PyTrilinos.
 import scipy
-import PyTrilinos
 import os
 
 from dolfin import *

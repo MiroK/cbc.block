@@ -64,7 +64,8 @@ class block_mul(block_base):
                     return op.create_vec(dim)
                 except AttributeError:
                     pass
-        raise AttributeError, 'failed to create vec, no appropriate reference matrix'
+        # Use AttributeError, because that's what the individual operators use
+        raise AttributeError('failed to create vec, no appropriate reference matrix')
 
     def block_collapse(self):
         """Create a block_mat of block_muls from a block_mul of
@@ -205,8 +206,8 @@ class block_sub(object):
         y = self.A*x
         z = self.B*x
         if len(y) != len(z):
-            raise RuntimeError, \
-                'incompatible dimensions in matrix subtraction -- %d != %d'%(len(y),len(z))
+            raise RuntimeError(
+                'incompatible dimensions in matrix subtraction -- %d != %d'%(len(y),len(z)))
         y -= z
         return y
     def __neg__(self):
@@ -289,8 +290,8 @@ class block_add(block_sub):
         y = self.A*x
         z = self.B*x
         if len(y) != len(z):
-            raise RuntimeError, \
-                'incompatible dimensions in matrix addition -- %d != %d'%(len(y),len(z))
+            raise RuntimeError(
+                'incompatible dimensions in matrix addition -- %d != %d'%(len(y),len(z)))
         y += z
         return y
 
