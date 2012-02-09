@@ -26,6 +26,12 @@ class MinRes(iterative):
     import minres
     method = staticmethod(minres.minres)
 
+class MinRes2(iterative):
+    import minres2
+    method = staticmethod(minres2.minres)
+
+
+
 class LGMRES(iterative):
     import lgmres
     __doc__ = lgmres.lgmres.__doc__
