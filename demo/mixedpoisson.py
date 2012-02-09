@@ -1,8 +1,8 @@
 from __future__ import division
 
 """This demo program shows the use of block preconditioners for Mixed
-Poisson. The original demo, with description of the mixed formulation of the
-variational problem, can be found in demo/pde/mixed-poisson/python.
+Poisson. The original DOLFIN demo, with description of the mixed formulation of
+the variational problem, can be found in $DOLFIN_DIR/demo/pde/mixed-poisson/python.
 
 The algebraic system to be solved can be written as
 
