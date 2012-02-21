@@ -131,6 +131,9 @@ Sigma, U = AAinv * b
 print 'norm Sigma:', Sigma.norm('l2')
 print 'norm U    :', U.norm('l2')
 
+if abs(1.213-Sigma.norm('l2')) > 1e-3 or abs(6.713-U.norm('l2')) > 1e-3:
+    raise RuntimeError("Wrong value in norms -- please check!")
+
 # Plotting doesn't seem to work in parallel with the Epetra backend
 #plot(Function(BDM, Sigma))
 #plot(Function(DG,  U))

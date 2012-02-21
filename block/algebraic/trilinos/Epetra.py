@@ -227,26 +227,40 @@ def _collapse(x):
     # block_mul objects... should convert to accessor functions.
 
     from block.block_compose import block_mul, block_add, block_sub, block_transpose
+    from block.block_mat import block_mat
     from numpy import isscalar
     from dolfin import GenericMatrix
     if isinstance(x, (matrix_op, diag_op)):
         return x
     elif isinstance(x, GenericMatrix):
         return matrix_op(x.down_cast().mat())
+    elif isinstance(x, block_mat):
+        if x.blocks.shape != (1,1):
+            raise NotImplementedError("collapse() for block_mat with shape != (1,1)")
+        return _collapse(x[0,0])
     elif isinstance(x, block_mul):
         factors = map(_collapse, reversed(x))
         while len(factors) > 1:
             A = factors.pop()
             B = factors.pop()
-            C = B.matmat(A) if isscalar(A) else A.matmat(B)
+            if isscalar(A) and isscalar(B):
+                C = A*B
+            else:
+                C = B.matmat(A) if isscalar(A) else A.matmat(B)
             factors.append(C)
         return factors[0]
     elif isinstance(x, block_add):
         A,B = map(_collapse, x)
-        return B.add(A) if isscalar(A) else A.add(B)
+        if isscalar(A) and isscalar(B):
+            return A+B
+        else:
+            return B.add(A) if isscalar(A) else A.add(B)
     elif isinstance(x, block_sub):
         A,B = map(_collapse, x)
-        return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
+        if isscalar(A) and isscalar(B):
+            return A-B
+        else:
+            return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
     elif isinstance(x, block_transpose):
         A = map(_collapse, x)
         return A if isscalar(A) else A.transpose()

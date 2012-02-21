@@ -37,7 +37,6 @@ def _init():
         else:
             check_type(self, other)
             return block_mul(self, other)
-
     dolfin.Matrix.__mul__ = wrap_mul
 
     dolfin.Matrix.__add__  = lambda self, other: check_type(self, other) and block_add(self, other)
@@ -68,5 +67,14 @@ def _init():
     # object.
     dolfin.GenericMatrix.down_cast = dolfin.down_cast
     dolfin.GenericVector.down_cast = dolfin.down_cast
+
+    # Make sure PyTrilinos is imported somewhere, otherwise the types from
+    # e.g. GenericMatrix.down_cast aren't recognised (if using Epetra backend).
+    # Not tested, but assuming the same is true for the PETSc backend.
+    for backend in ['PyTrilinos', 'petsc4py']:
+        try:
+            __import__(backend)
+        except ImportError:
+            pass
 
 _init()
