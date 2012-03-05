@@ -33,16 +33,16 @@ class iterative(block_base):
         if isinstance(b, block_vec):
             # Create a shallow copy to call allocate() on, to avoid changing the caller's copy of b
             b = block_vec(len(b), b.blocks)
-            b.allocate(self.A)
+            b.allocate(self.A, dim=0)
 
         if self.initial_guess:
             # Most (all?) solvers modify x, so make a copy to avoid changing the caller's copy of x
             from block.block_util import copy
             x = copy(self.initial_guess)
             if isinstance(x, block_vec):
-                x.allocate(self.A)
+                x.allocate(self.A, dim=1)
         else:
-            x = self.A.create_vec()
+            x = self.A.create_vec(dim=1)
             x.zero()
 
         try:

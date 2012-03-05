@@ -39,7 +39,7 @@ class IFPACK(block_base):
         from dolfin import GenericVector
         if not isinstance(b, GenericVector):
             return NotImplemented
-        x = self.A.create_vec()
+        x = self.A.create_vec(dim=1)
         if len(x) != len(b):
             raise RuntimeError(
                 'incompatible dimensions for AztecOO matvec, %d != %d'%(len(x),len(b)))

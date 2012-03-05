@@ -28,6 +28,7 @@ class block_mul(block_base):
         A = A.chain if isinstance(A, block_mul) else [A]
         B = B.chain if isinstance(B, block_mul) else [B]
         self.chain = A+B
+
     def __mul__(self, x):
         for op in reversed(self.chain):
             from dolfin import GenericMatrix, GenericVector
@@ -52,6 +53,20 @@ class block_mul(block_base):
         return x
 
     def create_vec(self, dim=1):
+        """Create a vector of the correct size and layout for b (if dim==0) or
+        x (if dim==1)."""
+
+        # Use try-except because even if op has a create_vec method, it may be
+        # a composed operator and its create_vec method may fail if it cannot
+        # find a component to create the vector.
+        #
+        # The operator may be scalar, in which case it doesn't change the
+        # dimensions, but it may also be something that reduces to a
+        # scalar. Hence, a simple is_scalar is not generally sufficient, and we
+        # just try the next operator in the chain. This is not completely safe,
+        # in particular it may produce a vector of the wrong size if non-square
+        # numpy matrices are involved.
+
         if dim==0:
             for op in self.chain:
                 try:
@@ -64,7 +79,8 @@ class block_mul(block_base):
                     return op.create_vec(dim)
                 except AttributeError:
                     pass
-        # Use AttributeError, because that's what the individual operators use
+        # Use AttributeError, because that's what the individual operators use,
+        # and an outer create_vec will try the next candidate
         raise AttributeError('failed to create vec, no appropriate reference matrix')
 
     def block_collapse(self):
@@ -218,6 +234,8 @@ class block_sub(object):
         return block_sub(self, x)
 
     def create_vec(self, dim=1):
+        """Create a vector of the correct size and layout for b (if dim==0) or
+        x (if dim==1)."""
         try:
             return self.A.create_vec(dim)
         except AttributeError:

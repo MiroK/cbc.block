@@ -34,7 +34,7 @@ class ML(block_base):
         if not isinstance(b, GenericVector):
             return NotImplemented
         # apply the ML preconditioner
-        x = self.A.create_vec()
+        x = self.A.create_vec(dim=1)
         if len(x) != len(b):
             raise RuntimeError(
                 'incompatible dimensions for ML matvec, %d != %d'%(len(x),len(b)))

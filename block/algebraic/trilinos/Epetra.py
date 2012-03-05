@@ -25,7 +25,7 @@ class diag_op(block_base):
         except AttributeError:
             return NotImplemented
 
-        x = self.create_vec()
+        x = self.create_vec(dim=1)
         if len(x) != len(b):
             raise RuntimeError(
                 'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b)))
@@ -112,10 +112,10 @@ class matrix_op(block_base):
             return NotImplemented
         if self.transposed:
             domainlen = self.M.NumGlobalRows()
-            x = self.create_vec(dim=1)
+            x = self.create_vec(dim=0)
         else:
             domainlen = self.M.NumGlobalCols()
-            x = self.create_vec(dim=0)
+            x = self.create_vec(dim=1)
         if len(b) != domainlen:
             raise RuntimeError(
                 'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,domainlen,len(b)))
