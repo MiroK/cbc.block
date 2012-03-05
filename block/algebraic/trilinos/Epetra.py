@@ -101,6 +101,11 @@ class matrix_op(block_base):
     def transpose(self):
         return matrix_op(self.M, not self.transposed)
 
+    def rowmap(self):
+        # Note: Tried ColMap for the transposed matrix, but that
+        # crashes when the result is used by ML in parallel
+        return self.M.DomainMap() if self.transposed else self.M.RowMap()
+
     def matvec(self, b):
         from dolfin import GenericVector
         if not isinstance(b, GenericVector):
@@ -137,10 +142,7 @@ class matrix_op(block_base):
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
-                # Note: Tried ColMap for the transposed matrix, but that
-                # crashes when the result is used by ML in parallel
-                RowMap = self.M.DomainMap() if self.transposed else self.M.RowMap()
-                C = Epetra.CrsMatrix(Epetra.Copy, RowMap, 100)
+                C = Epetra.CrsMatrix(Epetra.Copy, self.rowmap(), 100)
                 assert (0 == EpetraExt.Multiply(self.M,      self.transposed,
                                                 other.mat(), other.transposed,
                                                 C))
@@ -159,8 +161,8 @@ class matrix_op(block_base):
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
-                C = Epetra.CrsMatrix(Epetra.Copy, self.M.RowMap(), 100)
-                assert (0 == EpetraExt.Add(self.M,      self.transposed,      lscale, C, 0.0))
+                C = Epetra.CrsMatrix(Epetra.Copy, self.rowmap(), 100)
+                assert (0 == EpetraExt.Add(self.M,      self.transposed,  lscale, C, 0.0))
                 assert (0 == EpetraExt.Add(other.mat(), other.transposed, rscale, C, 1.0))
                 C.FillComplete()
                 C.OptimizeStorage()
@@ -262,7 +264,7 @@ def _collapse(x):
         else:
             return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
     elif isinstance(x, block_transpose):
-        A = map(_collapse, x)
+        A = _collapse(x.A)
         return A if isscalar(A) else A.transpose()
     elif isscalar(x):
         return x

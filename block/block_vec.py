@@ -23,8 +23,10 @@ class block_vec(block_container):
                 continue
             for j in range(len(self)):
                 A = AA[i,j] if dim==0 else AA[j,i]
+                val = self[i]
                 try:
                     self[i] = A.create_vec(dim)
+                    self[i][:] = val or 0.0
                     break
                 except AttributeError:
                     pass

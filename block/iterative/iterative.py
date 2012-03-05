@@ -31,10 +31,14 @@ class iterative(block_base):
         # normally they are not). To be sure, call allocate() on them.
 
         if isinstance(b, block_vec):
+            # Create a shallow copy to call allocate() on, to avoid changing the caller's copy of b
+            b = block_vec(len(b), b.blocks)
             b.allocate(self.A)
 
         if self.initial_guess:
-            x = self.initial_guess
+            # Most (all?) solvers modify x, so make a copy to avoid changing the caller's copy of x
+            from block.block_util import copy
+            x = copy(self.initial_guess)
             if isinstance(x, block_vec):
                 x.allocate(self.A)
         else:

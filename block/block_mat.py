@@ -103,20 +103,12 @@ class block_mat(block_container):
         return y
 
     def copy(self):
-        import copy
+        import block_util
         m,n = self.blocks.shape
         y = block_mat(m,n)
         for i in range(m):
             for j in range(n):
-                obj = self[i,j]
-                if hasattr(obj, 'copy'):
-                    y[i,j] = obj.copy()
-                else:
-                    try:
-                        y[i,j] = copy.deepcopy(obj)
-                    except TypeError:
-                        warning("Don't know how to make a deep copy of (%d,%d), making shallow copy"%(i,j))
-                        y[i,j] = copy.copy(obj)
+                y[i,j] = block_util.copy(self[i,j])
         return y
 
     def create_vec(self, dim=1):

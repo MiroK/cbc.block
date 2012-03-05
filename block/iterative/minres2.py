@@ -178,6 +178,6 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
         
         iter += 1
         #print "r",iter,"=",sqrt(inner(r,r))
-    print "precondMinRes finished, iter: %d, ||e||=%e" % (iter,sqrt(inner(r,r)))
+    #print "precondMinRes finished, iter: %d, ||e||=%e" % (iter,sqrt(inner(r,r)))
     return x,residuals, [], []
 
