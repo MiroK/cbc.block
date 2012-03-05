@@ -60,9 +60,9 @@ bb = block_vec([0,0])
 
 L = collapse(A+B*InvDiag(D)*C)
 
-x = AA.create_vec()
+x = AA.create_vec(dim=1)
 x.randomize()
-bb.allocate(AA)
+bb.allocate(AA, dim=0)
 
 Linv = CGN(L, precond=ML(L), initial_guess=x[0], tolerance=1e-9, maxiter=2000, show=0)
 Linv * bb[0]

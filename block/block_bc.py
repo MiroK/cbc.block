@@ -42,7 +42,7 @@ class block_bc(list):
 
     def compute_signs(self, AA, bb):
         self.signs = [None]*len(self)
-        bb.allocate(AA)
+        bb.allocate(AA, dim=0)
         for i in range(len(self)):
             if not self[i]:
                 # No BC on this block, sign doesn't matter
@@ -52,7 +52,7 @@ class block_bc(list):
             else:
                 # Do not use a constant vector, as that may be in the null space
                 # before boundary conditions are applied
-                x = AA[i,i].create_vec()
+                x = AA[i,i].create_vec(dim=1)
                 ran = numpy.random.random(x.local_size())
                 x.set_local(ran)
                 Ax = AA[i,i]*x
@@ -64,7 +64,7 @@ class block_bc(list):
         dolfin.info('Calculated signs of diagonal blocks:' + str(self.signs))
 
     def apply_matvec(self, A, b, symmetric):
-        b.allocate(A)
+        b.allocate(A, dim=0)
         for i in range(len(self)):
             for bc in self[i]:
                 for j in range(len(self)):

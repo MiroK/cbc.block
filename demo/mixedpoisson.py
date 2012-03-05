@@ -97,7 +97,7 @@ G = BoundarySource(mesh)
 
 # Define essential boundary
 def boundary(x, on_boundary):
-    return on_boundary and near(x[1], 0) or near(x[1], 1)
+    return on_boundary and (near(x[1], 0.0) or near(x[1], 1.0))
 
 # Define and apply the boundary conditions to the block matrix. The input to
 # block_bc defines a Dirichlet condition on the first block, and no conditions

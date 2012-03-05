@@ -31,14 +31,14 @@ class iterative(block_base):
         # normally they are not). To be sure, call allocate() on them.
 
         if isinstance(b, block_vec):
-            b.allocate(self.A)
+            b.allocate(self.A, dim=0)
 
         if self.initial_guess:
             x = self.initial_guess
             if isinstance(x, block_vec):
-                x.allocate(self.A)
+                x.allocate(self.A, dim=1)
         else:
-            x = self.A.create_vec()
+            x = self.A.create_vec(dim=1)
             x.zero()
 
         try:
