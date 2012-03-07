@@ -45,7 +45,7 @@ operator it is safe to use as inner solver for an outer Krylov solver.
 """
 
 from block import *
-from block.iterative import Richardson, ConjGrad, MinRes
+from block.iterative import *
 from block.algebraic.trilinos import ML, collapse
 from dolfin import *
 
@@ -59,26 +59,6 @@ DG = FunctionSpace(mesh, "DG", 0)
 # Define trial and test functions
 tau, sigma = TestFunction(BDM), TrialFunction(BDM)
 v,   u     = TestFunction(DG),  TrialFunction(DG)
-
-# Define source function
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
-
-# Define variational forms (one per block)
-a11 = dot(sigma, tau) * dx
-a12 = div(tau) * u * dx
-a21 = div(sigma) * v *dx
-L2  = - f * v * dx
-
-# Assemble forms into block matrices, and combine
-A = assemble(a11)
-B = assemble(a12)
-C = assemble(a21)
-
-AA = block_mat([[A, B],
-                [C, 0]])
-
-b1 = assemble(L2)
-b = block_vec([0, b1])
 
 # Define function G such that G \cdot n = g
 class BoundarySource(Expression):
@@ -96,16 +76,34 @@ class BoundarySource(Expression):
 G = BoundarySource(mesh)
 
 # Define essential boundary
-def boundary(x, on_boundary):
-    return on_boundary and near(x[1], 0) or near(x[1], 1)
+def boundary(x):
+    return near(x[1], 0.0) or near(x[1], 1.0)
 
 # Define and apply the boundary conditions to the block matrix. The input to
 # block_bc defines a Dirichlet condition on the first block, and no conditions
 # on the second block. The boundary conditions are applied in such a way that
 # the system remains symmetric, and the individual blocks remain positive or
 # negative definite.
-bc = block_bc([DirichletBC(BDM, G, boundary), None])
-bc.apply(AA, b)
+bcs_BDM = [DirichletBC(BDM, G, boundary)]
+bcs = [bcs_BDM, None]
+
+# Define source function
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+
+# Define variational forms (one per block)
+a11 = dot(sigma, tau) * dx
+a12 = div(tau) * u * dx
+a21 = div(sigma) * v *dx
+L2  = - f * v * dx
+
+AA, AArhs = block_symmetric_assemble([[a11, a12],
+                                      [a21,  0 ]], bcs=bcs)
+
+bb = block_assemble([0, L2], bcs=bcs, symmetric_mod=AArhs)
+
+# Extract the individual submatrices
+[[A, B],
+ [C, _]] = AA
 
 # Create a preconditioner for A (using the ML preconditioner from Trilinos)
 Ap = ML(A)
@@ -139,12 +137,16 @@ AAinv = MinRes(AA, precond=AAp, show=2, name='AA^')
 
 #=====================
 # Solve the system
-Sigma, U = AAinv * b
+Sigma, U = AAinv * bb
 #=====================
 
 # Print norms that can be compared with those reported by demo-parallelmixedpoisson
 print 'norm Sigma:', Sigma.norm('l2')
 print 'norm U    :', U.norm('l2')
+
+# Check that the norms are as expected
+if abs(1.213-Sigma.norm('l2')) > 1e-3 or abs(6.713-U.norm('l2')) > 1e-3:
+    raise RuntimeError("Wrong value in norms -- please check!")
 
 # Plot sigma and u
 plot(Function(BDM, Sigma))

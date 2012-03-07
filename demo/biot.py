@@ -112,25 +112,17 @@ bc_p_drained_source = DirichletBC(W,            0,              fluid_source_dom
 
 bcs = [[bc_u_topload, bc_u_bedrock], [bc_p_drained_source]]
 
-# Assemble the matrices
-A = assemble(a00)
-B = assemble(a01)
-C = assemble(a10)
-D = assemble(a11)
-c = assemble(L1)
+# Assemble the matrices and vectors
 
-# Insert the matrices into blocks
+AA, AArhs = block_symmetric_assemble([[a00, a01],
+                                      [a10, a11]], bcs=bcs)
 
-AA = block_mat([[A, B],
-                [C, D]])
-bb = block_vec([0, c])
+bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
 
-# Apply boundary conditions. Because just the right-hand side is modified later
-# (in the time loop), and because the left-hand side is modified symmetrically,
-# we set the save_A flag.
+# Extract the individual submatrices
 
-bcs = block_bc(bcs)
-bcs.apply(AA, bb, save_A=True)
+[[A, B],
+ [C, D]] = AA
 
 # Create preconditioner -- a generalised block Jacobi preconditioner, where the
 # (2,2) approximates the pressure Schur complement. Since the ML preconditioner
@@ -178,10 +170,7 @@ while t <= T:
     print "Time step %f" % t
 
     topload_source.t = t
-
-    bb[0].zero()
-    bb[1] = assemble(L1)
-    bcs.apply(bb)
+    bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
 
     x = AAinv * bb
 
