@@ -112,8 +112,9 @@ class block_mat(block_container):
         return y
 
     def create_vec(self, dim=1):
+        """Create a vector of the correct size and layout for b (if dim==0) or
+        x (if dim==1)."""
         xx = block_vec(self.blocks.shape[dim])
-        xx[:] = 0
         xx.allocate(self, dim)
         return xx
 

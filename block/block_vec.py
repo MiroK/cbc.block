@@ -13,10 +13,12 @@ class block_vec(block_container):
             m = len(m)
         block_container.__init__(self, m, blocks)
 
-    def allocate(self, AA, dim=1):
+    def allocate(self, AA, dim=0):
         """Make sure all blocks are proper vectors. Any non-vector blocks are
         replaced with appropriately sized vectors (where the sizes are taken
-        from AA, which should be a block_mat)."""
+        from AA, which should be a block_mat). If dim==0, newly allocated
+        vectors use layout appropriate for b (in Ax=b); if dim==1, the layout
+        for x is used."""
         from dolfin import GenericVector
         for i in range(len(self)):
             if isinstance(self[i], GenericVector):
@@ -47,14 +49,20 @@ class block_vec(block_container):
             return pack(sum(unpack(x.norm(ntype)) for x in self))
 
     def randomize(self):
+        """Fill the block_vec with random data (with zero bias)."""
         import numpy
         for i in range(len(self)):
-            if numpy.isscalar(self[i]):
+            if hasattr(self[i], 'local_size'):
+                ran = numpy.random.random(self[i].local_size())
+                ran -= sum(ran)/len(ran)
+                self[i].set_local(ran)
+            elif hasattr(self[i], '__len__'):
+                ran = numpy.random.random(len(self[i]))
+                ran -= sum(ran)/len(ran)
+                self[i][:] = ran
+            else:
                 raise RuntimeError(
-                    'block %d in block_vec has no size -- use proper vector or call allocate(A)' % i)
-            ran = numpy.random.random(self[i].local_size())
-            ran -= sum(ran)/len(ran)
-            self[i].set_local(ran)
+                    'block %d in block_vec has no size -- use a proper vector or call allocate(A)' % i)
 
     #
     # Map operator on the block_vec to operators on the individual blocks.

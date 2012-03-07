@@ -74,7 +74,7 @@ G = BoundarySource(mesh)
 
 # Define essential boundary
 def boundary(x, on_boundary):
-    return on_boundary and near(x[1], 0) or near(x[1], 1)
+    return on_boundary and (near(x[1], 0.0) or near(x[1], 1.0))
 
 # Define the boundary condition for the BDM space (sigma)
 BDM_bc = DirichletBC(BDM, G, boundary)

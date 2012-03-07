@@ -31,10 +31,11 @@ def _init():
             raise TypeError('cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2))
         return True
 
-    old_mul = dolfin.Matrix.__mul__
     def wrap_mul(self, other):
         if isinstance(other, dolfin.GenericVector):
-            return old_mul(self, other)
+            ret = self.create_vec(dim=0)
+            self.mult(other, ret)
+            return ret
         else:
             check_type(self, other)
             return block_mul(self, other)
@@ -52,13 +53,16 @@ def _init():
     def transpmult(self, x, y=None):
         check_type(self, x)
         if y is None:
-            y = self.create_vec(dim=0)
+            y = self.create_vec(dim=1)
         old_transpmult(self, x, y)
         return y
     dolfin.Matrix.transpmult = transpmult
 
     # Inject a create() method that returns the new vector (instead of resize() which uses out parameter)
     def create_vec(self, dim=1):
+        """Create a vector that is compatible with the matrix. Given A*x=b:
+        If dim==0, the vector can be used for b (layout like the rows of A);
+        if dim==1, the vector can be used for x (layout like the columns of A)."""
         vec = dolfin.Vector()
         self.resize(vec, dim)
         return vec
