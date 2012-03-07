@@ -299,7 +299,7 @@ def create_identity(vec, val=1):
     from PyTrilinos import Epetra
     from dolfin import EpetraMatrix
     rowmap = vec.down_cast().vec().Map()
-    graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1)
+    graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1, True)
     indices = numpy.array([0], dtype=numpy.intc)
     for row in rowmap.MyGlobalElements():
         indices[0] = row

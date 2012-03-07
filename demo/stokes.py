@@ -55,21 +55,24 @@ q, p = TestFunction(Q), TrialFunction(Q)
 
 f = Constant((0, 0))
 
-A  = assemble(inner(grad(v), grad(u))*dx)
-B  = assemble(div(v)*p*dx)
-C  = assemble(div(u)*q*dx)
+a11 = inner(grad(v), grad(u))*dx
+a12 = div(v)*p*dx
+a21 = div(u)*q*dx
+L1  = inner(v, f)*dx
+
 I  = assemble(p*q*dx)
-b0 = assemble(inner(v, f)*dx)
 
-# Create the block matrix/vector.
-AA = block_mat([[A, B],
-                [C, 0]])
-b  = block_vec([b0, 0])
+# Create the block matrix/vector, and apply boundary conditions. A diagonal
+# matrix is automatically created to replace the (2,2) block in AA, since bc2
+# makes the block non-zero.
+bcs = [[bc0, bc1], bc2]
+AA, AArhs = block_symmetric_assemble([[a11, a12],
+                                      [a21,  0 ]], bcs=bcs)
+bb  = block_assemble([L1, 0], bcs=bcs, symmetric_mod=AArhs)
 
-# Apply boundary conditions. A diagonal matrix is automatically created to
-# replace the (2,2) block in AA, since bc2 makes the block non-zero.
-bcs = block_bc([[bc0, bc1], [bc2]])
-bcs.apply(AA, b)
+# Extract the individual submatrices
+[[A, B],
+ [C, _]] = AA
 
 # Create preconditioners: An ML preconditioner for A, and the ML inverse of the
 # mass matrix for the (2,2) block.
@@ -84,7 +87,7 @@ prec = block_mat([[Ap, 0],
 AAinv = MinRes(AA, precond=prec, tolerance=1e-10, maxiter=500, show=2)
 
 # Compute solution
-u, p = AAinv * b
+u, p = AAinv * bb
 
 print "Norm of velocity coefficient vector: %.15g" % u.norm("l2")
 print "Norm of pressure coefficient vector: %.15g" % p.norm("l2")

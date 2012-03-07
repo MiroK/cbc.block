@@ -11,14 +11,14 @@ def block_assemble(forms, bcs=None, symmetric_mod=None):
         bcs = [[]]*forms.blocks.shape[0]
     if isinstance(forms, block_vec):
         for i in range(len(forms)):
-            tensor[i] = _assemble_vec(forms[i], bcs=bcs[i])
+            tensor[i] = _assemble_vec(forms[i], bcs=_wrap(bcs[i]))
         if symmetric_mod:
             tensor -= symmetric_mod*tensor
     else:
         assert symmetric_mod is None
         for i in range(forms.blocks.shape[0]):
             for j in range(forms.blocks.shape[1]):
-                tensor[i,j] = _assemble_mat(forms[i,j], bcs=bcs[i], diag=(i==j))
+                tensor[i,j] = _assemble_mat(forms[i,j], bcs=_wrap(bcs[i]), diag=(i==j))
     return tensor
 
 def block_symmetric_assemble(forms, bcs):
@@ -28,10 +28,10 @@ def block_symmetric_assemble(forms, bcs):
     symm = block_mat(forms.blocks)
     asymm = block_mat(forms.blocks)
     if bcs is None:
-        bcs = [None]*forms.blocks.shape[0]
+        bcs = [[]]*forms.blocks.shape[0]
     for i in range(forms.blocks.shape[0]):
         for j in range(forms.blocks.shape[1]):
-            symm[i,j], asymm[i,j] = _symmetric_assemble(forms[i,j], row_bcs=bcs[i], col_bcs=bcs[j])
+            symm[i,j], asymm[i,j] = _symmetric_assemble(forms[i,j], row_bcs=_wrap(bcs[i]), col_bcs=_wrap(bcs[j]))
     return symm, asymm
 
 def _is_form(form):
@@ -42,7 +42,7 @@ def _is_form(form):
 def _assemble_mat(form, bcs, diag):
     if _is_form(form):
         from dolfin import assemble, symmetric_assemble
-        if diag:
+        if diag or not bcs:
             return assemble(form, bcs=bcs)
         else:
             return symmetric_assemble(form, row_bcs=bcs)[0]
@@ -95,9 +95,19 @@ def _new_vector(bcs):
     return v
 
 def _new_square_matrix(bcs):
-    from dolfin import TrialFunction, TestFunction, assemble
-    V = _outer_function_space(bcs)
-    u = TrialFunction(V)
-    v = TestFunction(V)
-    mat = assemble(u*v*dx)
-    return mat
+    import block.algebraic
+    return block.algebraic.active_backend().create_identity(_new_vector(bcs), val=0.0)
+
+def _wrap(obj):
+    from dolfin import DirichletBC
+    types = DirichletBC
+    if obj is None:
+        lst = []
+    elif hasattr(obj, '__iter__'):
+        lst = list(obj)
+    else:
+        lst = [obj]
+    for obj in lst:
+        if not isinstance(obj, types):
+            raise TypeError("expected a (list of) %s, not %s" % (types, type(obj)))
+    return lst

@@ -45,20 +45,22 @@ f = Constant((0, 0))
 w = Constant((1, 0))
 mu = Constant(1e-2)
 
-A  = assemble(mu*inner(grad(v), grad(u))*dx + inner(dot(grad(u),w),v)*dx)
-B  = assemble(div(v)*p*dx)
-C  = assemble(div(u)*q*dx)
-b0 = assemble(inner(v, f)*dx)
+a11 = mu*inner(grad(v), grad(u))*dx + inner(dot(grad(u),w),v)*dx
+a12 = div(v)*p*dx
+a21 = div(u)*q*dx
+L1  = inner(v, f)*dx
 
-# Create the block matrix/vector.
-AA = block_mat([[A, B],
-                [C, 0]])
-b  = block_vec([b0, 0])
+# Create the block matrix/vector, with boundary conditions applied. The zeroes
+# in A[1,1] and b[1] are automatically converted to matrices/vectors to be able
+# to apply bc2.
+bcs = [[bc0, bc1], bc2]
+AA = block_assemble([[a11, a12],
+                     [a21,  0 ]], bcs=bcs)
+bb = block_assemble([L1, 0], bcs=bcs)
 
-# Apply boundary conditions. The zeroes in A[1,1] and b[1] are automatically
-# converted to matrices/vectors to be able to apply bc2.
-bcs = block_bc([[bc0, bc1], [bc2]])
-bcs.apply(AA, b)
+# Extract the individual submatrices
+[[A, B],
+ [C, _]] = AA
 
 # Create preconditioners: An ILU preconditioner for A, and an ML inverse of the
 # Schur complement approximation for the (2,2) block.
@@ -72,7 +74,7 @@ prec = block_mat([[Ap, B],
 AAinv = LGMRES(AA, precond=prec, tolerance=1e-5, maxiter=50, show=2)
 
 # Compute solution
-u, p = AAinv * b
+u, p = AAinv * bb
 
 print "Norm of velocity coefficient vector: %.15g" % u.norm("l2")
 print "Norm of pressure coefficient vector: %.15g" % p.norm("l2")

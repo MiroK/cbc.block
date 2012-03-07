@@ -27,8 +27,8 @@ class iterative(block_base):
         T = time()
 
         # If x and initial_guess are block_vecs, some of the blocks may be
-        # scalars (although block_bc.apply() converts these to vectors, so
-        # normally they are not). To be sure, call allocate() on them.
+        # scalars (although they are normally converted to vectors by bc
+        # application). To be sure, call allocate() on them.
 
         if isinstance(b, block_vec):
             # Create a shallow copy to call allocate() on, to avoid changing the caller's copy of b

@@ -79,11 +79,8 @@ G = BoundarySource(mesh)
 def boundary(x):
     return near(x[1], 0.0) or near(x[1], 1.0)
 
-# Define and apply the boundary conditions to the block matrix. The input to
-# block_bc defines a Dirichlet condition on the first block, and no conditions
-# on the second block. The boundary conditions are applied in such a way that
-# the system remains symmetric, and the individual blocks remain positive or
-# negative definite.
+# Define the blockwise boundary conditions -- a Dirichlet condition on the
+# first block, and no conditions on the second block.
 bcs_BDM = [DirichletBC(BDM, G, boundary)]
 bcs = [bcs_BDM, None]
 

@@ -63,18 +63,18 @@ kinv = Constant(1.0/k_val)
 v, u = TestFunction(V), TrialFunction(V)
 q, p = TestFunction(Q), TrialFunction(Q)
 
-A = assemble((dot(u,v) + k*inner(grad(u),grad(v)))*dx)
-B = assemble(div(v)*p*dx)
-C = assemble(div(u)*q*dx)
-b = assemble(dot(f, v)*dx)
+a11 = (dot(u,v) + k*inner(grad(u),grad(v)))*dx
+a12 = div(v)*p*dx
+a21 = div(u)*q*dx
+L1  = dot(f, v)*dx
 
-AA = block_mat([[A, B],
-                [C, 0]])
-bb = block_vec([b, 0])
+bcs = [DirichletBC(V, BoundaryFunction(), Boundary()), None]
+AA = block_assemble([[a11, a12],
+                     [a21,  0 ]], bcs=bcs)
+bb = block_assemble([L1, 0], bcs=bcs)
 
-bc_func = BoundaryFunction()
-bc = block_bc([DirichletBC(V, bc_func, Boundary()), None])
-bc.apply(AA, bb)
+[[A, B],
+ [C, _]] = AA
 
 M = assemble(kinv*p*q*dx)
 L = assemble(dot(grad(p),grad(q))*dx)
@@ -82,7 +82,7 @@ L = assemble(dot(grad(p),grad(q))*dx)
 prec = block_mat([[ML(A),      0     ],
                   [0,     ML(L)+ML(M)]])
 
-xx = bb.copy()
+xx = AA.create_vec()
 xx.randomize()
 AAinv = CGN(AA, precond=prec, initial_guess=xx, tolerance=1e-11, show=0)
 

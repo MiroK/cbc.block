@@ -20,8 +20,8 @@ else
     done
 fi
 
-# Only demos that don't use symmetric Dirichlet BCs can run in parallel
+# Only a couple of demos, check and add the others later
 mpirun -np 3 python fenics-book/hodge.py N=4
-mpirun -np 3 python parallelmixedpoisson.py
+mpirun -np 3 python mixedpoisson.py
 
 ps -o etime,cputime $$
