@@ -45,7 +45,7 @@ def inner(u,v):
         return u.inner(v)
 
 
-def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=500,  rit_=1):
+def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=500,  rit_=1, callback=None):
     """
     precondMinRes(B,A,x,b): Solve Ax = b with the preconditioned biconjugate
     gradient stabilized method.
@@ -101,6 +101,8 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
 
     """
 
+    callback_converged = False
+
     residuals = []
 
     rit = rit_
@@ -125,7 +127,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
 #    print "tolerance ", tolerance 
     # Alloc w
     #while sqrt(inner(r,r)) > tolerance:# and iter<maxiter:
-    while sqrt(rho) > tolerance and iter < maxit:
+    while (sqrt(rho) > tolerance or callback_converged) and iter < maxit:
         #print "iter, sqrt(inner(r,r))", iter, sqrt(inner(r,r))
         uo    = B*qo
         gamma = sqrt(inner(qo,uo))
@@ -175,6 +177,12 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
 
         residuals.append(sqrt(rho))
 #        print "sqrt(rho) ", sqrt(rho) 
+
+        # Call user provided callback with solution
+        if callable(callback):
+            callback_converged = callback(k=iter, x=x, r=r)
+
+
         
         iter += 1
         #print "r",iter,"=",sqrt(inner(r,r))
