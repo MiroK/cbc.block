@@ -2,6 +2,7 @@ from __future__ import division
 from block import *
 from block_util import block_tensor
 from numpy import isscalar
+from block_util import wrap_in_list, create_vec_from
 
 def block_assemble(forms, bcs=None, symmetric_mod=None):
     # Depending on the shape of forms, a block_mat or a block_vec is returned.
@@ -11,14 +12,14 @@ def block_assemble(forms, bcs=None, symmetric_mod=None):
         bcs = [[]]*forms.blocks.shape[0]
     if isinstance(forms, block_vec):
         for i in range(len(forms)):
-            tensor[i] = _assemble_vec(forms[i], bcs=_wrap(bcs[i]))
+            tensor[i] = _assemble_vec(forms[i], bcs=bcs[i])
         if symmetric_mod:
             tensor -= symmetric_mod*tensor
     else:
         assert symmetric_mod is None
         for i in range(forms.blocks.shape[0]):
             for j in range(forms.blocks.shape[1]):
-                tensor[i,j] = _assemble_mat(forms[i,j], bcs=_wrap(bcs[i]), diag=(i==j))
+                tensor[i,j] = _assemble_mat(forms[i,j], bcs=bcs[i], diag=(i==j))
     return tensor
 
 def block_symmetric_assemble(forms, bcs):
@@ -31,7 +32,7 @@ def block_symmetric_assemble(forms, bcs):
         bcs = [[]]*forms.blocks.shape[0]
     for i in range(forms.blocks.shape[0]):
         for j in range(forms.blocks.shape[1]):
-            symm[i,j], asymm[i,j] = _symmetric_assemble(forms[i,j], row_bcs=_wrap(bcs[i]), col_bcs=_wrap(bcs[j]))
+            symm[i,j], asymm[i,j] = _symmetric_assemble(forms[i,j], row_bcs=bcs[i], col_bcs=bcs[j])
     return symm, asymm
 
 def _is_form(form):
@@ -54,7 +55,7 @@ def _assemble_mat(form, bcs, diag):
         return form
     A = _new_square_matrix(bcs)
     A *= 0
-    for bc in bcs:
+    for bc in wrap_in_list(bcs):
         bc.apply(A)
     return A
 
@@ -64,9 +65,9 @@ def _assemble_vec(form, bcs):
         return assemble(form, bcs=bcs)
     if not bcs:
         return form
-    v = _new_vector(bcs)
+    v = create_vec_from(bcs)
     v[:] = form
-    for bc in bcs:
+    for bc in wrap_in_list(bcs):
         bc.apply(v)
     return v
 
@@ -78,36 +79,7 @@ def _symmetric_assemble(form, row_bcs=None, col_bcs=None):
         from dolfin import symmetric_assemble
         return symmetric_assemble(form, row_bcs=row_bcs, col_bcs=col_bcs)
 
-def _outer_function_space(bcs):
-    # Hack, may have to request new functionality to access parent function
-    # space from subspace
-    for bc in bcs:
-        V = bc.function_space()
-        if not V.component():
-            return V
-    raise RuntimeError("Couldn't get a complete function space (only subspaces)")
-
-def _new_vector(bcs):
-    from dolfin import Function
-    V = _outer_function_space(bcs)
-    f = Function(V)
-    v = f.vector()
-    return v
-
 def _new_square_matrix(bcs):
     import block.algebraic
-    return block.algebraic.active_backend().create_identity(_new_vector(bcs), val=0.0)
-
-def _wrap(obj):
-    from dolfin import DirichletBC
-    types = DirichletBC
-    if obj is None:
-        lst = []
-    elif hasattr(obj, '__iter__'):
-        lst = list(obj)
-    else:
-        lst = [obj]
-    for obj in lst:
-        if not isinstance(obj, types):
-            raise TypeError("expected a (list of) %s, not %s" % (types, type(obj)))
-    return lst
+    vec = create_vec_from(bcs)
+    return block.algebraic.active_backend().create_identity(vec, val=0.0)

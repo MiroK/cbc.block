@@ -138,7 +138,8 @@ AApre = block_mat([[Ap, 0],
                    [0, -Sp]])
 
 
-AAinv = SymmLQ(AA, precond=AApre, show=2, tolerance=1e-10)
+# FIXME: Investigate why it fails in parallel with MinRes2 and SymmLQ
+AAinv = MinRes(AA, precond=AApre, show=2, tolerance=1e-10)
 
 # An alternative could be to use an exact block decomposition of AAinv, like
 # the following. Since the AApre we define is exact, it can be solved using

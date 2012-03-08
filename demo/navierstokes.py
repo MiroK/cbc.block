@@ -15,6 +15,9 @@ from block.iterative import *
 from block.algebraic.trilinos import *
 
 dolfin.set_log_level(15)
+if MPI.num_processes() > 1:
+    print "Navier-Stokes demo does not work in parallel because of old-style XML mesh files"
+    exit()
 
 # Load mesh and subdomains
 path = os.path.join(os.path.dirname(__file__), '')

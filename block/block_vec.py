@@ -13,27 +13,37 @@ class block_vec(block_container):
             m = len(m)
         block_container.__init__(self, m, blocks)
 
-    def allocate(self, AA, dim=0):
+    def allocate(self, template, dim=0):
         """Make sure all blocks are proper vectors. Any non-vector blocks are
         replaced with appropriately sized vectors (where the sizes are taken
-        from AA, which should be a block_mat). If dim==0, newly allocated
-        vectors use layout appropriate for b (in Ax=b); if dim==1, the layout
-        for x is used."""
+        from the template, which should be a block_mat or a list of
+        DirichletBCs or FunctionSpaces). If dim==0, newly allocated vectors use
+        layout appropriate for b (in Ax=b); if dim==1, the layout for x is
+        used."""
         from dolfin import GenericVector
+        from block_mat import block_mat
         for i in range(len(self)):
             if isinstance(self[i], GenericVector):
                 continue
-            for j in range(len(self)):
-                A = AA[i,j] if dim==0 else AA[j,i]
+            if isinstance(template, block_mat):
                 val = self[i]
+                for j in range(len(self)):
+                    A = template[i,j] if dim==0 else template[j,i]
+                    try:
+                        self[i] = A.create_vec(dim)
+                        break
+                    except AttributeError:
+                        pass
+            else:
+                from block_util import create_vec_from
                 try:
-                    self[i] = A.create_vec(dim)
-                    self[i][:] = val or 0.0
-                    break
-                except AttributeError:
+                    self[i] = create_vec_from(template[i])
+                except RuntimeError:
                     pass
             if not isinstance(self[i], GenericVector):
-                raise RuntimeError("can't allocate vector - no Matrix (or equivalent) for block %d"%i)
+                raise RuntimeError("Can't allocate vector - no usable template for block %d.\n"%i +
+                                   "Consider calling something like bb.allocate([V, Q]) to initialise the block_vec.")
+            self[i][:] = val or 0.0
 
     def norm(self, ntype='l2'):
         if ntype == 'linf':
@@ -51,18 +61,36 @@ class block_vec(block_container):
     def randomize(self):
         """Fill the block_vec with random data (with zero bias)."""
         import numpy
+        from dolfin import MPI
         for i in range(len(self)):
             if hasattr(self[i], 'local_size'):
                 ran = numpy.random.random(self[i].local_size())
-                ran -= sum(ran)/len(ran)
+                ran -= MPI.sum(sum(ran))/self[i].size()
                 self[i].set_local(ran)
             elif hasattr(self[i], '__len__'):
                 ran = numpy.random.random(len(self[i]))
-                ran -= sum(ran)/len(ran)
+                ran -= MPI.sum(sum(ran))/MPI.sum(len(ran))
                 self[i][:] = ran
             else:
                 raise RuntimeError(
                     'block %d in block_vec has no size -- use a proper vector or call allocate(A)' % i)
+
+    def apply_bc(self, bcs):
+        """Apply Dirichlet boundary conditions, in a time loop for example,
+        when boundary conditions change. If the original vector was modified
+        for symmetry, it will remain so (since the BC dofs are not changed by
+        symmetry), but if any vectors have been individually reassembled then
+        it needs careful thought. It is probably better to just reassemble the
+        whole block_vec using block_assemble()."""
+        from block_util import create_vec_from, wrap_in_list
+        from dolfin import GenericVector
+        for i in range(len(self)):
+            if not isinstance(self[i], GenericVector):
+                vec = create_vec_from(bcs[i])
+                vec[:] = self[i]
+                self[i] = vec
+            for bc in wrap_in_list(bcs[i]):
+                bc.apply(self[i])
 
     #
     # Map operator on the block_vec to operators on the individual blocks.

@@ -20,8 +20,9 @@ else
     done
 fi
 
-# Only a couple of demos, check and add the others later
-mpirun -np 3 python fenics-book/hodge.py N=4
-mpirun -np 3 python mixedpoisson.py
+for demo in $demos; do
+    echo mpirun -np 3 python $demo
+    mpirun -np 3 python $demo
+done
 
 ps -o etime,cputime $$
