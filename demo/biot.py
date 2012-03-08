@@ -138,8 +138,11 @@ AApre = block_mat([[Ap, 0],
                    [0, -Sp]])
 
 
-# FIXME: Investigate why it fails in parallel with MinRes2 and SymmLQ
+# Note: The preconditioner is indefinite, so this is a bit iffy. Most of the
+# time MinRes works fine, but occasionally it fails -- fall back on the slower
+# BiCGStab in those cases.
 AAinv = MinRes(AA, precond=AApre, show=2, tolerance=1e-10)
+AAinv_fallback = BiCGStab(AA, precond=AApre, show=2, tolerance=1e-10)
 
 # An alternative could be to use an exact block decomposition of AAinv, like
 # the following. Since the AApre we define is exact, it can be solved using
@@ -167,13 +170,17 @@ AAinv = MinRes(AA, precond=AApre, show=2, tolerance=1e-10)
 # Time loop
 
 t = 0.0
+x = None
 while t <= T:
     print "Time step %f" % t
 
     topload_source.t = t
     bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
 
-    x = AAinv * bb
+    try:
+        x = AAinv * bb
+    except ValueError:
+        x = AAinv_fallback(initial_guess=x) * bb
 
     U,P = x
     u = Function(V, U)
