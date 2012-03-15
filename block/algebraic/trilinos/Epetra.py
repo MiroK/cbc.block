@@ -16,7 +16,7 @@ class diag_op(block_base):
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
         self.v = v
 
-    def transpose(self):
+    def _transpose(self):
         return self
 
     def matvec(self, b):
@@ -92,13 +92,15 @@ class matrix_op(block_base):
     """Base class for Epetra operators (represented by an Epetra matrix)."""
     from block.object_pool import vec_pool
 
-    def __init__(self, M, transposed=False):
+    def __init__(self, M, _transposed=False):
         from PyTrilinos import Epetra
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
-        self.transposed = transposed
+        self.transposed = _transposed
 
-    def transpose(self):
+    def _transpose(self):
+        # Note: An object with transposed set should only be used internally
+        # (in matmat() / matvec() / ...), and not returned to the user.
         return matrix_op(self.M, not self.transposed)
 
     def rowmap(self):
@@ -112,23 +114,20 @@ class matrix_op(block_base):
             return NotImplemented
         if self.transposed:
             domainlen = self.M.NumGlobalRows()
-            x = self.create_vec(dim=0)
+            x = self.create_vec(dim=1)
         else:
             domainlen = self.M.NumGlobalCols()
-            x = self.create_vec(dim=1)
+            x = self.create_vec(dim=0)
         if len(b) != domainlen:
             raise RuntimeError(
                 'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,domainlen,len(b)))
         self.M.SetUseTranspose(self.transposed)
         self.M.Apply(b.down_cast().vec(), x.down_cast().vec())
-        self.M.SetUseTranspose(False) # May not be necessary?
+        self.M.SetUseTranspose(False)
         return x
 
     def transpmult(self, b):
-        self.transposed = not self.transposed
-        result = self.matvec(b)
-        self.transposed = not self.transposed
-        return result
+        return self._transpose().matvec(b)
 
     def matmat(self, other):
         from PyTrilinos import Epetra
@@ -265,7 +264,7 @@ def _collapse(x):
             return B.add(A, lscale=-1.0) if isscalar(A) else A.add(B, rscale=-1.0)
     elif isinstance(x, block_transpose):
         A = _collapse(x.A)
-        return A if isscalar(A) else A.transpose()
+        return A if isscalar(A) else A._transpose()
     elif isscalar(x):
         return x
     else:
@@ -288,6 +287,8 @@ def collapse(x):
         # outermost operation then this doesn't work.
         warning('Transposed matrix returned from collapse() -- this matrix can be used for multiplications, '
                 + 'but not (for example) as input to ML. Try to convert from (A*B)^T to B^T*A^T in your call.')
+        from block.block_compose import block_transpose
+        return block_transpose(matrix_op(res.M))
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
     return res
 
