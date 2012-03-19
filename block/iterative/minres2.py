@@ -127,7 +127,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
 #    print "tolerance ", tolerance 
     # Alloc w
     #while sqrt(inner(r,r)) > tolerance:# and iter<maxiter:
-    while (sqrt(rho) > tolerance or callback_converged) and iter < maxit:
+    while (sqrt(rho) > tolerance and not callback_converged) and iter < maxit:
         #print "iter, sqrt(inner(r,r))", iter, sqrt(inner(r,r))
         uo    = B*qo
         gamma = sqrt(inner(qo,uo))
@@ -182,8 +182,6 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
         if callable(callback):
             callback_converged = callback(k=iter, x=x, r=r)
 
-
-        
         iter += 1
         #print "r",iter,"=",sqrt(inner(r,r))
     #print "precondMinRes finished, iter: %d, ||e||=%e" % (iter,sqrt(inner(r,r)))
