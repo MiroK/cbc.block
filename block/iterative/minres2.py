@@ -45,7 +45,7 @@ def inner(u,v):
         return u.inner(v)
 
 
-def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=500,  rit_=1, callback=None):
+def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1, callback=None):
     """
     precondMinRes(B,A,x,b): Solve Ax = b with the preconditioned minimum
     residual method.
@@ -127,7 +127,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, maxit=5
 #    print "tolerance ", tolerance 
     # Alloc w
     #while sqrt(inner(r,r)) > tolerance:# and iter<maxiter:
-    while (sqrt(rho) > tolerance and not callback_converged) and iter < maxit:
+    while (sqrt(rho) > tolerance and not callback_converged) and iter < maxiter:
         #print "iter, sqrt(inner(r,r))", iter, sqrt(inner(r,r))
         uo    = B*qo
         gamma = sqrt(inner(qo,uo))
