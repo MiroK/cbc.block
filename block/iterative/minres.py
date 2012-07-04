@@ -154,7 +154,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
         ynorm  = sqrt(ynorm2)
         epsa   = Anorm * eps
         epsx   = Anorm * ynorm * eps
-        epsr   = Anorm * ynorm * tolerance
+        #epsr   = Anorm * ynorm * tolerance
         diag   = gbar
         if diag==0: diag = epsa
 
