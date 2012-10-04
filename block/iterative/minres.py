@@ -16,9 +16,10 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
            ' Aname  does not define a symmetric matrix         ',  # 7
            ' Mname  does not define a symmetric matrix         ',  # 8
            ' Mname  does not define a pos-def preconditioner   ',  # 9
+           ' Userdefined callback function returned true       ',  #10
            ' beta2 = 0.  If M = I, b and x are eigenvectors    ']  #-1
 
-
+    callback_converged = False
     istop = 0;   itn = 0;     Anorm = 0.0;    Acond = 0.0;
     rnorm = 0.0; ynorm = 0.0; done  = False;
 
@@ -27,7 +28,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
     # y  =  beta1 P' v1,  where  P = C**(-1).
     # v is really P' v1.
     #------------------------------------------------------------------
-    r1 = b - A*x 
+    r1 = b - A*x
     y = B*r1
     beta1 = inner(r1,y)
 
@@ -153,7 +154,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
         ynorm  = sqrt(ynorm2)
         epsa   = Anorm * eps
         epsx   = Anorm * ynorm * eps
-        epsr   = Anorm * ynorm * tolerance
+        #epsr   = Anorm * ynorm * tolerance
         diag   = gbar
         if diag==0: diag = epsa
 
@@ -170,10 +171,14 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
 
         Acond  = gmax/gmin
 
+        # Call user provided callback with solution
+        if callable(callback):
+            callback_converged = callback(k=itn, x=x, r=test1)
+
         # See if any of the stopping criteria are satisfied.
         # In rare cases istop is already -1 from above (Abar = const*I)
 
-        if istop==0:
+        if istop == 0:
             t1 = 1 + test1      # These tests work if rtol < eps
             t2 = 1 + test2
             if t2 <= 1: istop = 2
@@ -187,16 +192,14 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
             if test2 <= tolerance: istop = 2
             if test1 <= tolerance: istop = 1
 
-        residuals.append(test1)
+            if callback_converged: istop = 10
 
-        # Call user provided callback with solution
-        if callable(callback):
-            callback(k=itn, x=x, r=test1)
+        residuals.append(test1)
 
         if istop != 0:
             break
 
     if istop != 1:
-        print 'MinRes:',msg[istop]
+        print 'MinRes:', msg[istop]
 
     return x, residuals, [], []

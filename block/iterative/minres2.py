@@ -22,7 +22,7 @@ along with PyFDM; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
-MinRes: A generic implementation of the Minimum Residual method. 
+MinRes: A generic implementation of the Minimum Residual method.
 """
 
 
@@ -72,10 +72,10 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1,
 
     @type relativeconv: bool
 
-    @return:  the solution x. 
+    @return:  the solution x.
 
     DESCRIPTION:
-    
+
     The method implements a left preconditioned Minimum residual method
     for symmetric indefinite linear systems.  The preconditioning
     operator has to be symmetric and positive definite.
@@ -88,14 +88,14 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1,
     \|B(b - A y)\|_B \] over the Krylov space $ \(span\{Bb, BABb,
     \ldots, (BA)^{k-1}Bb\}\).  $ Here the norm is defined by the inner
     product \((\cdot,\cdot)_B\).
-    
+
     The default convergence monitor is $ \[ \rho_k = \|B(b - A x_k)\|_B
     = (B(b - A x_k), b - A x_k).\] $ The residual \(b - A x_k\) is not
     computed during the iteration, hence a direct computation of this
     quantity reqire an additional matrix vector product.  In the
     algorithm it is computed recursively.  Unfortunately this
     computations accumulates error and it may be necessary to compute
-    the exact residual every update frequency iteration.  
+    the exact residual every update frequency iteration.
 
 
 
@@ -106,25 +106,26 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1,
     residuals = []
 
     rit = rit_
-    d = A*x 
-    r = b - d 
+    d = A*x
+    r = b - d
     s = B*r
     rho = inner(r,s)
 
-    
+
     po = s.copy()
     qo = A*po
 
-    p = 0.0*r.copy()
-    q = 0.0*r.copy()
-    u = 0.0*r.copy()
+    p = r.copy()
+    p *= 0.0
+    q = p.copy()
+    u = p.copy()
 
     if relativeconv:
-        tolerance *= sqrt(rho) 
+        tolerance *= sqrt(rho)
 
     residuals.append(sqrt(rho))
     iter = 0
-#    print "tolerance ", tolerance 
+    #print "tolerance ", tolerance
     # Alloc w
     #while sqrt(inner(r,r)) > tolerance:# and iter<maxiter:
     while (sqrt(rho) > tolerance and not callback_converged) and iter < maxiter:
@@ -138,7 +139,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1,
         po  = p
         p   = tmp
         p  *= gammai
-        
+
         tmp = qo
         qo  = q
         q   = tmp
@@ -159,7 +160,7 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1,
         else:
             rho -= alpha*alpha
         rho = fabs(rho)
-       
+
         t     = A*u
         alpha = inner(t,u)
         beta  = inner(t,uo)
@@ -173,14 +174,14 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, rit_=1,
         qo *= -beta
         qo -= alpha*q
         qo += t
-        
+
 
         residuals.append(sqrt(rho))
-#        print "sqrt(rho) ", sqrt(rho) 
+        #print "sqrt(rho) ", sqrt(rho)
 
         # Call user provided callback with solution
         if callable(callback):
-            callback_converged = callback(k=iter, x=x, r=r)
+            callback_converged = callback(k=iter, x=x, r=sqrt(rho)) #r=r)
 
         iter += 1
         #print "r",iter,"=",sqrt(inner(r,r))
