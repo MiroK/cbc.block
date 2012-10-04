@@ -68,9 +68,19 @@ def _init():
     dolfin.GenericMatrix.create_vec = vec_pool(create_vec)
 
     # For the Trilinos stuff, it's much nicer if down_cast is a method on the
-    # object.
-    dolfin.GenericMatrix.down_cast = dolfin.down_cast
-    dolfin.GenericVector.down_cast = dolfin.down_cast
+    # object. FIXME: Follow new dolfin naming? Invent our own?
+    if hasattr(dolfin, 'as_backend_type'):
+        dolfin.GenericMatrix.down_cast = dolfin.as_backend_type
+        dolfin.GenericVector.down_cast = dolfin.as_backend_type
+        # These are unnecessary and print deprecation warnings
+        if hasattr(dolfin.Matrix, 'down_cast'):
+            delattr(dolfin.Matrix, 'down_cast')
+        if hasattr(dolfin.Vector, 'down_cast'):
+            delattr(dolfin.Vector, 'down_cast')
+    else:
+        # Old name (before Sept-2012)
+        dolfin.GenericMatrix.down_cast = dolfin.down_cast
+        dolfin.GenericVector.down_cast = dolfin.down_cast
 
     # Make sure PyTrilinos is imported somewhere, otherwise the types from
     # e.g. GenericMatrix.down_cast aren't recognised (if using Epetra backend).

@@ -12,7 +12,7 @@ cd ${0%/*}
 demos=$(find . -name \*.py)
 
 if which parallel &>/dev/null; then
-    parallel -j +0 --halt-on-error=2 -v -n 1 python ::: $demos
+    parallel --gnu -j +0 --halt-on-error=2 -v -n 1 python ::: $demos
 else
     for demo in $demos; do
 	echo python $demo
