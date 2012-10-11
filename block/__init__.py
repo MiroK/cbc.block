@@ -8,7 +8,7 @@ method, which either does its thing (typically if isinstance(other,
 action until there is a proper vector to work on.
 
 In addition, methods are injected into dolfin.Matrix / dolfin.Vector as
-needed. This should eventually be moved to Dolfin proper.
+needed.
 """
 
 from block_mat import block_mat
@@ -23,12 +23,20 @@ def _init():
     from block_base import block_container
 
     # To make stuff like L=C*B work when C and B are type dolfin.Matrix, we inject
-    # methods into dolfin.Matrix
+    # methods into dolfin.(Generic)Matrix
 
     def check_type(obj1, obj2):
         if isinstance(obj2, block_container):
             raise TypeError('cannot apply dolfin operators on block containers:\n\t%s\nand\n\t%s'%(obj1,obj2))
         return True
+
+    def inject_matrix_method(name, meth):
+        setattr(dolfin.GenericMatrix, name, meth)
+        setattr(dolfin.Matrix, name, meth)
+
+    def inject_vector_method(name, meth):
+        setattr(dolfin.GenericVector, name, meth)
+        setattr(dolfin.Vector, name, meth)
 
     def wrap_mul(self, other):
         if isinstance(other, dolfin.GenericVector):
@@ -38,14 +46,14 @@ def _init():
         else:
             check_type(self, other)
             return block_mul(self, other)
-    dolfin.Matrix.__mul__ = wrap_mul
+    inject_matrix_method('__mul__', wrap_mul)
 
-    dolfin.Matrix.__add__  = lambda self, other: check_type(self, other) and block_add(self, other)
-    dolfin.Matrix.__sub__  = lambda self, other: check_type(self, other) and block_sub(self, other)
-    dolfin.Matrix.__rmul__ = lambda self, other: check_type(self, other) and block_mul(other, self)
-    dolfin.Matrix.__radd__ = lambda self, other: check_type(self, other) and block_add(other, self)
-    #dolfin.Matrix.__rsub__ = lambda self, other: check_type(self, other) and block_sub(other, self)
-    dolfin.Matrix.__neg__  = lambda self       : block_mul(-1, self)
+    inject_matrix_method('__add__', lambda self, other: check_type(self, other) and block_add(self, other))
+    inject_matrix_method('__sub__', lambda self, other: check_type(self, other) and block_sub(self, other))
+    inject_matrix_method('__rmul__', lambda self, other: check_type(self, other) and block_mul(other, self))
+    inject_matrix_method('__radd__', lambda self, other: check_type(self, other) and block_add(other, self))
+    #inject_matrix_method('__rsub__', lambda self, other: check_type(self, other) and block_sub(other, self))
+    inject_matrix_method('__neg__', lambda self : block_mul(-1, self))
 
     # Inject a new transpmult() method that returns the result vector (instead of output parameter)
     old_transpmult = dolfin.Matrix.transpmult
@@ -55,7 +63,7 @@ def _init():
             y = self.create_vec(dim=1)
         old_transpmult(self, x, y)
         return y
-    dolfin.Matrix.transpmult = transpmult
+    inject_matrix_method('transpmult', transpmult)
 
     # Inject a create() method that returns the new vector (instead of resize() which uses out parameter)
     def create_vec(self, dim=1):
@@ -65,22 +73,17 @@ def _init():
         vec = dolfin.Vector()
         self.resize(vec, dim)
         return vec
-    dolfin.GenericMatrix.create_vec = vec_pool(create_vec)
+    inject_matrix_method('create_vec', vec_pool(create_vec))
 
     # For the Trilinos stuff, it's much nicer if down_cast is a method on the
     # object. FIXME: Follow new dolfin naming? Invent our own?
     if hasattr(dolfin, 'as_backend_type'):
-        dolfin.GenericMatrix.down_cast = dolfin.as_backend_type
-        dolfin.GenericVector.down_cast = dolfin.as_backend_type
-        # These are unnecessary and print deprecation warnings
-        if hasattr(dolfin.Matrix, 'down_cast'):
-            delattr(dolfin.Matrix, 'down_cast')
-        if hasattr(dolfin.Vector, 'down_cast'):
-            delattr(dolfin.Vector, 'down_cast')
+        inject_matrix_method('down_cast', dolfin.as_backend_type)
+        inject_vector_method('down_cast', dolfin.as_backend_type)
     else:
         # Old name (before Sept-2012)
-        dolfin.GenericMatrix.down_cast = dolfin.down_cast
-        dolfin.GenericVector.down_cast = dolfin.down_cast
+        inject_matrix_method('down_cast', dolfin.down_cast)
+        inject_vector_method('down_cast', dolfin.down_cast)
 
     # Make sure PyTrilinos is imported somewhere, otherwise the types from
     # e.g. GenericMatrix.down_cast aren't recognised (if using Epetra backend).
