@@ -13,7 +13,7 @@ class diag_op(block_base):
 
     def __init__(self, v):
         from PyTrilinos import Epetra
-        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
+        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector, Epetra.Epetra_FEVector))
         self.v = v
 
     def _transpose(self):
