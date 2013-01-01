@@ -34,7 +34,7 @@ if MPI.num_processes() > 1:
 # Load mesh and subdomains
 path = os.path.join(os.path.dirname(__file__), '')
 mesh = Mesh(path+"dolfin-2.xml.gz")
-sub_domains = MeshFunction("uint", mesh, path+"subdomains.xml.gz")
+sub_domains = MeshFunction("size_t", mesh, path+"subdomains.xml.gz")
 
 # Define function spaces
 V = VectorFunctionSpace(mesh, "CG", 2)

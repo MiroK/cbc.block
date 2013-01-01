@@ -317,7 +317,7 @@ def create_identity(vec, val=1):
     graph.FillComplete()
 
     matrix = EpetraMatrix(graph)
-    indices = numpy.array(rowmap.MyGlobalElements(), dtype=numpy.uintc)
+    indices = numpy.array(rowmap.MyGlobalElements())
     if val == 0:
         matrix.zero(indices)
     else:

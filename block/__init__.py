@@ -56,7 +56,7 @@ def _init():
     inject_matrix_method('__neg__', lambda self : block_mul(-1, self))
 
     # Inject a new transpmult() method that returns the result vector (instead of output parameter)
-    old_transpmult = dolfin.Matrix.transpmult
+    old_transpmult = dolfin.GenericMatrix.transpmult
     def transpmult(self, x, y=None):
         check_type(self, x)
         if y is None:
