@@ -12,7 +12,9 @@ def block_assemble(forms, bcs=None, symmetric_mod=None):
         for i in range(len(forms)):
             tensor[i] = _assemble_vec(forms[i], bcs=bcs[i])
         if symmetric_mod:
-            tensor -= symmetric_mod*tensor
+            I = block_mat.diag(1, symmetric_mod.blocks.shape[0])
+            tensor.allocate(symmetric_mod)
+            tensor = (I-symmetric_mod)*tensor
     else:
         assert symmetric_mod is None
         for i in range(forms.blocks.shape[0]):

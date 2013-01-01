@@ -18,6 +18,7 @@ class block_mat(block_container):
 
     def matvec(self, x):
         from dolfin import GenericVector, GenericMatrix
+        from block_util import isscalar
         import numpy
         m,n = self.blocks.shape
         y = block_vec(m)
@@ -32,7 +33,8 @@ class block_mat(block_container):
                         y[i].resize(len(z))
                     y[i][:] += z[:]
                     continue
-                if self[i,j] is None or self[i,j]==0:
+                if self[i,j] is None or self[i,j]==0 \
+                        or x[j] is None or (isscalar(x[j]) and x[j]==0):
                     # Skip multiply if zero
                     continue
                 if self[i,j] == 1:
