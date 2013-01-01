@@ -33,7 +33,7 @@ from block.algebraic.trilinos import *
 
 dolfin.set_log_level(30)
 
-N = 2
+N = 4
 
 # Parse command-line arguments like "N=6"
 import sys
