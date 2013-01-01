@@ -161,11 +161,6 @@ AAinv_fallback = BiCGStab(AA, precond=AApre, show=2, tolerance=1e-10)
 #=====================
 # Set arguments to plot/save functions
 
-#update.set_args(displacement={'mode': 'displacement', 'wireframe': True},
-#                volumetric={'functionspace': FunctionSpace(mesh, "DG", 0)},
-#                velocity={'functionspace': VectorFunctionSpace(mesh, "DG", 0)}
-#                )
-
 #=====================
 # Time loop
 
@@ -186,11 +181,8 @@ while t <= T:
     u = Function(V, U)
     p = Function(W, P)
 
-#    update(time=t,
-#           displacement=u,
-#           pressure=p,
-#           velocity=v_D(p),
-#           )
+    plot(u, key='u', title='u', mode='displacement')
+    plot(p, key='p', title='p')
 
     u_prev.vector()[:] = U
     p_prev.vector()[:] = P
