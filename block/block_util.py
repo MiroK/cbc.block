@@ -78,3 +78,11 @@ def wrap_in_list(obj, types=object):
         if not isinstance(obj, types):
             raise TypeError("expected a (list of) %s, not %s" % (types, type(obj)))
     return lst
+
+def flatten(l):
+    if isinstance(l, (list, tuple)):
+        for el in l:
+            for sub in flatten(el):
+                yield sub
+    else:
+        yield l

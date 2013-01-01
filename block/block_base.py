@@ -54,8 +54,31 @@ class block_container(block_base):
     """Base class for block containers: block_mat and block_vec.
     """
     def __init__(self, mn, blocks):
+        import dolfin
+        from block_util import flatten
+
         self.blocks = numpy.ndarray(mn, dtype=numpy.object)
+
+        # Hack: Set __len__ to a function always returning 0. This stops numpy
+        # from requesting elements via __getitem__, which fails in parallel
+        # (due to non-zero-based numbering).
+        orig_len_func = {}
+        for el in flatten(blocks):
+            if isinstance(el, dolfin.GenericTensor):
+                tp = type(el)
+                if not tp in orig_len_func:
+                    orig_len_func[tp] = getattr(tp, '__len__', None)
+                    tp.__len__ = lambda s:0
+
+        # Assign
         self.blocks[:] = blocks
+
+        # Reset __len__ to what it was before the hack above
+        for tp in orig_len_func.keys():
+            if orig_len_func[tp] is None:
+                delattr(tp, '__len__')
+            else:
+                tp.__len__ = orig_len_func[tp]
 
     def __setitem__(self, key, val):
         self.blocks[key] = val
