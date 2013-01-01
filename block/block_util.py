@@ -1,5 +1,11 @@
 from __future__ import division
 
+def mult(op, x, transposed=False):
+    if not transposed or isscalar(op):
+        return op*x
+    else:
+        return op.transpmult(x)
+
 def copy(obj):
     """Return a deep copy of the object"""
     if hasattr(obj, 'copy'):
