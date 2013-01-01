@@ -13,7 +13,7 @@ class diag_op(block_base):
 
     def __init__(self, v):
         from PyTrilinos import Epetra
-        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
+        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector, Epetra.FEVector))
         self.v = v
 
     def _transpose(self):
@@ -45,7 +45,7 @@ class diag_op(block_base):
                 return diag_op(other)
             other = other.down_cast()
             if hasattr(other, 'mat'):
-                C = Epetra.CrsMatrix(other.mat())
+                C = Epetra.FECrsMatrix(other.mat())
                 C.LeftScale(self.v)
                 return matrix_op(C)
             else:
@@ -134,7 +134,7 @@ class matrix_op(block_base):
         from numpy import isscalar
         try:
             if isscalar(other):
-                C = Epetra.CrsMatrix(self.M)
+                C = Epetra.FECrsMatrix(self.M)
                 if other != 1:
                     C.Scale(other)
                 return matrix_op(C, self.transposed)
@@ -157,7 +157,7 @@ class matrix_op(block_base):
 
                 return matrix_op(C)
             else:
-                C = Epetra.CrsMatrix(self.M)
+                C = Epetra.FECrsMatrix(self.M)
                 C.RightScale(other.vec())
                 return matrix_op(C, self.transposed)
         except AttributeError:
@@ -169,7 +169,7 @@ class matrix_op(block_base):
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
-                C = Epetra.CrsMatrix(Epetra.Copy, self.rowmap(), 100)
+                C = Epetra.FECrsMatrix(Epetra.Copy, self.rowmap(), 100)
                 assert (0 == EpetraExt.Add(self.M,      self.transposed,  lscale, C, 0.0))
                 assert (0 == EpetraExt.Add(other.mat(), other.transposed, rscale, C, 1.0))
                 C.FillComplete()
@@ -287,7 +287,7 @@ def collapse(x):
     # Since _collapse works recursively, this method is a user-visible wrapper
     # to print timing, and to check input/output arguments.
     from time import time
-    from dolfin import info, warning
+    from dolfin import EpetraMatrix, info, warning
     T = time()
     res = _collapse(x)
     if getattr(res, 'transposed', False):
@@ -297,9 +297,9 @@ def collapse(x):
         warning('Transposed matrix returned from collapse() -- this matrix can be used for multiplications, '
                 + 'but not (for example) as input to ML. Try to convert from (A*B)^T to B^T*A^T in your call.')
         from block.block_compose import block_transpose
-        return block_transpose(matrix_op(res.M))
+        return block_transpose(EpetraMatrix(res.M))
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
-    return res
+    return EpetraMatrix(res.M)
 
 
 def create_identity(vec, val=1):
