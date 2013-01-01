@@ -13,6 +13,9 @@ class diag_op(block_base):
 
     def __init__(self, v):
         from PyTrilinos import Epetra
+        import dolfin
+        if isinstance(v, dolfin.GenericVector):
+            v = Epetra.FEVector(v.down_cast().vec())
         assert isinstance(v, (Epetra.MultiVector, Epetra.Vector, Epetra.FEVector))
         self.v = v
 
