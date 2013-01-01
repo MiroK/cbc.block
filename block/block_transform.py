@@ -16,7 +16,7 @@ def block_kronecker(A, B):
     Similarly, it may be wise to do the inverse separately:
       C,D = block_kronecker(A,B); inverse = some_invert(D)*ConjGrad(C)
     """
-    from numpy import isscalar
+    from block_util import isscalar
 
     if isinstance(B, block_mat):
         n = len(B.blocks)

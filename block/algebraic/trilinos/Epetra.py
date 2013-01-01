@@ -41,7 +41,7 @@ class diag_op(block_base):
     def matmat(self, other):
         from PyTrilinos import Epetra
         try:
-            from numpy import isscalar
+            from block.block_util import isscalar
             if isscalar(other):
                 x = Epetra.Vector(self.v)
                 x.Scale(other)
@@ -59,7 +59,7 @@ class diag_op(block_base):
             raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
 
     def add(self, other, lscale=1.0, rscale=1.0):
-        from numpy import isscalar
+        from block.block_util import isscalar
         from PyTrilinos import Epetra
         try:
             if isscalar(other):
@@ -134,7 +134,7 @@ class matrix_op(block_base):
 
     def matmat(self, other):
         from PyTrilinos import Epetra
-        from numpy import isscalar
+        from block.block_util import isscalar
         try:
             if isscalar(other):
                 C = Epetra.FECrsMatrix(self.M)
@@ -241,7 +241,7 @@ def _collapse(x):
 
     from block.block_compose import block_mul, block_add, block_sub, block_transpose
     from block.block_mat import block_mat
-    from numpy import isscalar
+    from block.block_util import isscalar
     from dolfin import GenericMatrix
     if isinstance(x, (matrix_op, diag_op)):
         return x

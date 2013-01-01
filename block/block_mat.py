@@ -206,7 +206,7 @@ class block_mat(block_container):
         """Try to convert identities to scalars, recursively. A fuller
         explanation is found in block_transform.block_simplify.
         """
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_simplify
         m,n = self.blocks.shape
         res = block_mat(m,n)

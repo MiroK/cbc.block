@@ -1,8 +1,6 @@
 from __future__ import division
 from block import *
-from block_util import block_tensor
-from numpy import isscalar
-from block_util import wrap_in_list, create_vec_from
+from block_util import block_tensor, isscalar, wrap_in_list, create_vec_from
 
 def block_assemble(forms, bcs=None, symmetric_mod=None):
     # Depending on the shape of forms, a block_mat or a block_vec is returned.

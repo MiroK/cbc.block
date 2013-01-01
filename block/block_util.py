@@ -6,6 +6,15 @@ def mult(op, x, transposed=False):
     else:
         return op.transpmult(x)
 
+def isscalar(obj):
+    """Return True if obj is convertible to float. Use this instead of
+    numpy.isscalar, becuase the latter returns true for e.g. strings"""
+    try:
+        float(obj)
+        return True
+    except:
+        return False
+
 def copy(obj):
     """Return a deep copy of the object"""
     if hasattr(obj, 'copy'):

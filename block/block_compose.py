@@ -43,7 +43,7 @@ class block_mul(block_base):
         return x
 
     def transpmult(self, x):
-        from numpy import isscalar
+        from block_util import isscalar
         for op in self.chain:
             if isscalar(op):
                 if op != 1:
@@ -87,7 +87,7 @@ class block_mul(block_base):
         """Create a block_mat of block_muls from a block_mul of
         block_mats. See block_transform.block_collapse."""
         from block_mat import block_mat
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_collapse, block_simplify
 
         # Reduce all composed objects
@@ -130,7 +130,7 @@ class block_mul(block_base):
         """Try to combine scalar terms and remove multiplicative identities,
         recursively. A fuller explanation is found in block_transform.block_simplify.
         """
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_simplify
         operators = []
         scalar = 1.0
@@ -189,7 +189,7 @@ class block_transpose(block_base):
         """Try to simplify the transpose, recursively. A fuller explanation is
         found in block_transform.block_simplify.
         """
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_simplify
         A = block_simplify(self.A)
         if isscalar(A):
@@ -217,22 +217,36 @@ class block_sub(object):
     def __init__(self, A, B):
         self.A = A
         self.B = B
-    def __mul__(self, x):
+
+    def _combine(self, y, z):
+        y -= z
+
+    def _action(self, x, transposed):
         from block_mat import block_vec
+        from block_util import mult
         from dolfin import GenericVector
         if not isinstance(x, (GenericVector, block_vec)):
             return NotImplemented
-        y = self.A*x
-        z = self.B*x
+        y = mult(self.A, x, transposed)
+        z = mult(self.B, x, transposed)
         if len(y) != len(z):
             raise RuntimeError(
                 'incompatible dimensions in matrix subtraction -- %d != %d'%(len(y),len(z)))
-        y -= z
+        self._combine(y, z)
         return y
+
+    def __mul__(self, x):
+        return self._action(x, transposed=False)
+
+    def transpmult(self, x):
+        return self._action(x, transposed=True)
+
     def __neg__(self):
         return block_sub(self.B, self.A)
+
     def __add__(self, x):
         return block_add(self, x)
+
     def __sub__(self, x):
         return block_sub(self, x)
 
@@ -248,7 +262,7 @@ class block_sub(object):
         """Try to combine scalar terms and remove additive identities,
         recursively. A fuller explanation is found in block_transform.block_simplify.
         """
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_simplify
         A = block_simplify(self.A)
         B = block_simplify(self.B)
@@ -261,7 +275,7 @@ class block_sub(object):
     def block_collapse(self):
         """Create a block_mat of block_adds from a block_add of block_mats. See block_transform.block_collapse."""
         from block_mat import block_mat
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_collapse, block_simplify
 
         A = block_collapse(self.A)
@@ -303,24 +317,14 @@ class block_sub(object):
         return [self.A, self.B][i]
 
 class block_add(block_sub):
-    def __mul__(self, x):
-        from block_mat import block_vec
-        from dolfin import GenericVector
-        if not isinstance(x, (GenericVector, block_vec)):
-            return NotImplemented
-        y = self.A*x
-        z = self.B*x
-        if len(y) != len(z):
-            raise RuntimeError(
-                'incompatible dimensions in matrix addition -- %d != %d'%(len(y),len(z)))
+    def _combine(self, y, z):
         y += z
-        return y
 
     def block_simplify(self):
         """Try to combine scalar terms and remove additive identities,
         recursively. A fuller explanation is found in block_transform.block_simplify.
         """
-        from numpy import isscalar
+        from block_util import isscalar
         from block_transform import block_simplify
         A = block_simplify(self.A)
         B = block_simplify(self.B)
