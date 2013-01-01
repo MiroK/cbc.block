@@ -141,11 +141,20 @@ class matrix_op(block_base):
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 from PyTrilinos import EpetraExt
-                C = Epetra.CrsMatrix(Epetra.Copy, self.rowmap(), 100)
+
+                # Create result matrix C. This is done in a contorted way, to
+                # ensure all diagonals are present.
+                A = Epetra.FECrsMatrix(self.M);      A.PutScalar(1.0)
+                B = Epetra.FECrsMatrix(other.mat()); B.PutScalar(1.0)
+                C = Epetra.FECrsMatrix(Epetra.Copy, self.rowmap(), 100)
+                EpetraExt.Multiply(A, self.transposed, B, other.transposed, C)
+                C.OptimizeStorage()
+                # C is now finalised, we can use it to store the real mat-mat product.
+
                 assert (0 == EpetraExt.Multiply(self.M,      self.transposed,
                                                 other.mat(), other.transposed,
                                                 C))
-                C.OptimizeStorage()
+
                 return matrix_op(C)
             else:
                 C = Epetra.CrsMatrix(self.M)
