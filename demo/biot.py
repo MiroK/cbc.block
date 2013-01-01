@@ -50,7 +50,7 @@ import numpy
 
 # Function spaces, elements
 
-mesh = UnitSquare(16,16)
+mesh = UnitSquareMesh(16,16)
 dim = mesh.topology().dim()
 
 V = VectorFunctionSpace(mesh, "CG", 2)

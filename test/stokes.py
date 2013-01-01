@@ -27,7 +27,7 @@ class Stokes(unittest.TestCase):
 	vorder = 2
 	alpha = 0
 
-        mesh = UnitSquare(N,N)
+        mesh = UnitSquareMesh(N,N)
 
 	V = VectorFunctionSpace(mesh, "CG", vorder)
 	Q = FunctionSpace(mesh, "CG", porder)

@@ -13,7 +13,7 @@ if MPI.num_processes() > 1:
 
 # Function spaces, elements
 
-mesh = UnitSquare(16,16)
+mesh = UnitSquareMesh(16,16)
 
 V = FunctionSpace(mesh, "CG", 1)
 

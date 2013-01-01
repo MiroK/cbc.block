@@ -25,7 +25,7 @@ for s in sys.argv[1:]:
     exec(s)
 
 # Create mesh and finite element
-mesh = UnitSquare(N,N)
+mesh = UnitSquareMesh(N,N)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Define variational problem

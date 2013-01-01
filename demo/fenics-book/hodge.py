@@ -40,7 +40,7 @@ import sys
 for s in sys.argv[1:]:
     exec(s)
 
-mesh = UnitCube(N,N,N)
+mesh = UnitCubeMesh(N,N,N)
 
 V = FunctionSpace(mesh, "N1curl", 1)
 Q = FunctionSpace(mesh, "CG", 1)

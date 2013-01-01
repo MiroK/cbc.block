@@ -7,7 +7,7 @@ import numpy
 
 # Function spaces, elements
 
-mesh = UnitSquare(16,16)
+mesh = UnitSquareMesh(16,16)
 
 V = FunctionSpace(mesh, "CG", 1)
 

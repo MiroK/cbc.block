@@ -50,7 +50,7 @@ from block.algebraic.trilinos import ML, collapse
 from dolfin import *
 
 # Create mesh
-mesh = UnitSquare(32,32)
+mesh = UnitSquareMesh(32,32)
 
 # Define function spaces
 BDM = FunctionSpace(mesh, "BDM", 1)

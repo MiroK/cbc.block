@@ -26,7 +26,7 @@ class BoundaryFunction(Expression):
         values[0] = 1 if near(x[1],1) else 0
         values[1] = 0
 
-mesh = UnitSquare(N,N)
+mesh = UnitSquareMesh(N,N)
 def CG(n):
     return ('DG',0) if n==0 else ('CG',n)
 

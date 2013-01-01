@@ -4,7 +4,7 @@ from dolfin import *
 from block import *
 from block.iterative import *
 
-mesh = UnitSquare(2,2)
+mesh = UnitSquareMesh(2,2)
 V    = FunctionSpace(mesh, "CG", 1)
 v, u = TestFunction(V), TrialFunction(V)
 

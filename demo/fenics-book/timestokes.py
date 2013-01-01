@@ -50,7 +50,7 @@ class BoundaryFunction(Expression):
         values[0] = 1 if near(x[1],1) else 0
         values[1] = 0
 
-mesh = UnitSquare(N,N)
+mesh = UnitSquareMesh(N,N)
 
 V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)

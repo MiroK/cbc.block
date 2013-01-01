@@ -10,7 +10,7 @@ from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *
 
-mesh = UnitSquare(64,64)
+mesh = UnitSquareMesh(64,64)
 
 V = FunctionSpace(mesh, "CG", 1)
 W = FunctionSpace(mesh, "CG", 2)
