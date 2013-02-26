@@ -80,7 +80,7 @@ bb  = block_assemble([L1, 0], bcs=bcs, symmetric_mod=AArhs)
 # Create preconditioners: An ML preconditioner for A, and the ML inverse of the
 # mass matrix for the (2,2) block.
 Ap = ML(A)
-Ip = ML(I)
+Ip = LumpedInvDiag(I)
 
 prec = block_mat([[Ap, 0],
                   [0, Ip]])
