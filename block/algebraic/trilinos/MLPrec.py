@@ -7,20 +7,27 @@ from __future__ import division
 from block.block_base import block_base
 
 class ML(block_base):
-    def __init__(self, A, pdes=1):
+    def __init__(self, A, parameters=None):
         from PyTrilinos.ML import MultiLevelPreconditioner
         # create the ML preconditioner
         MLList = {
             #"max levels"                : 30,
-#            "ML output"                 : 10,
+#             "ML print final list"       : -1,  
+            #"ML output"                 : 10,
             "smoother: type"            : "ML symmetric Gauss-Seidel" ,
-            #"smoother: sweeps"          : 2,
+            "smoother: sweeps"          : 2,
+#            "smoother: damping factor"  : 0.8, 
             #"cycle applications"        : 2,
-            #"prec type"                 : "MGW",
-            "aggregation: type"         : "Uncoupled" ,
-            "PDE equations"             : pdes,
-            "ML validate parameter list": True,
+            "prec type"                 : "MGV",
+#            "aggregation: type"         : "METIS" ,
+#            "aggregation: damping factor": 1.6, 
+#            "aggregation: smoothing sweeps" : 3,  
+
+            "PDE equations"             : 1,
+#            "ML validate parameter list": True,
             }
+      
+        MLList.update(parameters)
         self.A = A # Prevent matrix being deleted
         self.ml_prec = MultiLevelPreconditioner(A.down_cast().mat(), 0)
         self.ml_prec.SetParameterList(MLList)
