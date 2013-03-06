@@ -27,7 +27,7 @@ class ML(block_base):
 #            "ML validate parameter list": True,
             }
       
-        MLList.update(parameters)
+        if parameters: MLList.update(parameters)
         self.A = A # Prevent matrix being deleted
         self.ml_prec = MultiLevelPreconditioner(A.down_cast().mat(), 0)
         self.ml_prec.SetParameterList(MLList)
