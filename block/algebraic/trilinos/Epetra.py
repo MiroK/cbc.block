@@ -167,24 +167,25 @@ class matrix_op(block_base):
             raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
 
     def add(self, other, lscale=1.0, rscale=1.0):
-        from PyTrilinos import Epetra
         try:
             other = other.down_cast()
-            if hasattr(other, 'mat'):
-                from PyTrilinos import EpetraExt
-                C = Epetra.FECrsMatrix(Epetra.Copy, self.rowmap(), 100)
-                assert (0 == EpetraExt.Add(self.M,      self.transposed,  lscale, C, 0.0))
-                assert (0 == EpetraExt.Add(other.mat(), other.transposed, rscale, C, 1.0))
-                C.FillComplete()
-                C.OptimizeStorage()
-                return matrix_op(C)
-            else:
-                lhs = self.matmat(lscale)
-                D = Diag(lhs).add(other, rscale=rscale)
-                lhs.M.ReplaceDiagonalValues(D.vec())
-                return lhs
         except AttributeError:
-            raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
+            #raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
+            pass
+
+        if hasattr(other, 'mat'):
+            from PyTrilinos import Epetra, EpetraExt
+            C = Epetra.FECrsMatrix(Epetra.Copy, self.rowmap(), 100)
+            assert (0 == EpetraExt.Add(self.M,      self.transposed,  lscale, C, 0.0))
+            assert (0 == EpetraExt.Add(other.mat(), other.transposed, rscale, C, 1.0))
+            C.FillComplete()
+            C.OptimizeStorage()
+            return matrix_op(C)
+        else:
+            lhs = self.matmat(lscale)
+            D = Diag(lhs).add(other, rscale=rscale)
+            lhs.M.ReplaceDiagonalValues(D.vec())
+            return lhs
 
     @vec_pool
     def create_vec(self, dim=1):
