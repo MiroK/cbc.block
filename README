@@ -31,7 +31,7 @@ DOLFIN python interface is required. For more details of use, I recommend
 looking at the demos (start with demo/mixedpoisson.py), and the comments
 therein.
 
-Bugs, questions, contributions: Visit http://launchpad.net/cbc.block.
+Bugs, questions, contributions: Visit http://bitbucket.org/jobh/cbc.block.
 
 The code is licensed under the GNU Lesser Public License, found in COPYING,
 version 2.1 or later. Some files under block/iterative/ use the BSD license,
