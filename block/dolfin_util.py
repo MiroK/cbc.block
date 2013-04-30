@@ -104,9 +104,9 @@ class update():
             # Create mass matrix
             u = d.TrialFunction(V)
             a = d.inner(v,u) * d.dx
-            solver = d.LinearSolver("cg", "none")
+            solver = d.LinearSolver("direct")
             solver.set_operator(d.assemble(a))
-            solver.parameters['preconditioner']['reuse'] = True
+            #solver.parameters['preconditioner']['reuse'] = True
             self.projectors[key] = solver
         # Use separate function objects for separate quantities, since this
         # object is used as key by viper
