@@ -45,7 +45,7 @@ class diag_op(block_base):
             if isscalar(other):
                 x = Epetra.Vector(self.v)
                 x.Scale(other)
-                return diag_op(other)
+                return diag_op(x)
             other = other.down_cast()
             if hasattr(other, 'mat'):
                 C = Epetra.FECrsMatrix(other.mat())
