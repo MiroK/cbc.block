@@ -16,7 +16,10 @@ class diag_op(block_base):
         import dolfin
         if isinstance(v, dolfin.GenericVector):
             v = Epetra.FEVector(v.down_cast().vec())
-        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector, Epetra.FEVector))
+        if isinstance(v, Epetra.FEVector):
+            # FEVector doesn't inherit from Vector...
+            v = Epetra.Vector(v)
+        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
         self.v = v
 
     def _transpose(self):
