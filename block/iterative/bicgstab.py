@@ -25,7 +25,7 @@ def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
     if relativeconv:
         tolerance *= residuals[0]
 
-    while residuals[-1] > tolerance and iter <= maxiter:
+    while residuals[-1] > tolerance and iter < maxiter:
         Bp    = B*p
         ABp   = A*Bp
         alpha = rr0/inner(r0,ABp)
