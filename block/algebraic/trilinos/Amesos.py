@@ -12,21 +12,41 @@ class AmesosSolver(block_base):
     """
     def __init__(self, A, solver='Klu'):
         from PyTrilinos import Epetra, Amesos
+        from dolfin import info
+        from time import time
         self.A = A # Keep reference
         #self.b = A.create_vec(dim=0)
         #self.x = A.create_vec(dim=1)
         #problem = Epetra.LinearProblem(A.down_cast().mat(),
         #                               self.x.down_cast().vec(),
         #                               self.b.down_cast().vec())
+        T = time()
         self.problem = Epetra.LinearProblem()
         self.problem.SetOperator(A.down_cast().mat())
         self.solver = Amesos.Factory().Create(solver, self.problem)
+        if self.solver is None:
+            raise RuntimeError("Unknown solver '%s'"%solver)
         err = self.solver.SymbolicFactorization()
         if err != 0:
             raise RuntimeError("Amesos " + solver + " symbolic factorization failed, err=%d"%err)
         err = self.solver.NumericFactorization()
         if err != 0:
             raise RuntimeError("Amesos " + solver + " numeric factorization failed, err=%d"%err)
+        info('constructed direct solver (using %s) in %.2f s'%(solver,time()-T))
+
+    @staticmethod
+    def query(which=None):
+        """Return list of available solver backends, or True/False if given a solver name"""
+        from PyTrilinos import Amesos
+        factory = Amesos.Factory()
+        if which is None:
+            avail = []
+            for s in ['Klu', 'Lapack', 'Umfpack', 'Taucs', 'Superlu',
+                      'Superludist', 'Mumps', 'Taucs', 'Superlu']:
+                if factory.Query(s):
+                    avail.append(s)
+            return avail
+        return factory.Query(which)
 
     def matvec(self, b):
         from dolfin import GenericVector
