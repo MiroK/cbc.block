@@ -43,7 +43,7 @@ def block_tensor(obj):
         raise RuntimeError("Not able to create block container of rank %d"%len(blocks.shape))
 
 def _create_vec(template):
-    from dolfin import DirichletBC, Function
+    from dolfin import DirichletBC, FunctionSpace, Function
     if isinstance(template, DirichletBC):
         V = template.function_space()
     elif isinstance(template, FunctionSpace):

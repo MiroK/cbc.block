@@ -7,13 +7,17 @@ from __future__ import division
 from block.block_base import block_base
 
 class ML(block_base):
-    def __init__(self, A, parameters=None):
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
         from PyTrilinos.ML import MultiLevelPreconditioner
+        from dolfin import info
+        from time import time
+        T = time()
         # create the ML preconditioner
         MLList = {
             #"max levels"                : 30,
 #             "ML print final list"       : -1,  
             #"ML output"                 : 10,
+#            "coarse: type" : "Amesos-KLU",
             "smoother: type"            : "ML symmetric Gauss-Seidel" ,
             "smoother: sweeps"          : 2,
 #            "smoother: damping factor"  : 0.8, 
@@ -23,18 +27,31 @@ class ML(block_base):
 #            "aggregation: damping factor": 1.6, 
 #            "aggregation: smoothing sweeps" : 3,  
 
-            "PDE equations"             : 1,
+            "PDE equations"             : pdes,
 #            "ML validate parameter list": True,
+#            "repartition: enable": 1,
             }
-      
+
         if parameters: MLList.update(parameters)
         self.A = A # Prevent matrix being deleted
         self.ml_prec = MultiLevelPreconditioner(A.down_cast().mat(), 0)
-        self.ml_prec.SetParameterList(MLList)
+        if nullspace:
+            # Convert to MultiVector if necessary
+            from PyTrilinos import Epetra
+            if not isinstance(nullspace, Epetra.MultiVector):
+                n = len(nullspace)
+                mv = Epetra.MultiVector(nullspace[0].down_cast().vec().Map(), n, False)
+                for i in range(n):
+                    mv[i] = Epetra.FEVector(nullspace[i].down_cast().vec())
+                nullspace = mv
+            self.ml_prec.SetParameterListAndNullSpace(MLList, nullspace)
+        else:
+            self.ml_prec.SetParameterList(MLList)
         self.ml_agg = self.ml_prec.GetML_Aggregate()
         err = self.ml_prec.ComputePreconditioner()
         if err:
             raise RuntimeError('ComputePreconditioner returned %d'%err)
+        info('constructed ML preconditioner in %.2f s'%(time()-T))
 
     def matvec(self, b):
         from dolfin import GenericVector

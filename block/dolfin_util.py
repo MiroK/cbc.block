@@ -3,13 +3,13 @@ from __future__ import division
 """Utility functions for plotting, boundaries, etc."""
 
 import os
-import dolfin as d
+from dolfin import *
 import time as timer
 
 class BoxBoundary(object):
     def __init__(self, mesh):
         c = mesh.coordinates()
-        self.c_min, self.c_max = map(d.MPI.min, c.min(0)), map(d.MPI.max, c.max(0))
+        self.c_min, self.c_max = map(MPI.min, c.min(0)), map(MPI.max, c.max(0))
         dim = len(self.c_min)
 
         sd = self._compile(west  = self._boundary(0, self.c_min) if dim>1 else '0',
@@ -39,7 +39,7 @@ class BoxBoundary(object):
         for expr in kwargs.values():
             expr_to_code[expr] = None
 
-        compiled = d.compile_subdomains(expr_to_code.keys())
+        compiled = compile_subdomains(expr_to_code.keys())
         for i, expr in enumerate(expr_to_code.keys()):
             expr_to_code[expr] = compiled[i]
 
@@ -68,7 +68,7 @@ class update():
         # Extract mesh from functions
         if mesh is None:
             for f in functions:
-                if isinstance(f, d.Function):
+                if isinstance(f, Function):
                     mesh = f.function_space().mesh()
                     if mesh is not None:
                         break
@@ -78,11 +78,11 @@ class update():
         # Create function space
         shape = expression.shape()
         if shape == ():
-            V = d.FunctionSpace(mesh, "CG", 1)
+            V = FunctionSpace(mesh, "CG", 1)
         elif len(shape) == 1:
-            V = d.VectorFunctionSpace(mesh, "CG", 1, dim=shape[0])
+            V = VectorFunctionSpace(mesh, "CG", 1, dim=shape[0])
         elif len(shape) == 2:
-            V = d.TensorFunctionSpace(mesh, "CG", 1, shape=shape)
+            V = TensorFunctionSpace(mesh, "CG", 1, shape=shape)
         else:
             raise RuntimeError, "Unable to project expression, unhandled rank, shape is %s." % (shape,)
 
@@ -91,7 +91,7 @@ class update():
     def project(self, f, name, V, mesh=None):
         if V is None:
             # If trying to project an Expression
-            if isinstance(f, d.Expression):
+            if isinstance(f, Expression):
                 if isinstance(mesh, cpp.Mesh):
                     V = FunctionSpaceBase(mesh, v.ufl_element())
                 else:
@@ -99,22 +99,22 @@ class update():
             else:
                 V = self._extract_function_space(f, mesh)
         key = str(V)
-        v = d.TestFunction(V)
+        v = TestFunction(V)
         if not key in self.projectors:
             # Create mass matrix
-            u = d.TrialFunction(V)
-            a = d.inner(v,u) * d.dx
-            solver = d.LinearSolver("direct")
-            solver.set_operator(d.assemble(a))
+            u = TrialFunction(V)
+            a = inner(v,u) * dx
+            solver = LinearSolver("direct")
+            solver.set_operator(assemble(a))
             #solver.parameters['preconditioner']['reuse'] = True
             self.projectors[key] = solver
         # Use separate function objects for separate quantities, since this
         # object is used as key by viper
         if not name in self.functions:
-            self.functions[name] = d.Function(V)
+            self.functions[name] = Function(V)
 
         solver, Pf = self.projectors[key], self.functions[name]
-        b = d.assemble(d.inner(v,f) * d.dx)
+        b = assemble(inner(v,f) * dx)
 
         # Solve linear system for projection
         solver.solve(Pf.vector(), b)
@@ -135,7 +135,7 @@ class update():
         if not os.path.exists('data'):
             os.mkdir('data')
         if not name in self.files:
-            self.files[name] = d.File('data/%s.pvd'%name)
+            self.files[name] = File('data/%s.pvd'%name)
         if time is not None:
             self.files[name] << (data, time)
         else:
@@ -144,7 +144,7 @@ class update():
     def plot(self, name, title, data, time):
         kwargs = self.kwargs.get(name, {})
         if not name in self.plots:
-            self.plots[name] = d.plot(data, title=title, size=(400,400),
+            self.plots[name] = plot(data, title=title, size=(400,400),
                                       axes=True, warpscalar=False,
                                       **kwargs)
         else:
@@ -153,7 +153,7 @@ class update():
     def __call__(self, time=None, postfix="", **functionals):
         for name,func in sorted(functionals.iteritems()):
             args = self.kwargs.get(name, {})
-            if 'functionspace' in args or not isinstance(func, d.Function):
+            if 'functionspace' in args or not isinstance(func, Function):
                 func = self.project(func, name, args.get('functionspace'))
             if hasattr(func, 'rename'):
                 func.rename(name+postfix, name+postfix)
@@ -163,3 +163,48 @@ class update():
                 self.save_to_file(name+postfix, func, time)
 
 update = update() # singleton
+
+def rigid_body_modes(V, show_plot=False):
+    """Compute orthogonal rigid body modes of a function space."""
+    T = timer.time()
+    mesh = V.mesh()
+    dim = mesh.geometry().dim()
+    x = mesh.ufl_cell().x
+    u = TrialFunction(V)
+    v = TestFunction(V)
+    modes = []
+
+    # Displacement modes
+    for i in range(dim):
+        mode = Function(V).vector()
+        mode[:] = 0
+        DirichletBC(V.sub(i), 1.0, lambda a,b:True).apply(mode)
+        modes.append(mode)
+
+    # Rotational modes
+    M_inv = LinearSolver('cg', 'amg')
+    M_inv.set_operator(assemble(inner(u,v)*dx))
+    def ortho(mode):
+        res = mode.copy()
+        M_inv.solve(res, mode)
+        for j in range(dim):
+            other = modes[j]
+            res -= res.inner(other)/other.inner(other)*other
+        return res
+
+    if dim >= 2:
+        mode = assemble((x[0]*v[1]-x[1]*v[0]) * dx)
+        modes.append(ortho(mode))
+    if dim == 3:
+        mode = assemble((x[1]*v[2]-x[2]*v[1]) * dx)
+        modes.append(ortho(mode))
+        mode = assemble((x[2]*v[0]-x[0]*v[2]) * dx)
+        modes.append(ortho(mode))
+
+    if show_plot:
+        for mode in modes:
+            plot(Function(V,mode))
+        interactive()
+
+    info("computed rigid body modes in %.2f s"%(timer.time()-T))
+    return modes
