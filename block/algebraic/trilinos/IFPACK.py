@@ -9,6 +9,7 @@ class IFPACK(block_base):
                3 : "Data has not been correctly pre-processed",
                4 : "Problem encountered during application of the algorithm (division by zero, out-of-bounds, ...)",
                5 : "Memory allocation error",
+               22: "Matrix is numerically singular",
                98: "Feature is not supported",
                99: "Feature is not implemented yet (check Known Bugs and Future Developments, or submit a bug)"}
 
@@ -16,9 +17,12 @@ class IFPACK(block_base):
 
     def __init__(self, A, overlap=0, params={}):
         from PyTrilinos.IFPACK import Factory
+        from dolfin import info
+        from time import time
 
         self.A = A # Keep reference to avoid delete
 
+        T = time()
         prectype = self.prectype
         if overlap == 0:
             prectype += ' stand-alone' # Skip the additive Schwarz step
@@ -33,7 +37,10 @@ class IFPACK(block_base):
 
         assert (0 == self.prec.SetParameters(paramlist))
         assert (0 == self.prec.Initialize())
-        assert (0 == self.prec.Compute())
+        err = self.prec.Compute()
+        if err:
+            raise RuntimeError('Compute returned error %d: %s'%(err, self.errcode.get(-err)))
+        info('Constructed %s in %.2f s'%(self.__class__.__name__,time()-T))
 
     def matvec(self, b):
         from dolfin import GenericVector
@@ -64,47 +71,50 @@ class IFPACK(block_base):
 # "ILUT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILUT>.
 # otherwise, Create() returns 0.
 
-class Jacobi(IFPACK):
+class DD_Jacobi(IFPACK):
     prectype = 'point relaxation'
     params = {'relaxation: type' : 'Jacobi'}
 
-class GaussSeidel(IFPACK):
+class DD_GaussSeidel(IFPACK):
     prectype = 'point relaxation'
     params = {'relaxation: type' : 'Gauss-Seidel'}
 
-class SymmGaussSeidel(IFPACK):
+class DD_SymmGaussSeidel(IFPACK):
     prectype = 'point relaxation'
     params = {'relaxation: type' : 'symmetric Gauss-Seidel'}
 
-class BJacobi(IFPACK):
+class DD_BJacobi(IFPACK):
     prectype = 'block relaxation'
     params = {'relaxation: type' : 'Jacobi'}
 
-class BGaussSeidel(IFPACK):
+class DD_BGaussSeidel(IFPACK):
     prectype = 'block relaxation'
     params = {'relaxation: type' : 'Gauss-Seidel'}
 
-class BSymmGaussSeidel(IFPACK):
+class DD_BSymmGaussSeidel(IFPACK):
     prectype = 'block relaxation'
     params = {'relaxation: type' : 'symmetric Gauss-Seidel'}
 
-class ILU(IFPACK):
+class DD_ILU(IFPACK):
     """Incomplete LU factorization"""
     prectype = 'ILU'
 
-class ILUT(IFPACK):
+class DD_ILUT(IFPACK):
     """ILU with threshold"""
     prectype = 'ILUT'
 
-class IC(IFPACK):
+class DD_IC(IFPACK):
     """Incomplete Cholesky factorization"""
     prectype = 'IC'
 
-class ICT(IFPACK):
+class DD_ICT(IFPACK):
     """IC with threshold"""
     prectype = 'ICT'
 
-class Amesos(IFPACK):
+class DD_Amesos(IFPACK):
     prectype = 'Amesos'
+    def __init__(self, A, solver='Klu', **kwargs):
+        self.params.update({'amesos: solver type': 'Amesos_'+solver})
+        super(DD_Amesos, self).__init__(A, **kwargs)
 
 del IFPACK
