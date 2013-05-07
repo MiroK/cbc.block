@@ -39,6 +39,10 @@ def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
 
         residual = sqrt(inner(r,r))
 
+        if residual == 0.0:
+            print "BiCGStab breakdown"
+            return x, residuals, alphas, betas
+
         # Call user provided callback with solution
         if callable(callback):
             callback(k=iter, x=x, r=residual)

@@ -4,8 +4,8 @@ from __future__ import division
 from block.block_base import block_base
 
 class iterative(block_base):
-    def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None, iter=None, maxiter=200,
-                 name=None, show=1, **kwargs):
+    def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None,
+                 iter=None, maxiter=200, name=None, show=1, **kwargs):
         self.B = precond
         self.A = A
         self.initial_guess = initial_guess
@@ -15,7 +15,12 @@ class iterative(block_base):
         if iter is not None:
             tolerance = 0
             maxiter = iter
-        self.tolerance = tolerance
+        if tolerance > 0:
+            self.tolerance = tolerance
+            self.relative = False
+        else:
+            self.tolerance = -tolerance
+            self.relative = True
         self.maxiter = maxiter
 
     def matvec(self, b):
@@ -36,7 +41,8 @@ class iterative(block_base):
             b.allocate(self.A, dim=0)
 
         if self.initial_guess:
-            # Most (all?) solvers modify x, so make a copy to avoid changing the caller's copy of x
+            # Most (all?) solvers modify x, so make a copy to avoid changing
+            # the caller's copy of x
             from block.block_util import copy
             x = copy(self.initial_guess)
             if isinstance(x, block_vec):
@@ -50,7 +56,8 @@ class iterative(block_base):
             if self.B != 1.0:
                 log(TRACE, 'Using preconditioner: '+str(self.B))
             progress = Progress(self.name, self.maxiter)
-            x = self.method(self.B, self.A, x, b, tolerance=self.tolerance, maxiter=self.maxiter,
+            x = self.method(self.B, self.A, x, b, tolerance=self.tolerance,
+                            relativeconv=self.relative, maxiter=self.maxiter,
                             progress=progress, **self.kwargs)
             del progress # trigger final printout
         except Exception, e:
@@ -69,9 +76,17 @@ class iterative(block_base):
         if self.show == 1:
             info('%s %s [iter=%2d, time=%.2fs, res=%.1e]' \
                 % (self.name, msg, self.iterations, time()-T, self.residuals[-1]))
-        elif self.show == 2:
+        elif self.show >= 2:
             info('%s %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
                 % (self.name, msg, self.iterations, time()-T, self.residuals[-1], (self.A*x-b).norm('l2')))
+        if self.show == 3:
+            try:
+                from matplotlib import pyplot
+                pyplot.semilogy(self.residuals)
+                pyplot.show(block=False)
+            except:
+                pass
+
         return x
 
     def __call__(self, initial_guess=None, precond=None, tolerance=None, iter=None, maxiter=None,
@@ -93,7 +108,12 @@ class iterative(block_base):
         return len(self.residuals)-1
     @property
     def converged(self):
-        return self.tolerance == 0 or self.residuals[-1] < self.tolerance
+        tolerance = self.tolerance
+        if tolerance == 0:
+            return True
+        if self.relative:
+            tolerance *= self.residuals[0]
+        return self.residuals[-1] < tolerance
 
     def eigenvalue_estimates(self):
         #####

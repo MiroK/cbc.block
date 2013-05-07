@@ -63,10 +63,6 @@ def lgmres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
 
     """
     import sys
-    if 'PyTrilinos' in sys.modules and not 'scipy' in sys.modules:
-        print 'LGMRES: the next import may crash if scipy is not loaded before PyTrilinos.'
-        print 'Consider putting "import scipy" first in your script.'
-
     from scipy.linalg.basic import lstsq
 
     if outer_v is None:
