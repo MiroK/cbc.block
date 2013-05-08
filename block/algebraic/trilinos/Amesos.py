@@ -81,9 +81,16 @@ class AmesosSolver(block_base):
 
 class MumpsSolver(AmesosSolver):
     """Specialized Amesos-Mumps solver. The matrix_type argument may be 'SPD',
-    'symmetric' or 'general'."""
+    'symmetric' or 'general'.
+
+    NOTE 1: This functionality (matrix_type) is documented, but disabled in
+    trilinos (see Amesos_Control.h)
+
+    NOTE 2: The key that is used in the actual trilinos code is "MatrixProperty"
+    but the documentation says "MatrixType".
+    """
     def __init__(self, A, matrix_type='general', parameters={}):
-        new_parameters = {'MatrixType': matrix_type}
+        new_parameters = {'MatrixType': matrix_type, 'MatrixProperty': matrix_type}
         new_parameters.update(parameters)
         super(MumpsSolver, self).__init__(A, solver='Mumps', parameters=new_parameters)
 
