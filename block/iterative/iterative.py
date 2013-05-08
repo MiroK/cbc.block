@@ -5,8 +5,9 @@ from block.block_base import block_base
 
 class iterative(block_base):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None,
-                 iter=None, maxiter=200, name=None, show=1, **kwargs):
+                 iter=None, maxiter=200, name=None, show=1, rprecond=None, **kwargs):
         self.B = precond
+        self.R = rprecond
         self.A = A
         self.initial_guess = initial_guess
         self.show = show
@@ -56,7 +57,7 @@ class iterative(block_base):
             if self.B != 1.0:
                 log(TRACE, 'Using preconditioner: '+str(self.B))
             progress = Progress(self.name, self.maxiter)
-            x = self.method(self.B, self.A, x, b, tolerance=self.tolerance,
+            x = self.method(self.B, self.AR, x, b, tolerance=self.tolerance,
                             relativeconv=self.relative, maxiter=self.maxiter,
                             progress=progress, **self.kwargs)
             del progress # trigger final printout
@@ -80,19 +81,24 @@ class iterative(block_base):
             info('%s %s [iter=%2d, time=%.2fs, res=%.1e, true res=%.1e]' \
                 % (self.name, msg, self.iterations, time()-T, self.residuals[-1], (self.A*x-b).norm('l2')))
         if self.show == 3:
-            try:
-                from matplotlib import pyplot
-                pyplot.semilogy(self.residuals)
-                pyplot.show(block=False)
-            except:
-                pass
+            from dolfin import MPI
+            if MPI.process_number() == 0:
+                try:
+                    from matplotlib import pyplot
+                    pyplot.semilogy(self.residuals)
+                    pyplot.show(block=True)
+                except:
+                    pass
 
+        if self.R is not None:
+            x = self.R*x
         return x
 
-    def __call__(self, initial_guess=None, precond=None, tolerance=None, iter=None, maxiter=None,
-                 name=None, show=None):
+    def __call__(self, initial_guess=None, precond=None, tolerance=None, iter=None,
+                 maxiter=None, name=None, show=None, rprecond=None):
         """Allow changing the parameters within an expression, e.g. x = Ainv(initial_guess=x) * b"""
         if precond       is not None: self.B = precond
+        if rprecond      is not None: self.R = rprecond
         if initial_guess is not None: self.initial_guess = initial_guess
         if show          is not None: self.show = show
         if name          is not None: self.name = name
@@ -104,16 +110,20 @@ class iterative(block_base):
         return self
 
     @property
+    def AR(self):
+        return self.A if self.R is None else self.A*self.R
+
+    @property
     def iterations(self):
         return len(self.residuals)-1
     @property
     def converged(self):
-        tolerance = self.tolerance
-        if tolerance == 0:
+        eff_tolerance = self.tolerance
+        if eff_tolerance == 0:
             return True
         if self.relative:
-            tolerance *= self.residuals[0]
-        return self.residuals[-1] < tolerance
+            eff_tolerance *= self.residuals[0]
+        return self.residuals[-1] <= eff_tolerance
 
     def eigenvalue_estimates(self):
         #####
