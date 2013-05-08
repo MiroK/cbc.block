@@ -18,5 +18,5 @@ from MLPrec import ML
 from AztecOO import AztecSolver
 from IFPACK import *
 from Epetra import *
-from Amesos import AmesosSolver
+from Amesos import AmesosSolver, MumpsSolver
 from block.dolfin_util import rigid_body_modes

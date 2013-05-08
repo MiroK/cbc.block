@@ -2,15 +2,24 @@ from __future__ import division
 
 from block.block_base import block_base
 
+serial_solvers = ['Klu', 'Lapack', 'Umfpack', 'Taucs', 'Superlu']
+parallel_solvers = ['Superludist', 'Mumps', 'Dscpack', 'Pardiso', 'Paraklete']
+
 class AmesosSolver(block_base):
+    __doc__ = \
     """Trilinos interface to direct solvers. The available solvers depend on
     your Trilinos installation, but the default (Klu) is usually available.
 
-    Serial solvers: Klu, Lapack, Umfpack, Taucs, Superlu
+    Serial solvers: %s
 
-    Parallelsolvers: Superludist, Mumps, Dscpack, Pardiso, Paraklete
-    """
-    def __init__(self, A, solver='Klu'):
+    Parallel solvers: %s
+
+    Call AmesosSolver.query() to list currently available solvers.
+    """%(serial_solvers, parallel_solvers)
+
+    default_solver = 'Klu'
+
+    def __init__(self, A, solver=default_solver, parameters={}):
         from PyTrilinos import Epetra, Amesos
         from dolfin import info
         from time import time
@@ -24,6 +33,7 @@ class AmesosSolver(block_base):
         self.problem = Epetra.LinearProblem()
         self.problem.SetOperator(A.down_cast().mat())
         self.solver = Amesos.Factory().Create(solver, self.problem)
+        self.solver.SetParameters(parameters)
         if self.solver is None:
             raise RuntimeError("Unknown solver '%s'"%solver)
         err = self.solver.SymbolicFactorization()
@@ -41,8 +51,7 @@ class AmesosSolver(block_base):
         factory = Amesos.Factory()
         if which is None:
             avail = []
-            for s in ['Klu', 'Lapack', 'Umfpack', 'Taucs', 'Superlu',
-                      'Superludist', 'Mumps', 'Taucs', 'Superlu']:
+            for s in serial_solvers + parallel_solvers:
                 if factory.Query(s):
                     avail.append(s)
             return avail
@@ -69,3 +78,12 @@ class AmesosSolver(block_base):
 
     def __str__(self):
         return '<%s solver for %s>'%(self.__class__.__name__, str(self.A))
+
+class MumpsSolver(AmesosSolver):
+    """Specialized Amesos-Mumps solver. The matrix_type argument may be 'SPD',
+    'symmetric' or 'general'."""
+    def __init__(self, A, matrix_type='general', parameters={}):
+        new_parameters = {'MatrixType': matrix_type}
+        new_parameters.update(parameters)
+        super(MumpsSolver, self).__init__(A, solver='Mumps', parameters=new_parameters)
+
