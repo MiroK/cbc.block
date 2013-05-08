@@ -174,32 +174,31 @@ def rigid_body_modes(V, show_plot=False):
     v = TestFunction(V)
     modes = []
 
-    # Displacement modes
-    for i in range(dim):
-        mode = Function(V).vector()
-        mode[:] = 0
-        DirichletBC(V.sub(i), 1.0, lambda a,b:True).apply(mode)
-        modes.append(mode)
-
-    # Rotational modes
     M_inv = LinearSolver('cg', 'amg')
     M_inv.set_operator(assemble(inner(u,v)*dx))
-    def ortho(mode):
+    def proj(mode, orthogonalize):
         res = mode.copy()
         M_inv.solve(res, mode)
-        for j in range(dim):
-            other = modes[j]
-            res -= res.inner(other)/other.inner(other)*other
+        if orthogonalize:
+            for j in range(dim):
+                other = modes[j]
+                res -= other.inner(res)/other.inner(other)*other
         return res
 
+    # Translational modes
+    for i in range(dim):
+        mode = assemble(v[i]*dx)
+        modes.append(proj(mode, False))
+
+    # Rotational modes
     if dim >= 2:
         mode = assemble((x[0]*v[1]-x[1]*v[0]) * dx)
-        modes.append(ortho(mode))
+        modes.append(proj(mode, True))
     if dim == 3:
         mode = assemble((x[1]*v[2]-x[2]*v[1]) * dx)
-        modes.append(ortho(mode))
+        modes.append(proj(mode, True))
         mode = assemble((x[2]*v[0]-x[0]*v[2]) * dx)
-        modes.append(ortho(mode))
+        modes.append(proj(mode, True))
 
     if show_plot:
         for mode in modes:
