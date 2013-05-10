@@ -24,15 +24,15 @@ class AmesosSolver(block_base):
         from dolfin import info
         from time import time
         self.A = A # Keep reference
-        #self.b = A.create_vec(dim=0)
-        #self.x = A.create_vec(dim=1)
-        #problem = Epetra.LinearProblem(A.down_cast().mat(),
-        #                               self.x.down_cast().vec(),
-        #                               self.b.down_cast().vec())
         T = time()
         self.problem = Epetra.LinearProblem()
         self.problem.SetOperator(A.down_cast().mat())
         self.solver = Amesos.Factory().Create(solver, self.problem)
+
+        # This prevents a use-after-free crash for the MPI communicator. It
+        # enforces that the solver is destroyed before A.
+        self.solver.A = A
+
         self.solver.SetParameters(parameters)
         if self.solver is None:
             raise RuntimeError("Unknown solver '%s'"%solver)
