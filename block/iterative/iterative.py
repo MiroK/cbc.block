@@ -5,11 +5,14 @@ from block.block_base import block_base
 
 class iterative(block_base):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None,
-                 iter=None, maxiter=200, name=None, show=1, rprecond=None, **kwargs):
+                 iter=None, maxiter=200, name=None, show=1, rprecond=None,
+                 nonconvergence_is_fatal=False, retain_guess=False, **kwargs):
         self.B = precond
         self.R = rprecond
         self.A = A
         self.initial_guess = initial_guess
+        self.retain_guess = retain_guess
+        self.nonconvergence_is_fatal = nonconvergence_is_fatal
         self.show = show
         self.kwargs = kwargs
         self.name = name if name else self.__class__.__name__
@@ -85,6 +88,7 @@ class iterative(block_base):
             if MPI.process_number() == 0:
                 try:
                     from matplotlib import pyplot
+                    pyplot.figure('%s convergence (show=3)'%self.name)
                     pyplot.semilogy(self.residuals)
                     pyplot.show(block=True)
                 except:
@@ -92,14 +96,22 @@ class iterative(block_base):
 
         if self.R is not None:
             x = self.R*x
+
+        if self.retain_guess:
+            self.initial_guess = x
+
+        if not self.converged and self.nonconvergence_is_fatal:
+            raise RuntimeError('Not converged')
+
         return x
 
     def __call__(self, initial_guess=None, precond=None, tolerance=None, iter=None,
-                 maxiter=None, name=None, show=None, rprecond=None):
+                 maxiter=None, name=None, show=None, rprecond=None, nonconvergence_ok=None):
         """Allow changing the parameters within an expression, e.g. x = Ainv(initial_guess=x) * b"""
         if precond       is not None: self.B = precond
         if rprecond      is not None: self.R = rprecond
         if initial_guess is not None: self.initial_guess = initial_guess
+        if nonconvergence_ok is not None: self.nonconvergence_ok = nonconvergence_ok
         if show          is not None: self.show = show
         if name          is not None: self.name = name
         if tolerance     is not None: self.tolerance = tolerance
