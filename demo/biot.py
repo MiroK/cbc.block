@@ -129,7 +129,7 @@ bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
 # requires access to the matrix elements, we use the collapse() call to perform
 # the necessary matrix algebra to convert the operator S to a single matrix.
 
-Ap = ML(A)
+Ap = ML(A, pdes=dim, nullspace=rigid_body_modes(V))
 
 S = C*InvDiag(A)*B-D
 Sp = ML(collapse(S))
@@ -138,11 +138,8 @@ AApre = block_mat([[Ap, 0],
                    [0, -Sp]])
 
 
-# Note: The preconditioner is indefinite, so this is a bit iffy. Most of the
-# time MinRes works fine, but occasionally it fails -- fall back on the slower
-# BiCGStab in those cases.
-AAinv = MinRes(AA, precond=AApre, show=2, tolerance=1e-10)
-AAinv_fallback = BiCGStab(AA, precond=AApre, show=2, tolerance=1e-10)
+# Note: The preconditioner is indefinite, so this is a bit iffy.
+AAinv = BiCGStab(AA, precond=AApre, show=2, tolerance=1e-10)
 
 # An alternative could be to use an exact block decomposition of AAinv, like
 # the following. Since the AApre we define is exact, it can be solved using
@@ -172,10 +169,7 @@ while t <= T:
     topload_source.t = t
     bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
 
-    try:
-        x = AAinv * bb
-    except ValueError:
-        x = AAinv_fallback(initial_guess=x) * bb
+    x = AAinv * bb
 
     U,P = x
     u = Function(V, U)

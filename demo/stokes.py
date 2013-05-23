@@ -34,6 +34,7 @@ if MPI.num_processes() > 1:
 # Load mesh and subdomains
 path = os.path.join(os.path.dirname(__file__), '')
 mesh = Mesh(path+"dolfin-2.xml.gz")
+dim = mesh.topology().dim()
 sub_domains = MeshFunction("size_t", mesh, path+"subdomains.xml.gz")
 
 # Define function spaces
@@ -77,9 +78,9 @@ bb  = block_assemble([L1, 0], bcs=bcs, symmetric_mod=AArhs)
 [[A, B],
  [C, _]] = AA
 
-# Create preconditioners: An ML preconditioner for A, and the ML inverse of the
-# mass matrix for the (2,2) block.
-Ap = ML(A)
+# Create preconditioners: An ML preconditioner for A, and the inverse diagonal
+# of the mass matrix for the (2,2) block.
+Ap = ML(A, nullspace=rigid_body_modes(V))
 Ip = LumpedInvDiag(I)
 
 prec = block_mat([[Ap, 0],
