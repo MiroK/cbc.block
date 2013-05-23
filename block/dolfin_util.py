@@ -164,6 +164,10 @@ class update():
 
 update = update() # singleton
 
+def orthogonalize(v, basis):
+    for w in basis:
+        v -= w.inner(v)/w.inner(w)*w
+
 def rigid_body_modes(V, show_plot=False):
     """Compute orthogonal rigid body modes of a function space."""
     T = timer.time()
@@ -174,15 +178,17 @@ def rigid_body_modes(V, show_plot=False):
     v = TestFunction(V)
     modes = []
 
+    # Create integrator for whole mesh
+    mf0 = MeshFunction('size_t', mesh, 1, 0)
+    dx = dolfin.dx[mf0](0)
+
     M_inv = LinearSolver('cg', 'amg')
     M_inv.set_operator(assemble(inner(u,v)*dx))
-    def proj(mode, orthogonalize):
+    def proj(mode, ortho):
         res = mode.copy()
         M_inv.solve(res, mode)
-        if orthogonalize:
-            for j in range(dim):
-                other = modes[j]
-                res -= other.inner(res)/other.inner(other)*other
+        if ortho:
+            orthogonalize(res, modes[:dim])
         return res
 
     # Translational modes

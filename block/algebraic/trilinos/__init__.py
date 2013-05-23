@@ -19,4 +19,4 @@ from AztecOO import AztecSolver
 from IFPACK import *
 from Epetra import *
 from Amesos import AmesosSolver, MumpsSolver
-from block.dolfin_util import rigid_body_modes
+from block.dolfin_util import rigid_body_modes, orthogonalize
