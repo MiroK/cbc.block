@@ -1,4 +1,4 @@
-This is a python library for block operations in DOLFIN
+*cbc.block* is a python library for block operations in DOLFIN
 (http://fenicsproject.org). The headline features are:
 
 - Block operators may be defined from standard DOLFIN matrices and vectors::
@@ -15,8 +15,7 @@ This is a python library for block operations in DOLFIN
     AAinv = SymmLQ(AA, precond=AAprec)
     x = AAinv*b
 
-- Matrix algebra is supported both through composition of operators...
-::
+- Matrix algebra is supported both through composition of operators... ::
 
     S = C*ILU(A)*B-D
     Sprec = ConjGrad(S)
