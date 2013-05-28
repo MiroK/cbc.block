@@ -31,7 +31,7 @@ DOLFIN python interface is required. For more details of use, I recommend
 looking at the demos (start with demo/mixedpoisson.py), and the comments
 therein.
 
-Bugs, questions, contributions: Visit http://bitbucket.org/jobh/cbc.block.
+Bugs, questions, contributions: Visit http://bitbucket.org/fenics-apps/cbc.block.
 
   The code is licensed under the GNU Lesser Public License, found in COPYING,
   version 2.1 or later. Some files under block/iterative/ use the BSD license,
@@ -43,4 +43,4 @@ Joachim Berdal Haga <jobh@simula.no>, March 2011.
 Publications
 ------------
 
-1. K.-A. Mardal, and J. B. Haga (2012). *Block preconditioning of systems of PDEs.* In A. Logg, K.-A. Mardal, G. N. Wells et al. (eds) *Automated Solution of Differential Equations by the Finite Element Method,* Springer. [doi:10.1007/978-3-642-23099-8, url: http://fenicsproject.org/book]
+1. K.-A. Mardal, and J. B. Haga (2012). *Block preconditioning of systems of PDEs.* In A. Logg, K.-A. Mardal, G. N. Wells et al. (ed) *Automated Solution of Differential Equations by the Finite Element Method,* Springer. doi:10.1007/978-3-642-23099-8, http://fenicsproject.org/book
