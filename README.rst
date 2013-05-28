@@ -39,3 +39,8 @@ Bugs, questions, contributions: Visit http://bitbucket.org/jobh/cbc.block.
 
 
 Joachim Berdal Haga <jobh@simula.no>, March 2011.
+
+Publications
+------------
+
+1. K.-A. Mardal, and J. B. Haga (2012). *Block preconditioning of systems of PDEs.* In A. Logg, K.-A. Mardal, G. N. Wells et al. (eds) *Automated Solution of Differential Equations by the Finite Element Method,* Springer. [doi:10.1007/978-3-642-23099-8, url: http://fenicsproject.org/book]
