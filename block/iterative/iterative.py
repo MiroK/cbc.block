@@ -19,12 +19,7 @@ class iterative(block_base):
         if iter is not None:
             tolerance = 0
             maxiter = iter
-        if tolerance > 0:
-            self.tolerance = tolerance
-            self.relative = False
-        else:
-            self.tolerance = -tolerance
-            self.relative = True
+        self.tolerance = tolerance
         self.maxiter = maxiter
 
     def matvec(self, b):
@@ -60,8 +55,14 @@ class iterative(block_base):
             if self.B != 1.0:
                 log(TRACE, 'Using preconditioner: '+str(self.B))
             progress = Progress(self.name, self.maxiter)
-            x = self.method(self.B, self.AR, x, b, tolerance=self.tolerance,
-                            relativeconv=self.relative, maxiter=self.maxiter,
+            if self.tolerance < 0:
+                tolerance = -self.tolerance
+                relative = True
+            else:
+                tolerance = self.tolerance
+                relative = False
+            x = self.method(self.B, self.AR, x, b, tolerance=tolerance,
+                            relativeconv=relative, maxiter=self.maxiter,
                             progress=progress, **self.kwargs)
             del progress # trigger final printout
         except Exception, e:
@@ -133,8 +134,8 @@ class iterative(block_base):
         eff_tolerance = self.tolerance
         if eff_tolerance == 0:
             return True
-        if self.relative:
-            eff_tolerance *= self.residuals[0]
+        if eff_tolerance < 0:
+            eff_tolerance *= -self.residuals[0]
         return self.residuals[-1] <= eff_tolerance
 
     def eigenvalue_estimates(self):
