@@ -6,7 +6,8 @@ from block.block_base import block_base
 class iterative(block_base):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None,
                  iter=None, maxiter=200, name=None, show=1, rprecond=None,
-                 nonconvergence_is_fatal=False, retain_guess=False, **kwargs):
+                 nonconvergence_is_fatal=False, retain_guess=False,
+                 callback=None, **kwargs):
         self.B = precond
         self.R = rprecond
         self.A = A
@@ -14,6 +15,7 @@ class iterative(block_base):
         self.retain_guess = retain_guess
         self.nonconvergence_is_fatal = nonconvergence_is_fatal
         self.show = show
+        self.callback = callback
         self.kwargs = kwargs
         self.name = name if name else self.__class__.__name__
         if iter is not None:
@@ -63,7 +65,8 @@ class iterative(block_base):
                 relative = False
             x = self.method(self.B, self.AR, x, b, tolerance=tolerance,
                             relativeconv=relative, maxiter=self.maxiter,
-                            progress=progress, **self.kwargs)
+                            progress=progress, callback=self.callback,
+                            **self.kwargs)
             del progress # trigger final printout
         except Exception, e:
             from dolfin import warning
@@ -106,8 +109,9 @@ class iterative(block_base):
 
         return x
 
-    def __call__(self, initial_guess=None, precond=None, tolerance=None, iter=None,
-                 maxiter=None, name=None, show=None, rprecond=None, nonconvergence_ok=None):
+    def __call__(self, initial_guess=None, precond=None, tolerance=None,
+                 iter=None, maxiter=None, name=None, show=None, rprecond=None,
+                 nonconvergence_ok=None, callback=None):
         """Allow changing the parameters within an expression, e.g. x = Ainv(initial_guess=x) * b"""
         if precond       is not None: self.B = precond
         if rprecond      is not None: self.R = rprecond
@@ -117,6 +121,7 @@ class iterative(block_base):
         if name          is not None: self.name = name
         if tolerance     is not None: self.tolerance = tolerance
         if maxiter       is not None: self.maxiter = maxiter
+        if callback      is not None: self.callback = callback
         if iter is not None:
             self.tolerance = 0
             self.maxiter = iter

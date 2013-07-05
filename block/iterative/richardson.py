@@ -1,7 +1,8 @@
 from __future__ import division
 from common import *
 
-def richardson(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
+def richardson(B, A, x, b, tolerance, maxiter, progress, relativeconv=False,
+               callback=None):
 
     residuals = []
 
@@ -17,6 +18,9 @@ def richardson(B, A, x, b, tolerance, maxiter, progress, relativeconv=False):
         r = b - A*x
 
         residuals.append(sqrt(inner(r,r)))
+        if callable(callback):
+            callback(iter, x, residuals[-1])
+
         iter += 1
         progress += 1
 
