@@ -85,6 +85,11 @@ def _init():
         inject_matrix_method('down_cast', dolfin.down_cast)
         inject_vector_method('down_cast', dolfin.down_cast)
 
+    def T(self):
+        from block_compose import block_transpose
+        return block_transpose(self)
+    inject_matrix_method('T', property(T))
+
     # Make sure PyTrilinos is imported somewhere, otherwise the types from
     # e.g. GenericMatrix.down_cast aren't recognised (if using Epetra backend).
     # Not tested, but assuming the same is true for the PETSc backend.

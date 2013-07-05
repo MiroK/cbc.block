@@ -40,6 +40,11 @@ class block_base(object):
         from block_compose import block_sub
         return block_sub(other, self)
 
+    @property
+    def T(self):
+        from block_compose import block_transpose
+        return block_transpose(self)
+
     def __pow__(self, other):
         p = int(other)
         if p != other or p < 0:
