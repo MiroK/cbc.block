@@ -32,7 +32,12 @@ def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
         s     = r-alpha*ABp
         Bs    = B*s
         ABs   = A*Bs
-        w     = inner(ABs,s)/inner(ABs,ABs)
+        ABsABs = inner(ABs,ABs)
+        sABs   = inner(ABs,s)
+        if ABsABs == 0.0 or sABs == 0.0:
+            print "BiCGStab breakdown (zero inner product)"
+            return x, residuals, alphas, betas
+        w     = sABs/ABsABs
         x    += alpha*Bp+w*Bs
         r     = s - w*ABs
         rrn   = inner(r,r0)
@@ -40,12 +45,14 @@ def precondBiCGStab(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
         residual = sqrt(inner(r,r))
 
         if residual == 0.0:
-            print "BiCGStab breakdown"
+            print "BiCGStab breakdown (zero residual)"
             return x, residuals, alphas, betas
 
         # Call user provided callback with solution
         if callable(callback):
-            callback(k=iter, x=x, r=residual)
+            newres = callback(k=iter, x=x, r=residual)
+            if newres is not None:
+                residual = newres
 
         beta  = (rrn/rr0)*(alpha/w)
         if beta==0.0:
