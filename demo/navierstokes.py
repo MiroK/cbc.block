@@ -67,7 +67,7 @@ bb = block_assemble([L1, 0], bcs=bcs)
 
 # Create preconditioners: An ILU preconditioner for A, and an ML inverse of the
 # Schur complement approximation for the (2,2) block.
-Ap = ILU(A)
+Ap = DD_ILU(A)
 Dp = ML(collapse(C*InvDiag(A)*B))
 
 prec = block_mat([[Ap, B],
