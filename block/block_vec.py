@@ -140,7 +140,14 @@ class block_vec(block_container):
         return y
 
 
-    def copy(self): return self._map_operator('copy')
+    def copy(self):
+        import block_util
+        m = len(self)
+        y = block_vec(m)
+        for i in range(m):
+            y[i] = block_util.copy(self[i])
+        return y
+    
     def zero(self): return self._map_operator('zero', True)
 
     def __add__ (self, x): return self._map_vector_operator('__add__',  x)

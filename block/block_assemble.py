@@ -2,84 +2,172 @@ from __future__ import division
 from block import *
 from block_util import block_tensor, isscalar, wrap_in_list, create_vec_from
 
-def block_assemble(forms, bcs=None, symmetric_mod=None):
-    # Depending on the shape of forms, a block_mat or a block_vec is returned.
-    forms = block_tensor(forms)
-    tensor = block_tensor(forms)
-    if bcs is None:
-        bcs = [[]]*forms.blocks.shape[0]
-    if isinstance(forms, block_vec):
-        for i in range(len(forms)):
-            tensor[i] = _assemble_vec(forms[i], bcs=bcs[i])
-        if symmetric_mod:
-            I = block_mat.diag(1, symmetric_mod.blocks.shape[0])
-            tensor.allocate(symmetric_mod)
-            tensor = (I-symmetric_mod)*tensor
+def block_assemble(lhs, rhs=None, bcs=None,
+                   symmetric=False, signs=None, symmetric_mod=None):
+    """
+    Assembles block matrices, block vectors or block systems.
+    Input can be arrays of variational forms or block matrices/vectors.
+
+    Arguments:
+
+            symmetric : Boundary conditions are applied so that symmetry of the system 
+                        is preserved. If only the left hand side of the system is given,
+                        then a matrix represententing the rhs corrections is returned 
+                        along with a symmetric matrix.
+
+        symmetric_mod : Matrix describing symmetric corrections for assembly of the 
+                        of the rhs of a variational system.
+                        
+                signs : An array to specify the signs of diagonal blocks. The sign 
+                        of the blocks are computed if the argument is not provided.          
+    """
+    error_msg = {'incompatibility' : 'A and b do not have compatible dimensions.',
+                 'symm_mod error'  : 'symmetric_mod argument only accepted when assembling a vector',
+                 'not square'      : 'A must be square for symmetric assembling',
+                 'invalid bcs'     : 'Expecting a list or list of lists of DirichletBC.',
+                 'invalid signs'   : 'signs should be a list of length n containing only 1 or -1',
+                 'mpi and symm'    : 'Symmetric application of BC not yet implemented in parallel'}
+    # Check arguments
+    if symmetric:
+        from dolfin import MPI
+        if MPI.num_processes() > 1:
+            raise NotImplementedError(error_msg['mpi and symm'])
+    if lhs and rhs:
+        A, b = map(block_tensor,[lhs,rhs])
+        n, m = A.blocks.shape
+        if not ( isinstance(b,block_vec) and  len(b.blocks) is m):
+            raise TypeError(error_msg['incompatibility'])
     else:
-        assert symmetric_mod is None
-        for i in range(forms.blocks.shape[0]):
-            for j in range(forms.blocks.shape[1]):
-                tensor[i,j] = _assemble_mat(forms[i,j], bcs=bcs[i], diag=(i==j))
-    return tensor
+        A, b = block_tensor(lhs), None
+        if isinstance(A,block_vec):
+            A, b = None, A
+            n, m = 0, len(b.blocks)
+        else: n,m = A.blocks.shape
+    if A and symmetric and (m is not n):
+        raise RuntimeError(error_msg['not square'])
+    if symmetric_mod and ( A or not b ):
+        raise RuntimeError(error_msg['symmetric_mod error']) 
+    # First assemble everything needing assembling.
+    from dolfin import assemble
+    assemble_if_form = lambda x: assemble(x) if _is_form(x) else x
+    if A:
+        A.blocks.flat[:] = map(assemble_if_form,A.blocks.flat)
+    if b:
+        b.blocks[:] = map(assemble_if_form,b.blocks)
+    # If there are no boundary conditions then we are done.
+    if bcs is None:
+        if A: return A,b if b else A
+        else: return b
+    # Otherwise check that boundary conditions are valid.
+    if not hasattr(bcs,'__iter__'):
+        raise TypeError(error_msg['invalid bcs'])
+    if len(bcs) is not m:
+        raise TypeError(error_msg['invalid bcs'])
+    from dolfin import DirichletBC
+    for bc in bcs:
+        if isinstance(bc,DirichletBC) or bc is None:
+            pass
+        else:
+            if not hasattr(bc,'__iter__'):
+                raise TypeError(error_msg['invalid bcs'])
+            else:
+                for bc_i in bc:
+                    if isinstance(bc_i,DirichletBC):
+                        pass
+                    else:
+                        raise TypeError(error_msg['invalid bcs'])
+    bcs = [bc if hasattr(bc,'__iter__') else [bc] if bc else bc for bc in bcs]
+    # Apply BCs if we are only assembling the righ hand side
+    if not A:
+        if symmetric_mod: b.allocate(symmetric_mod)
+        for i in xrange(m):
+            if bcs[i]:
+                if isscalar(b[i]):
+                    b[i], val = create_vec_from(bcs[i][0]), b[i]
+                    b[i][:] = val
+                for bc in bcs[i]: bc.apply(b[i])     
+        if symmetric_mod:
+            b.allocate(symmetric_mod)
+            b -= symmetric_mod*b
+        return b
+    # If a signs argument is passed, check if it is valid. 
+    # Otherwise guess.
+    if signs and symmetric:
+        if ( hasattr(signs,'__iter__')  and len(signs)==m ):
+            for sign in signs:
+                if sign not in (-1,1):
+                    raise TypeError(error_msg['invalid signs'])
+        else: 
+            raise TypeError(error_msg['invalid signs'])
+    elif symmetric:
+        from numpy.random import random
+        signs = [0]*m
+        for i in xrange(m):
+            if isscalar(A[i,i]):
+                signs[i] = -1 if A[i,i] < 0 else 1
+            else:
+                x = A[i,i].create_vec(dim=1)
+                x.set_local(random(x.local_size()))
+                signs[i] = -1 if x.inner(A[i,i]*x) < 0 else 1
+    # Now apply boundary conditions.
+    if b:
+        b.allocate(A)
+        A_mod = None
+    elif symmetric:
+        # If we are preserving symmetry but don't have the rhs b,
+        # then we need to store the symmetric corretions to b
+        # as a matrix which we call A_mod
+        b, A_mod = A.create_vec(), A.copy()
+    else: A_mod = None
+    for i in xrange(n):
+        if bcs[i]:
+            for bc in bcs[i]:
+                # Apply BCs to the diagonal block.
+                if isscalar(A[i,i]):
+                    A[i,i] = _new_square_matrix(bc,A[i,i])
+                    if A_mod: 
+                        A_mod[i,i] = A[i,i].copy()
+                if symmetric:
+                    bc.zero_columns(A[i,i],b[i],signs[i])
+                    if A_mod: bc.apply(A_mod[i,i])
+                elif b: 
+                    bc.apply(A[i,i],b[i])
+                else: bc.apply(A[i,i])
+                # Zero out the rows corresponding to BC dofs.
+                for j in range(i) + range(i+1,n):
+                    if A[i,j] is 0:
+                        continue
+                    assert not isscalar(A[i,j])
+                    bc.zero(A[i,j])
+                # If we are not preserving symmetry then we are done at this point.
+                # Otherwise, we need to zero out the columns as well
+                if symmetric:
+                    for j in range(i) + range(i+1,n):
+                        if A[j,i] is 0:
+                            continue
+                        assert not isscalar(A[j,i])
+                        bc.zero_columns(A[j,i],b[j])
+                        if A_mod: 
+                            bc.zero(A_mod[i,j])
+    if b and not A_mod:
+        return A,b
+    elif not A_mod: return A
+    else:
+        for i in range(n):
+            for j in range(n):
+                from block.algebraic import active_backend
+                A_mod[i,j] -= A[i,j]
+        return A,A_mod
 
 def block_symmetric_assemble(forms, bcs):
-    # Two block_mats are returned (symmetric and asymmetric parts).
-    forms = block_tensor(forms)
-    assert len(forms.blocks.shape) == 2
-    symm = block_mat(forms.blocks)
-    asymm = block_mat(forms.blocks)
-    if bcs is None:
-        bcs = [[]]*forms.blocks.shape[0]
-    for i in range(forms.blocks.shape[0]):
-        for j in range(forms.blocks.shape[1]):
-            symm[i,j], asymm[i,j] = _symmetric_assemble(forms[i,j], row_bcs=bcs[i], col_bcs=bcs[j])
-    return symm, asymm
+    return block_assemble(forms,bcs=bcs,symmetric=True)
 
 def _is_form(form):
     from dolfin.cpp import Form as cpp_Form
     from ufl.form import Form as ufl_Form
     return isinstance(form, (cpp_Form, ufl_Form))
 
-def _assemble_mat(form, bcs, diag):
-    if _is_form(form):
-        from dolfin import assemble, symmetric_assemble
-        if diag or not bcs:
-            return assemble(form, bcs=bcs)
-        else:
-            return symmetric_assemble(form, row_bcs=bcs)[0]
-    if not bcs:
-        return form
-    if form != 0:
-        raise NotImplementedError("can't set Dirichlet BCs on a non-zero, non-form block")
-    if not diag:
-        return form
-    A = _new_square_matrix(bcs)
-    A *= 0
-    for bc in wrap_in_list(bcs):
-        bc.apply(A)
-    return A
-
-def _assemble_vec(form, bcs):
-    if _is_form(form):
-        from dolfin import assemble
-        return assemble(form, bcs=bcs)
-    if not bcs:
-        return form
-    v = create_vec_from(bcs)
-    v[:] = form
-    for bc in wrap_in_list(bcs):
-        bc.apply(v)
-    return v
-
-def _symmetric_assemble(form, row_bcs=None, col_bcs=None):
-    if isscalar(form):
-        ret = _assemble_mat(form, row_bcs, diag=(row_bcs==col_bcs))
-        return ret, 0
-    else:
-        from dolfin import symmetric_assemble
-        return symmetric_assemble(form, row_bcs=row_bcs, col_bcs=col_bcs)
-
-def _new_square_matrix(bcs):
+def _new_square_matrix(bcs,val):
     import block.algebraic
     vec = create_vec_from(bcs)
-    return block.algebraic.active_backend().create_identity(vec, val=0.0)
+    return block.algebraic.active_backend().create_identity(vec, val=val)
