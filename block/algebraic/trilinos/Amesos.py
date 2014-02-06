@@ -28,6 +28,8 @@ class AmesosSolver(block_base):
         self.problem = Epetra.LinearProblem()
         self.problem.SetOperator(A.down_cast().mat())
         self.solver = Amesos.Factory().Create(solver, self.problem)
+        if (self.solver == None):
+            raise RuntimeError('Failed to create Amesos solver: '+solver)
 
         # This prevents a use-after-free crash for the MPI communicator. It
         # enforces that the solver is destroyed before A.

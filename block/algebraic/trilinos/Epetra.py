@@ -100,6 +100,7 @@ class matrix_op(block_base):
 
     def __init__(self, M, _transposed=False):
         from PyTrilinos import Epetra
+        #M = Epetra.FECrsMatrix(M)
         assert isinstance(M, (Epetra.CrsMatrix, Epetra.FECrsMatrix))
         self.M = M
         self.transposed = _transposed
@@ -140,7 +141,7 @@ class matrix_op(block_base):
         from block.block_util import isscalar
         try:
             if isscalar(other):
-                C = Epetra.FECrsMatrix(self.M)
+                C = type(self.M)(self.M)
                 if other != 1:
                     C.Scale(other)
                 return matrix_op(C, self.transposed)
@@ -150,20 +151,18 @@ class matrix_op(block_base):
 
                 # Create result matrix C. This is done in a contorted way, to
                 # ensure all diagonals are present.
-                A = Epetra.FECrsMatrix(self.M);      A.PutScalar(1.0)
-                B = Epetra.FECrsMatrix(other.mat()); B.PutScalar(1.0)
+                A = type(self.M)(self.M);      A.PutScalar(1.0)
+                B = type(other.mat())(other.mat()); B.PutScalar(1.0)
                 C = Epetra.FECrsMatrix(Epetra.Copy, self.rowmap(), 100)
                 EpetraExt.Multiply(A, self.transposed, B, other.transposed, C)
                 C.OptimizeStorage()
                 # C is now finalised, we can use it to store the real mat-mat product.
 
-                assert (0 == EpetraExt.Multiply(self.M,      self.transposed,
-                                                other.mat(), other.transposed,
-                                                C))
+                assert (0 == EpetraExt.Multiply(self.M, self.transposed, other.mat(), other.transposed, C))
 
                 return matrix_op(C)
             else:
-                C = Epetra.FECrsMatrix(self.M)
+                C = type(self.M)(self.M)
                 C.RightScale(other.vec())
                 return matrix_op(C, self.transposed)
         except AttributeError:
