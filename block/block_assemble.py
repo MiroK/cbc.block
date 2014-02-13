@@ -10,16 +10,16 @@ def block_assemble(lhs, rhs=None, bcs=None,
 
     Arguments:
 
-            symmetric : Boundary conditions are applied so that symmetry of the system 
+            symmetric : Boundary conditions are applied so that symmetry of the system
                         is preserved. If only the left hand side of the system is given,
-                        then a matrix represententing the rhs corrections is returned 
+                        then a matrix represententing the rhs corrections is returned
                         along with a symmetric matrix.
 
-        symmetric_mod : Matrix describing symmetric corrections for assembly of the 
+        symmetric_mod : Matrix describing symmetric corrections for assembly of the
                         of the rhs of a variational system.
-                        
-                signs : An array to specify the signs of diagonal blocks. The sign 
-                        of the blocks are computed if the argument is not provided.          
+
+                signs : An array to specify the signs of diagonal blocks. The sign
+                        of the blocks are computed if the argument is not provided.
     """
     error_msg = {'incompatibility' : 'A and b do not have compatible dimensions.',
                  'symm_mod error'  : 'symmetric_mod argument only accepted when assembling a vector',
@@ -42,11 +42,12 @@ def block_assemble(lhs, rhs=None, bcs=None,
         if isinstance(A,block_vec):
             A, b = None, A
             n, m = 0, len(b.blocks)
-        else: n,m = A.blocks.shape
+        else:
+            n,m = A.blocks.shape
     if A and symmetric and (m is not n):
         raise RuntimeError(error_msg['not square'])
     if symmetric_mod and ( A or not b ):
-        raise RuntimeError(error_msg['symmetric_mod error']) 
+        raise RuntimeError(error_msg['symmetric_mod error'])
     # First assemble everything needing assembling.
     from dolfin import assemble
     assemble_if_form = lambda x: assemble(x) if _is_form(x) else x
@@ -56,8 +57,10 @@ def block_assemble(lhs, rhs=None, bcs=None,
         b.blocks[:] = map(assemble_if_form,b.blocks)
     # If there are no boundary conditions then we are done.
     if bcs is None:
-        if A: return A,b if b else A
-        else: return b
+        if A:
+            return [A,b] if b else A
+        else:
+            return b
     # Otherwise check that boundary conditions are valid.
     if not hasattr(bcs,'__iter__'):
         raise TypeError(error_msg['invalid bcs'])
@@ -79,25 +82,26 @@ def block_assemble(lhs, rhs=None, bcs=None,
     bcs = [bc if hasattr(bc,'__iter__') else [bc] if bc else bc for bc in bcs]
     # Apply BCs if we are only assembling the righ hand side
     if not A:
-        if symmetric_mod: b.allocate(symmetric_mod)
+        if symmetric_mod:
+            b.allocate(symmetric_mod)
         for i in xrange(m):
             if bcs[i]:
                 if isscalar(b[i]):
                     b[i], val = create_vec_from(bcs[i][0]), b[i]
                     b[i][:] = val
-                for bc in bcs[i]: bc.apply(b[i])     
+                for bc in bcs[i]: bc.apply(b[i])
         if symmetric_mod:
             b.allocate(symmetric_mod)
             b -= symmetric_mod*b
         return b
-    # If a signs argument is passed, check if it is valid. 
+    # If a signs argument is passed, check if it is valid.
     # Otherwise guess.
     if signs and symmetric:
         if ( hasattr(signs,'__iter__')  and len(signs)==m ):
             for sign in signs:
                 if sign not in (-1,1):
                     raise TypeError(error_msg['invalid signs'])
-        else: 
+        else:
             raise TypeError(error_msg['invalid signs'])
     elif symmetric:
         from numpy.random import random
@@ -112,27 +116,26 @@ def block_assemble(lhs, rhs=None, bcs=None,
     # Now apply boundary conditions.
     if b:
         b.allocate(A)
-        A_mod = None
     elif symmetric:
         # If we are preserving symmetry but don't have the rhs b,
         # then we need to store the symmetric corretions to b
         # as a matrix which we call A_mod
         b, A_mod = A.create_vec(), A.copy()
-    else: A_mod = None
     for i in xrange(n):
         if bcs[i]:
             for bc in bcs[i]:
                 # Apply BCs to the diagonal block.
                 if isscalar(A[i,i]):
                     A[i,i] = _new_square_matrix(bc,A[i,i])
-                    if A_mod: 
+                    if symmetric:
                         A_mod[i,i] = A[i,i].copy()
                 if symmetric:
                     bc.zero_columns(A[i,i],b[i],signs[i])
-                    if A_mod: bc.apply(A_mod[i,i])
-                elif b: 
+                    bc.apply(A_mod[i,i])
+                elif b:
                     bc.apply(A[i,i],b[i])
-                else: bc.apply(A[i,i])
+                else:
+                    bc.apply(A[i,i])
                 # Zero out the rows corresponding to BC dofs.
                 for j in range(i) + range(i+1,n):
                     if A[i,j] is 0:
@@ -147,17 +150,17 @@ def block_assemble(lhs, rhs=None, bcs=None,
                             continue
                         assert not isscalar(A[j,i])
                         bc.zero_columns(A[j,i],b[j])
-                        if A_mod: 
-                            bc.zero(A_mod[i,j])
-    if b and not A_mod:
-        return A,b
-    elif not A_mod: return A
-    else:
+                        bc.zero(A_mod[i,j])
+
+    result = [A]
+    if symmetric:
         for i in range(n):
             for j in range(n):
-                from block.algebraic import active_backend
                 A_mod[i,j] -= A[i,j]
-        return A,A_mod
+        result += [A_mod]
+    if b:
+        result += [b]
+    return result[0] if len(result)==1 else result
 
 def block_symmetric_assemble(forms, bcs):
     return block_assemble(forms,bcs=bcs,symmetric=True)
