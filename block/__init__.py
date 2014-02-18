@@ -72,7 +72,7 @@ def _init():
         If dim==0, the vector can be used for b (layout like the rows of A);
         if dim==1, the vector can be used for x (layout like the columns of A)."""
         vec = dolfin.Vector()
-        self.resize(vec, dim)
+        self.init_vector(vec, dim)
         return vec
     inject_matrix_method('create_vec', vec_pool(create_vec))
 
@@ -85,6 +85,9 @@ def _init():
         # Old name (before Sept-2012)
         inject_matrix_method('down_cast', dolfin.down_cast)
         inject_vector_method('down_cast', dolfin.down_cast)
+
+    if not hasattr(dolfin.GenericMatrix, 'init_vector'):
+        inject_matrix_method('init_vector', dolfin.Matrix.resize)
 
     def T(self):
         from block_compose import block_transpose
