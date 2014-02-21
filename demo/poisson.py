@@ -1,6 +1,6 @@
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 from dolfin import *
 from block.dolfin_util import *
 import numpy
