@@ -62,14 +62,17 @@ class block_vec(block_container):
         """Fill the block_vec with random data (with zero bias)."""
         import numpy
         from dolfin import MPI
+        # FIXME: deal with dolfin MPI api changes
         for i in range(len(self)):
             if hasattr(self[i], 'local_size'):
                 ran = numpy.random.random(self[i].local_size())
-                ran -= MPI.sum(sum(ran))/self[i].size()
+                #ran -= MPI.sum(sum(ran))/self[i].size() # should be like this
+                ran -= sum(ran)/self[i].size()
                 self[i].set_local(ran)
             elif hasattr(self[i], '__len__'):
                 ran = numpy.random.random(len(self[i]))
-                ran -= MPI.sum(sum(ran))/MPI.sum(len(ran))
+                #ran -= MPI.sum(sum(ran))/MPI.sum(len(ran)) # should be like this
+                ran -= sum(ran)/len(ran)
                 self[i][:] = ran
             else:
                 raise RuntimeError(

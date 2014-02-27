@@ -137,6 +137,7 @@ class matrix_op(block_base):
         return self._transpose().matvec(b)
 
     def matmat(self, other):
+
         from PyTrilinos import Epetra
         from block.block_util import isscalar
         try:
@@ -305,7 +306,18 @@ def collapse(x):
         from block.block_compose import block_transpose
         return block_transpose(EpetraMatrix(res.M))
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
-    return EpetraMatrix(res.M)
+
+    result = EpetraMatrix(res.M)
+
+    # Sanity check. Cannot trust EpetraExt.Multiply always, it seems.
+    from block import block_vec
+    v = x.create_vec()
+    block_vec([v]).randomize()
+    err = (x*v-result*v).norm('l2')/(x*v).norm('l2')
+    if (err > 1e-3):
+        raise RuntimeError('collapse computed wrong result; ||(a-b)x||/||ax|| = %g'%err)
+
+    return result
 
 
 def create_identity(vec, val=1):
