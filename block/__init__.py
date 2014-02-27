@@ -17,6 +17,7 @@ from block_compose import block_mul, block_add, block_sub, block_transpose
 from block_transform import block_kronecker, block_simplify, block_collapse
 from block_assemble import block_assemble, block_symmetric_assemble
 from block_bc import block_bc
+from block_util import issymmetric
 
 def _init():
     import dolfin

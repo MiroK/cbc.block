@@ -1,5 +1,16 @@
 from __future__ import division
 
+def issymmetric(op):
+    x = op.create_vec()
+    if hasattr(x, 'randomize'):
+        x.randomize()
+    else:
+        from block import block_vec
+        block_vec([x]).randomize();
+    opx = op*x
+    err = (opx - op.T*x).norm('l2')/opx.norm('l2')
+    return (err < 1e-6)
+
 def mult(op, x, transposed=False):
     if not transposed or isscalar(op):
         return op*x

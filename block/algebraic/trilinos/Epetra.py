@@ -313,9 +313,10 @@ def collapse(x):
     from block import block_vec
     v = x.create_vec()
     block_vec([v]).randomize()
-    err = (x*v-result*v).norm('l2')/(x*v).norm('l2')
+    xv = x*v
+    err = (xv-result*v).norm('l2')/(xv).norm('l2')
     if (err > 1e-3):
-        raise RuntimeError('collapse computed wrong result; ||(a-b)x||/||ax|| = %g'%err)
+        raise RuntimeError('collapse computed wrong result; ||(a-a\')x||/||ax|| = %g'%err)
 
     return result
 
