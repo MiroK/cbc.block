@@ -88,7 +88,7 @@ def _init():
         inject_vector_method('down_cast', dolfin.down_cast)
 
     if not hasattr(dolfin.GenericMatrix, 'init_vector'):
-        inject_matrix_method('init_vector', dolfin.Matrix.resize)
+        inject_matrix_method('init_vector', dolfin.GenericMatrix.resize)
 
     def T(self):
         from block_compose import block_transpose
