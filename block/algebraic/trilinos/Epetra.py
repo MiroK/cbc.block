@@ -71,7 +71,7 @@ class diag_op(block_base):
                 other = diag_op(x)
             other = other.down_cast()
             if isinstance(other, matrix_op):
-                return other.add(self)
+                return other.add(self, lscale=rscale, rscale=lscale)
             else:
                 x = Epetra.Vector(self.v)
                 x.Update(rscale, other.vec(), lscale)
