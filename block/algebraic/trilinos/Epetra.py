@@ -121,10 +121,9 @@ class matrix_op(block_base):
             return NotImplemented
         if self.transposed:
             domainlen = self.M.NumGlobalRows()
-            x = self.create_vec(dim=1)
         else:
             domainlen = self.M.NumGlobalCols()
-            x = self.create_vec(dim=0)
+        x = self.create_vec(dim=0)
         if len(b) != domainlen:
             raise RuntimeError(
                 'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,domainlen,len(b)))
@@ -161,10 +160,26 @@ class matrix_op(block_base):
 
                 assert (0 == EpetraExt.Multiply(self.M, self.transposed, other.mat(), other.transposed, C))
 
-                return matrix_op(C)
+                result = matrix_op(C)
+
+                # Sanity check. Cannot trust EpetraExt.Multiply always, it seems.
+                from block import block_vec
+                v = result.create_vec()
+                block_vec([v]).randomize()
+                xv = self*other*v
+                err = (xv-result*v).norm('l2')/(xv).norm('l2')
+                if (err > 1e-3):
+                    print '++ a :',self*other
+                    print '++ a\':',result
+                    print '++ EpetraExt.Multiply computed wrong result; ||(a-a\')x||/||ax|| = %g'%err
+
+                return result
             else:
                 C = type(self.M)(self.M)
-                C.RightScale(other.vec())
+                if self.transposed:
+                    C.LeftScale(other.vec())
+                else:
+                    C.RightScale(other.vec())
                 return matrix_op(C, self.transposed)
         except AttributeError:
             raise TypeError("can't extract matrix data from type '%s'"%str(type(other)))
@@ -193,6 +208,8 @@ class matrix_op(block_base):
     @vec_pool
     def create_vec(self, dim=1):
         from dolfin import EpetraVector
+        if self.transposed:
+            dim = 1-dim
         if dim == 0:
             m = self.M.RangeMap()
         elif dim == 1:
@@ -256,15 +273,16 @@ def _collapse(x):
             raise NotImplementedError("collapse() for block_mat with shape != (1,1)")
         return _collapse(x[0,0])
     elif isinstance(x, block_mul):
-        factors = map(_collapse, reversed(x))
+        factors = map(_collapse, x)
         while len(factors) > 1:
-            A = factors.pop()
-            B = factors.pop()
-            if isscalar(A) and isscalar(B):
-                C = A*B
+            A = factors.pop(0)
+            B = factors[0]
+            if isscalar(A):
+                C = A*B if isscalar(B) else B.matmat(A)
             else:
-                C = B.matmat(A) if isscalar(A) else A.matmat(B)
-            factors.append(C)
+                C = A.matmat(B)
+            factors[0] = C
+
         return factors[0]
     elif isinstance(x, block_add):
         A,B = map(_collapse, x)
