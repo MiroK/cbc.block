@@ -9,7 +9,7 @@ import time as timer
 class BoxBoundary(object):
     def __init__(self, mesh):
         c = mesh.coordinates()
-        self.c_min, self.c_max = map(MPI.min, c.min(0)), map(MPI.max, c.max(0))
+        self.c_min, self.c_max = c.min(0), c.max(0)
         dim = len(self.c_min)
 
         sd = self._compile(west  = self._boundary(0, self.c_min) if dim>1 else '0',
@@ -39,9 +39,10 @@ class BoxBoundary(object):
         for expr in kwargs.values():
             expr_to_code[expr] = None
 
-        compiled = compile_subdomains(expr_to_code.keys())
+        #print expr_to_code.keys()
+        #compiled = CompiledSubDomain(expr_to_code.keys())
         for i, expr in enumerate(expr_to_code.keys()):
-            expr_to_code[expr] = compiled[i]
+            expr_to_code[expr] = CompiledSubDomain(expr)
 
         return [(name, expr_to_code[expr]) for name, expr in kwargs.items()]
 
