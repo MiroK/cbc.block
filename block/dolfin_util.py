@@ -165,8 +165,9 @@ class update():
 update = update() # singleton
 
 def orthogonalize(v, basis):
+    """basis vectors are assumed to be normalized -- w.inner(w)==1.0"""
     for w in basis:
-        v -= w.inner(v)/w.inner(w)*w
+        v -= w.inner(v)*w
 
 def rigid_body_modes(V, show_plot=False):
     """Compute orthogonal rigid body modes of a function space."""
@@ -189,6 +190,7 @@ def rigid_body_modes(V, show_plot=False):
         M_inv.solve(res, mode)
         if ortho:
             orthogonalize(res, modes[:dim])
+        res *= 1.0/res.inner(res)
         return res
 
     # Translational modes

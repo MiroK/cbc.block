@@ -11,6 +11,9 @@ def _init():
 
     import dolfin
     dolfin.parameters["linear_algebra_backend"] = "PETSc"
+    import petsc4py, sys
+    petsc4py.init(sys.argv)
 _init()
 
-from ML import ML
+from precond import precond, ML, ILU
+from matrix import InvDiag, collapse
