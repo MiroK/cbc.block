@@ -16,4 +16,4 @@ def _init():
 _init()
 
 from precond import precond, ML, ILU
-from matrix import InvDiag, collapse
+from matrix import InvDiag, LumpedInvDiag, collapse

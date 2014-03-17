@@ -75,8 +75,8 @@ class block_bc(list):
                     if i==j:
                         if numpy.isscalar(A[i,i]):
                             # Convert to a diagonal matrix, so that the individual rows can be modified
-                            import block.algebraic
-                            A[i,i] = block.algebraic.active_backend().create_identity(b[i], val=A[i,i])
+                            from block_assemble import _new_square_matrix
+                            A[i,i] = _new_square_matrix(bc, A[i,i])
                         if symmetric:
                             bc.zero_columns(A[i,i], b[i], self.signs[i])
                         else:

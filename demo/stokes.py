@@ -21,8 +21,9 @@ and BB^ approximates the inverse of the block operator
 
 from dolfin import *
 from block import *
+from block.dolfin_util import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 
 import os
 
@@ -70,7 +71,7 @@ I  = assemble(p*q*dx)
 # matrix is automatically created to replace the (2,2) block in AA, since bc2
 # makes the block non-zero.
 bcs = [[bc0, bc1], bc2]
-AA, AArhs = block_symmetric_assemble([[a11, a12],
+AA, AArhs, _ = block_symmetric_assemble([[a11, a12],
                                       [a21,  0 ]], bcs=bcs)
 bb  = block_assemble([L1, 0], bcs=bcs, symmetric_mod=AArhs)
 

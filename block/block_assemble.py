@@ -170,7 +170,17 @@ def _is_form(form):
     from ufl.form import Form as ufl_Form
     return isinstance(form, (cpp_Form, ufl_Form))
 
-def _new_square_matrix(bcs,val):
-    import block.algebraic
-    vec = create_vec_from(bcs)
-    return block.algebraic.active_backend().create_identity(vec, val=val)
+def _new_square_matrix(bc, val):
+    from dolfin import *
+    import numpy
+    V = bc.function_space()
+    u,v = TrialFunction(V),TestFunction(V)
+    Z = assemble(Constant(0)*inner(u,v)*dx)
+    if val != 0.0:
+        lrange = range(*Z.local_range(0))
+        idx = numpy.ndarray(len(lrange), dtype=numpy.intc)
+        idx[:] = lrange
+        Z.ident(idx)
+        if val != 1.0:
+            Z *= val
+    return Z

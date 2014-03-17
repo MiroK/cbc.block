@@ -74,42 +74,52 @@ class IFPACK(block_base):
 class DD_Jacobi(IFPACK):
     prectype = 'point relaxation'
     params = {'relaxation: type' : 'Jacobi'}
+Jacobi = DD_Jacobi
 
 class DD_GaussSeidel(IFPACK):
     prectype = 'point relaxation'
     params = {'relaxation: type' : 'Gauss-Seidel'}
+GaussSeidel = DD_GaussSeidel
 
 class DD_SymmGaussSeidel(IFPACK):
     prectype = 'point relaxation'
     params = {'relaxation: type' : 'symmetric Gauss-Seidel'}
+SymmGaussSeidel = DD_SymmGaussSeidel
 
 class DD_BJacobi(IFPACK):
     prectype = 'block relaxation'
     params = {'relaxation: type' : 'Jacobi'}
+BJacobi = DD_BJacobi
 
 class DD_BGaussSeidel(IFPACK):
     prectype = 'block relaxation'
     params = {'relaxation: type' : 'Gauss-Seidel'}
+BGaussSeidel = DD_BGaussSeidel
 
 class DD_BSymmGaussSeidel(IFPACK):
     prectype = 'block relaxation'
     params = {'relaxation: type' : 'symmetric Gauss-Seidel'}
+BSymmGaussSeidel = DD_BSymmGaussSeidel
 
 class DD_ILU(IFPACK):
     """Incomplete LU factorization"""
     prectype = 'ILU'
+ILU = DD_ILU
 
 class DD_ILUT(IFPACK):
     """ILU with threshold"""
     prectype = 'ILUT'
+ILUT = DD_ILUT
 
 class DD_IC(IFPACK):
     """Incomplete Cholesky factorization"""
     prectype = 'IC'
+IC = DD_IC
 
 class DD_ICT(IFPACK):
     """IC with threshold"""
     prectype = 'ICT'
+ICT = DD_ICT
 
 class DD_Amesos(IFPACK):
     prectype = 'Amesos'

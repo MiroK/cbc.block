@@ -12,7 +12,7 @@ import os
 from dolfin import *
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 
 dolfin.set_log_level(15)
 if MPI.num_processes() > 1:
@@ -67,7 +67,7 @@ bb = block_assemble([L1, 0], bcs=bcs)
 
 # Create preconditioners: An ILU preconditioner for A, and an ML inverse of the
 # Schur complement approximation for the (2,2) block.
-Ap = DD_ILU(A)
+Ap = ILU(A)
 Dp = ML(collapse(C*InvDiag(A)*B))
 
 prec = block_mat([[Ap, B],

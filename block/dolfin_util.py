@@ -186,28 +186,24 @@ def rigid_body_modes(V, show_plot=False):
 
     M_inv = LinearSolver('cg', 'amg')
     M_inv.set_operator(assemble(inner(u,v)*dx))
-    def proj(mode, ortho):
-        res = mode.copy()
-        M_inv.solve(res, mode)
-        if ortho:
-            orthogonalize(res, modes[:dim])
-        res *= 1.0/res.inner(res)
-        return res
+    def proj(form, ortho_modes):
+        rhs = assemble(form)
+        lhs = rhs.copy()
+        M_inv.solve(lhs, rhs)
+        orthogonalize(lhs, ortho_modes)
+        lhs *= 1.0/lhs.norm('l2')
+        return lhs
 
     # Translational modes
     for i in range(dim):
-        mode = assemble(v[i]*dx)
-        modes.append(proj(mode, False))
+        modes.append(proj(v[i]*dx, []))
 
-    # Rotational modes
+    # Rotational modes; orthogonalize with respect to translations
     if dim >= 2:
-        mode = assemble((x[0]*v[1]-x[1]*v[0]) * dx)
-        modes.append(proj(mode, True))
+        modes.append(proj((x[0]*v[1]-x[1]*v[0])*dx, modes[:dim]))
     if dim == 3:
-        mode = assemble((x[1]*v[2]-x[2]*v[1]) * dx)
-        modes.append(proj(mode, True))
-        mode = assemble((x[2]*v[0]-x[0]*v[2]) * dx)
-        modes.append(proj(mode, True))
+        modes.append(proj((x[1]*v[2]-x[2]*v[1])*dx, modes[:dim]))
+        modes.append(proj((x[2]*v[0]-x[0]*v[2])*dx, modes[:dim]))
 
     if show_plot:
         for mode in modes:

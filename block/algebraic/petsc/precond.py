@@ -11,21 +11,24 @@ class precond(block_base):
         T = time()
         Ad = A.down_cast().mat()
 
-        # A bug somewhere... setUp() below crashes with BS>1 matrices
-        if prectype == 'ml' and Ad.getBlockSize() > 1:
-            Ad = PETSc.Mat().createAIJ(Ad.getSize(), csr=Ad.getValuesCSR())
-
         if nullspace:
-            nullspace = [v.down_cast().vec().copy() for v in nullspace]
+            from block.block_util import isscalar
             ns = PETSc.NullSpace()
-            ns.create(constant=False, vectors=nullspace)
-            Ad.setNullSpace(ns)
+            if isscalar(nullspace):
+                ns.create(constant=True)
+            else:
+                ns.create(constant=False, vectors=[v.down_cast().vec() for v in nullspace])
+            try:
+                Ad.setNearNullSpace(ns)
+            except:
+                info('failed to set near null space (not supported in petsc4py version)')
 
         self.A = A
         self.ml_prec = PETSc.PC()
-        self.ml_prec.create(PETSc.COMM_WORLD)
+        self.ml_prec.create()
         self.ml_prec.setType(prectype)
         self.ml_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
+        self.ml_prec.setFromOptions()
         self.ml_prec.setUp()
 
         info('constructed %s preconditioner in %.2f s'%(self.__class__.__name__, time()-T))
@@ -49,6 +52,12 @@ class precond(block_base):
         return '<%s prec of %s>'%(self.__class__.__name__, str(self.A))
 
 class ML(precond):
+    # Set some "safe" options, which can handle zero diagonal entries and makes
+    # the operator linear..
+    PETSc.Options().setValue('-mg_coarse_ksp_type', 'preonly')
+    PETSc.Options().setValue('-mg_coarse_pc_type', 'lu')
+    PETSc.Options().setValue('-mg_levels_ksp_type', 'richardson')
+    PETSc.Options().setValue('-mg_levels_pc_type', 'ilu')
     def __init__(self, A, parameters=None, pdes=1, nullspace=None):
         precond.__init__(self, A, PETSc.PC.Type.ML, parameters, pdes, nullspace)
 

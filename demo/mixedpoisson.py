@@ -46,7 +46,7 @@ operator it is safe to use as inner solver for an outer Krylov solver.
 
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import ML, collapse
+from block.algebraic.petsc import ML, collapse
 from dolfin import *
 
 # Create mesh
@@ -93,7 +93,7 @@ a12 = div(tau) * u * dx
 a21 = div(sigma) * v *dx
 L2  = - f * v * dx
 
-AA, AArhs = block_symmetric_assemble([[a11, a12],
+AA, AArhs, _ = block_symmetric_assemble([[a11, a12],
                                       [a21,  0 ]], bcs=bcs)
 
 bb = block_assemble([0, L2], bcs=bcs, symmetric_mod=AArhs)

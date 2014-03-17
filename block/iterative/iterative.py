@@ -24,6 +24,9 @@ class iterative(block_base):
         self.tolerance = tolerance
         self.maxiter = maxiter
 
+    def create_vec(self, dim=1):
+        return self.A.create_vec(dim)
+
     def matvec(self, b):
         from time import time
         from block.block_vec import block_vec

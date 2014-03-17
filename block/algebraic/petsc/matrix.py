@@ -222,15 +222,14 @@ class InvDiag(Diag):
 
 class LumpedInvDiag(diag_op):
     """Extract the inverse of the lumped diagonal of a matrix (i.e., sum of the
-    absolute values in the row)"""
+    values in the row)"""
     def __init__(self, A):
-        1/0
-        # absolute values? multiply by all-one vec to get non-absolute
-        from PyTrilinos import Epetra
-        A = A.down_cast().mat()
-        v = Epetra.Vector(A.RowMap())
-        A.InvRowSums(v)
-        diag_op.__init__(self, v)
+        one = A.create_vec()
+        one.zero()
+        one.down_cast().vec().shift(1.0)
+        lumpedInvDiag = A*one
+        lumpedInvDiag.down_cast().vec().reciprocal()
+        diag_op.__init__(self, lumpedInvDiag.down_cast().vec())
 
 def _collapse(x):
     # Works by calling the matmat(), transpose() and add() methods of
