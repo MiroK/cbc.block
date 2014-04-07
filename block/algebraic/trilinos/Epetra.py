@@ -14,12 +14,7 @@ class diag_op(block_base):
     def __init__(self, v):
         from PyTrilinos import Epetra
         import dolfin
-        if isinstance(v, dolfin.GenericVector):
-            v = Epetra.FEVector(v.down_cast().vec())
-        if isinstance(v, Epetra.FEVector):
-            # FEVector doesn't inherit from Vector...
-            v = Epetra.Vector(v)
-        assert isinstance(v, (Epetra.MultiVector, Epetra.Vector))
+        assert isinstance(v, (Epetra.MultiVector, Epetra.Epetra_MultiVector))
         self.v = v
 
     def _transpose(self):
@@ -92,7 +87,7 @@ class diag_op(block_base):
         return self.v
 
     def __str__(self):
-        return '<%s %dx%d>'%(self.__class__.__name__,len(self.v),len(self.v))
+        return '<%s %dx%d>'%(self.__class__.__name__,self.v.GlobalLength(),self.v.GlobalLength())
 
 class matrix_op(block_base):
     """Base class for Epetra operators (represented by an Epetra matrix)."""
@@ -244,8 +239,8 @@ class InvDiag(Diag):
 
 class LumpedInvDiag(diag_op):
     """Extract the inverse of the lumped diagonal of a matrix (i.e., sum of the
-    absolute values in the row)"""
     def __init__(self, A):
+    absolute values in the row)."""
         from PyTrilinos import Epetra
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())

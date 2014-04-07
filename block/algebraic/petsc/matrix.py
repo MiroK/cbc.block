@@ -62,10 +62,9 @@ class diag_op(block_base):
         from PyTrilinos import Epetra
         try:
             if isscalar(other):
-                1/0
-                x = Epetra.Vector(self.v.Map())
-                x.PutScalar(other)
-                other = diag_op(x)
+                x = self.v.copy()
+                x.shift(rscale*other)
+                return diag_op(x)
             other = other.down_cast()
             if isinstance(other, matrix_op):
                 return other.add(self, lscale=rscale, rscale=lscale)
@@ -222,14 +221,17 @@ class InvDiag(Diag):
 
 class LumpedInvDiag(diag_op):
     """Extract the inverse of the lumped diagonal of a matrix (i.e., sum of the
-    values in the row)"""
+    absolute values in the row)."""
     def __init__(self, A):
-        one = A.create_vec()
-        one.zero()
-        one.down_cast().vec().shift(1.0)
-        lumpedInvDiag = A*one
-        lumpedInvDiag.down_cast().vec().reciprocal()
-        diag_op.__init__(self, lumpedInvDiag.down_cast().vec())
+        v = A.create_vec().down_cast().vec()
+        a = A.down_cast().mat()
+        for row in xrange(*a.getOwnershipRange()):
+            data = a.getRow(row)[1]
+            v.setValue(row, sum(abs(d) for d in data))
+        v.assemblyBegin()
+        v.assemblyEnd()
+        v.reciprocal()
+        diag_op.__init__(self, v)
 
 def _collapse(x):
     # Works by calling the matmat(), transpose() and add() methods of
@@ -318,7 +320,8 @@ def collapse(x):
 
 
 def create_identity(vec, val=1):
-    1/0
+    raise NotImplementedError()
+
     """Create an identity matrix with the layout given by the supplied
     GenericVector. The values of the vector are NOT used."""
     import numpy
