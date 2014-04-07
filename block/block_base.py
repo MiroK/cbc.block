@@ -97,6 +97,12 @@ class block_container(block_base):
     def __iter__(self):
         return self.blocks.__iter__()
     def __str__(self):
-        return '<%s %s:\n%s>'%(self.__class__.__name__,
-                               'x'.join(map(str, self.blocks.shape)),
-                               str(self.blocks))
+        try:
+            return '<%s %s:\n%s>'%(self.__class__.__name__,
+                                   'x'.join(map(str, self.blocks.shape)),
+                                   str(self.blocks))
+        except:
+            # some weird numpy-dolfin interaction going on
+            return '<%s %s>:\n{%s}'%(self.__class__.__name__,
+                                     'x'.join(map(str, self.blocks.shape)),
+                                     ', '.join(map(str, self.blocks)))
