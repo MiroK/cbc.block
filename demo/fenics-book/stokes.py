@@ -50,10 +50,11 @@ L2  = q*g*dx
 
 M1 = assemble(p*q*dx)
 
-bcs = [DirichletBC(V, BoundaryFunction(), Boundary()), None]
-AA, AArhs = block_symmetric_assemble([[a11, a12],
-                                      [a21, a22]], bcs=bcs)
-bb = block_assemble([L1, L2], bcs=bcs, symmetric_mod=AArhs)
+bcs = block_bc([DirichletBC(V, BoundaryFunction(), Boundary()), None], True)
+AA = block_assemble([[a11, a12],
+                     [a21, a22]])
+bb = block_assemble([L1, L2])
+bcs.apply(AA).apply(bb)
 
 [[A, B],
  [C, D]] = AA

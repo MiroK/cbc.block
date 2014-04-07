@@ -31,7 +31,7 @@ class numpy_op(block_base):
 
     @vec_pool
     def create_vec(self, dim=1):
-        return dolfin.Vector(self.M.shape[dim])
+        return dolfin.Vector(None, self.M.shape[dim])
 
     def __str__(self):
         format = '<%s %dx%d>'
@@ -49,7 +49,7 @@ for i in range(N):
 
 
 A = numpy_op(A)
-x = dolfin.Vector(N)
+x = dolfin.Vector(None, N)
 from numpy import random
 x[:] = random.random(N)
 

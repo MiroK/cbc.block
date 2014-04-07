@@ -82,7 +82,7 @@ def boundary(x):
 # Define the blockwise boundary conditions -- a Dirichlet condition on the
 # first block, and no conditions on the second block.
 bcs_BDM = [DirichletBC(BDM, G, boundary)]
-bcs = [bcs_BDM, None]
+bcs = block_bc([bcs_BDM, None], True)
 
 # Define source function
 f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
@@ -93,10 +93,12 @@ a12 = div(tau) * u * dx
 a21 = div(sigma) * v *dx
 L2  = - f * v * dx
 
-AA, AArhs, _ = block_symmetric_assemble([[a11, a12],
-                                      [a21,  0 ]], bcs=bcs)
+AA = block_assemble([[a11, a12],
+                     [a21,  0 ]])
 
-bb = block_assemble([0, L2], bcs=bcs, symmetric_mod=AArhs)
+bb = block_assemble([0, L2])
+
+bcs.apply(AA).apply(bb)
 
 # Extract the individual submatrices
 [[A, B],

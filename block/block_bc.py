@@ -6,118 +6,93 @@ import numpy
 
 class block_bc(list):
     """This class applies Dirichlet BCs to a block matrix. It is not a block operator itself."""
-    def apply(self, A=None, b=None, symmetric=False, save_A=False, signs=None):
+    def __init__(self, lst, symmetric):
+        list.__init__(self, lst)
         # Clean up self, and check arguments
         for i in range(len(self)):
             if self[i] is None:
                 self[i] = []
-            if not hasattr(self[i], '__iter__'):
+            elif not hasattr(self[i], '__iter__'):
                 self[i] = [self[i]]
+        self.symmetric = symmetric
 
-        if A is None and b is None:
-            raise TypeError('too few arguments to apply')
-        if b is None and isinstance(A, block_vec):
-            A,b = None,A
-        if (A and not isinstance(A, block_mat)) or (b and not isinstance(b, block_vec)):
-            raise TypeError('arguments of wrong type')
-        if A is None:
-            return self.apply_rhs(b, symmetric)
-        if save_A and not symmetric:
-            raise TypeError('no point in saving A if symmetric=False')
-        if symmetric and dolfin.MPI.num_processes() > 1:
-            raise RuntimeError('symmetric BCs not supported in parallel (yet)')
+    def apply(self, A):
+        if not isinstance(A, block_mat):
+            raise RuntimeError('A is not a block matrix')
 
-        if b is None:
-            # Just use a throw-away vector
-            b = A.create_vec(0)
+        # Create rhs_bc with a copy of A before any symmetric modifications
+        rhs_bc = block_rhs_bc(self, A.copy() if self.symmetric else None)
 
-        # Find signs of matrices. Robust for definite matrices. For indefinite matrices, the
-        # sign doesn't matter. For semi-definite matrices, we may get wrong answer.
-        if signs:
-            self.signs = signs
-        if not hasattr(self, 'signs'):
-            self.compute_signs(A, b)
+        self._apply(A, A.create_vec() if self.symmetric else None)
 
-        if save_A:
-            # Save a copy of the matrices, for subsequent RHS modification.
-            self.A_unmod = A.copy()
+        return rhs_bc
 
-        self.apply_matvec(A, b, symmetric)
-
-    def compute_signs(self, AA, bb):
-        self.signs = [None]*len(self)
-        bb.allocate(AA, dim=0)
-        for i in range(len(self)):
-            if not self[i]:
-                # No BC on this block, sign doesn't matter
-                continue
-            if numpy.isscalar(AA[i,i]):
-                xAx = AA[i,i]
-            else:
-                # Do not use a constant vector, as that may be in the null space
-                # before boundary conditions are applied
-                x = AA[i,i].create_vec(dim=1)
-                ran = numpy.random.random(x.local_size())
-                x.set_local(ran)
-                Ax = AA[i,i]*x
-                xAx = x.inner(Ax)
-            if xAx == 0:
-                from dolfin import warning
-                warning("block_bc: zero or semi-definite block (%d,%d), using sign +1"%(i,i))
-            self.signs[i] = -1 if xAx < 0 else 1
-        dolfin.info('Calculated signs of diagonal blocks:' + str(self.signs))
-
-    def apply_matvec(self, A, b, symmetric):
-        b.allocate(A, dim=0)
-        for i in range(len(self)):
-            for bc in self[i]:
+    def _apply(self, A, b):
+        for i,bcs in enumerate(self):
+            for bc in bcs:
                 for j in range(len(self)):
                     if i==j:
                         if numpy.isscalar(A[i,i]):
                             # Convert to a diagonal matrix, so that the individual rows can be modified
                             from block_assemble import _new_square_matrix
                             A[i,i] = _new_square_matrix(bc, A[i,i])
-                        if symmetric:
-                            bc.zero_columns(A[i,i], b[i], self.signs[i])
+                        if self.symmetric:
+                            bc.zero_columns(A[i,i], b[i], 1.0)
                         else:
-                            bc.apply(A[i,i], b[i])
+                            bc.apply(A[i,i])
                     else:
                         if numpy.isscalar(A[i,j]):
-                            if A[i,j] != 0:
+                            if A[i,j] != 0.0:
                                 dolfin.error("can't modify block (%d,%d) for BC, expected a GenericMatrix" % (i,j))
-                            continue
-                        bc.zero(A[i,j])
-                        if symmetric:
-                            bc.zero_columns(A[j,i], b[j])
+                        else:
+                            bc.zero(A[i,j])
+                        if self.symmetric:
+                            if numpy.isscalar(A[j,i]):
+                                if A[j,i] != 0.0:
+                                    dolfin.error("can't modify block (%d,%d) for BC, expected a GenericMatrix" % (j,i))
+                            else:
+                                bc.zero_columns(A[j,i], b[j])
 
-    def apply_rhs(self, b, symmetric):
-        # First, collect a vector containing all non-zero BCs. These are required for
-        # symmetric modification, and for changing sign
-        b_mod = b.copy()
-        b_mod.zero()
-        for i in range(len(self)):
-            for bc in self[i]:
-                if symmetric or self.signs[i] == -1:
+class block_rhs_bc(list):
+    def __init__(self, bc, A):
+        list.__init__(self, bc)
+        self.A = A;
+
+    def apply(self, b):
+        if not isinstance(b, block_vec):
+            raise RuntimeError('not a block vector')
+
+        if self.A is not None:
+            b.allocate(self.A)
+        else:
+            from block_util import isscalar, _create_vec
+            for i,bcs in enumerate(self):
+                for bc in bcs:
+                    if isscalar(b[i]) and b[i] == 0.0:
+                        v = _create_vec(bc)
+                        if v is not None:
+                            v.zero()
+                            b[i] = v
+
+
+        if self.A is not None:
+            # First, collect a vector containing all non-zero BCs. These are required for
+            # symmetric modification.
+            b_mod = b.copy()
+            b_mod.zero()
+            for i,bcs in enumerate(self):
+                for bc in bcs:
                     bc.apply(b_mod[i])
-
-        if symmetric:
-            if not hasattr(self, 'A_unmod'):
-                raise RuntimeError('for symmetric modification, apply() must have been called with save_A=True')
 
             # The non-zeroes of b_mod are now exactly the x values (assuming the
             # matrix diagonal is in fact 1). We can thus create the necessary modifications
             # to b by just multiplying with the un-symmetricised original matrix.
-            b -= self.A_unmod * b_mod
+            b -= self.A * b_mod
 
         # Apply the actual BC dofs to b. (This must be done after the symmetric
         # correction above, since the correction might also change the BC dofs.)
-        for i in range(len(self)):
-            for bc in self[i]:
-                # Must call bc.apply even if sign==1, to set zero BCs
+        for i,bcs in enumerate(self):
+            for bc in bcs:
                 bc.apply(b[i])
-                if self.signs[i] == -1:
-                    # Then we only need to consider the nonzseroes...
-                    B = b_mod[i].array()
-                    idx = numpy.where(B != 0)[0]
-                    if len(idx):
-                        b[i][idx] = -B[idx]
+
+        return self

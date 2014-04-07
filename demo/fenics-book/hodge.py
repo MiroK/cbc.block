@@ -29,7 +29,7 @@ preconditioned systems.
 from dolfin import *
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 
 dolfin.set_log_level(30)
 
@@ -74,15 +74,16 @@ Linv * bb[0]
 e = Linv.eigenvalue_estimates()
 K_P1A = sqrt(e[-1]/e[0])
 
+# Note april-2014: PETSc-ML fails -- ML(E) not positive definite. Find appropriate smoother?
 prec = block_mat([[ML(A),  0  ],
-                  [0,    ML(E)]])
+                  [0,    ILU(E)]])
 AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=2000, show=0)
 AAinv*bb
 e = AAinv.eigenvalue_estimates()
 K_B1AA = sqrt(e[len(e)-1]/e[0])
 
 prec = block_mat([[ML(L),  0  ],
-                  [0,    ML(D)]])
+                  [0,    ILU(D)]])
 AAinv = CGN(AA, precond=prec, initial_guess=x, tolerance=1e-9, maxiter=2000, show=0)
 AAinv*bb
 e = AAinv.eigenvalue_estimates()

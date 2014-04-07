@@ -42,7 +42,7 @@ for i in range(N):
 A = numpy2epetra(A)
 
 from numpy import random
-x = dolfin.Vector(N)
+x = dolfin.Vector(None, N)
 x[:] = random.random(N)
 
 

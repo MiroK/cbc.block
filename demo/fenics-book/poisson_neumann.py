@@ -41,7 +41,7 @@ L = v*f*dx + v*g*ds
 A, b = assemble_system(a,L)
 
 # remove constant from right handside
-b_mean = MPI.sum(sum(b.array())) / b.size()
+b_mean = MPI.sum(None, sum(b.array())) / b.size()
 c = A.create_vec()
 c[:] = b_mean
 b -= c

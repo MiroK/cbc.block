@@ -71,9 +71,11 @@ I  = assemble(p*q*dx)
 # matrix is automatically created to replace the (2,2) block in AA, since bc2
 # makes the block non-zero.
 bcs = [[bc0, bc1], bc2]
-AA, AArhs, _ = block_symmetric_assemble([[a11, a12],
-                                      [a21,  0 ]], bcs=bcs)
-bb  = block_assemble([L1, 0], bcs=bcs, symmetric_mod=AArhs)
+AA = block_assemble([[a11, a12],
+                     [a21,  0 ]])
+bb  = block_assemble([L1, 0])
+
+block_bc(bcs, True).apply(AA).apply(bb)
 
 # Extract the individual submatrices
 [[A, B],

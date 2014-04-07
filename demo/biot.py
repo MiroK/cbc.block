@@ -43,7 +43,7 @@ Richardson method just for reporting purposes.
 
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 from dolfin import *
 from block.dolfin_util import *
 import numpy
@@ -102,7 +102,7 @@ boundary = BoxBoundary(mesh)
 
 c = 0.25
 h = mesh.hmin()
-fluid_source_domain = compile_subdomains('{min}<x[0] && x[0]<{max} && {min}<x[1] && x[1]<{max}'
+fluid_source_domain = CompiledSubDomain('{min}<x[0] && x[0]<{max} && {min}<x[1] && x[1]<{max}'
                                          .format(min=c-h, max=c+h))
 topload_source      = Expression("-sin(2*t*pi)*sin(x[0]*pi/2)/3", t=0)
 
@@ -110,14 +110,14 @@ bc_u_bedrock        = DirichletBC(V,            [0]*dim,        boundary.bottom)
 bc_u_topload        = DirichletBC(V.sub(dim-1), topload_source, boundary.top)
 bc_p_drained_source = DirichletBC(W,            0,              fluid_source_domain)
 
-bcs = [[bc_u_topload, bc_u_bedrock], [bc_p_drained_source]]
+bcs = block_bc([[bc_u_topload, bc_u_bedrock], [bc_p_drained_source]], True)
 
 # Assemble the matrices and vectors
 
-AA, AArhs = block_symmetric_assemble([[a00, a01],
-                                      [a10, a11]], bcs=bcs)
+AA = block_assemble([[a00, a01],
+                     [a10, a11]])
 
-bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
+rhs_bc = bcs.apply(AA)
 
 # Extract the individual submatrices
 
@@ -167,7 +167,8 @@ while t <= T:
     print "Time step %f" % t
 
     topload_source.t = t
-    bb = block_assemble([0, L1], bcs=bcs, symmetric_mod=AArhs)
+    bb = block_assemble([0, L1])
+    rhs_bc.apply(bb)
 
     x = AAinv * bb
 

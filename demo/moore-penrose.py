@@ -8,7 +8,7 @@ system, or the minimum-norm / all solutions to an underspecified system.
 from dolfin import *
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 
 mesh = UnitSquareMesh(64,64)
 
@@ -39,12 +39,11 @@ Ap = assemble(am)
 # Create linear system (matrices, transpose operator, RHS vector)
 
 A = assemble(a1)
-AT = block_transpose(A)
 b = assemble(L1)
 
 # Create pseudo-inverse operator (least squares solution)
 
-Apinv = ConjGrad(AT*A, precond=ML(Ap)**2, show=2) * AT
+Apinv = ConjGrad(A.T*A, precond=ML(Ap)**2, show=2) * A.T
 
 # Solve and plot
 
@@ -58,12 +57,11 @@ plot(Function(V, x), title="least squares")
 # Create linear system (matrices, transpose operator, RHS vector)
 
 A = assemble(a2)
-AT = block_transpose(A)
 b = assemble(L2)
 
 # Create pseudo-inverse operator (minimum norm solution)
 
-Apinv = AT * ConjGrad(A*AT, precond=ML(Ap)**2, show=2)
+Apinv = A.T * ConjGrad(A*A.T, precond=ML(Ap)**2, show=2)
 
 # Solve and plot
 

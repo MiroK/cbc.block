@@ -184,7 +184,8 @@ def rigid_body_modes(V, show_plot=False):
     mf0 = MeshFunction('size_t', mesh, 1, 0)
     dx = dolfin.dx[mf0](0)
 
-    M_inv = LinearSolver('cg', 'amg')
+    M_inv = LinearSolver('cg', 'ilu')
+    M_inv.parameters['relative_tolerance']=1e-4
     M_inv.set_operator(assemble(inner(u,v)*dx))
     def proj(form, ortho_modes):
         rhs = assemble(form)

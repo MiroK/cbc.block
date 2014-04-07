@@ -68,10 +68,11 @@ a12 = div(v)*p*dx
 a21 = div(u)*q*dx
 L1  = dot(f, v)*dx
 
-bcs = [DirichletBC(V, BoundaryFunction(), Boundary()), None]
-AA, AAn = block_symmetric_assemble([[a11, a12],
-                                    [a21,  0 ]], bcs=bcs)
-bb = block_assemble([L1, 0], bcs=bcs, symmetric_mod=AAn)
+bcs = block_bc([DirichletBC(V, BoundaryFunction(), Boundary()), None], True)
+AA = block_assemble([[a11, a12],
+                     [a21,  0 ]])
+bb = block_assemble([L1, 0])
+bcs.apply(AA).apply(bb)
 
 [[A, B],
  [C, _]] = AA
