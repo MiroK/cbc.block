@@ -293,7 +293,7 @@ def collapse(x):
     # Since _collapse works recursively, this method is a user-visible wrapper
     # to print timing, and to check input/output arguments.
     from time import time
-    from dolfin import info, warning
+    from dolfin import PETScMatrix, info, warning
     T = time()
     res = _collapse(x)
     if getattr(res, 'transposed', False):
@@ -303,9 +303,7 @@ def collapse(x):
         res.M.transpose()
     info('computed explicit matrix representation %s in %.2f s'%(str(res),time()-T))
 
-    #from dolfin import PETScMatrix
-    #result = PETScMatrix(res.M)
-    result = res
+    result = PETScMatrix(res.M)
 
     # Sanity check. Cannot trust EpetraExt.Multiply always, it seems.
     from block import block_vec
