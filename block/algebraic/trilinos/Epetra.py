@@ -241,6 +241,7 @@ class LumpedInvDiag(diag_op):
     """Extract the inverse of the lumped diagonal of a matrix (i.e., sum of the
     def __init__(self, A):
     absolute values in the row)."""
+    def __init__(self, A):
         from PyTrilinos import Epetra
         A = A.down_cast().mat()
         v = Epetra.Vector(A.RowMap())
