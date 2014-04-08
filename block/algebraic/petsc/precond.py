@@ -29,25 +29,22 @@ class precond(block_base):
         self.ml_prec.setType(prectype)
         self.ml_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
 
-        # Merge options from various sources into the options database
-        origOptions = PETSc.Options().getAll()
-        options = {}
-        options.update(_defaultOptions)
-        options.update(origOptions)
+        # Merge parameters into the options database
         if parameters:
-            options.update(parameters)
-        for key,val in options.iteritems():
-            PETSc.Options().setValue(key, val)
+            origOptions = PETSc.Options().getAll()
+            for key,val in parameters.iteritems():
+                PETSc.Options().setValue(key, val)
 
         # Create preconditioner based on the options database
         self.ml_prec.setFromOptions()
         self.ml_prec.setUp()
 
         # Reset the options database
-        for key in options.iterkeys():
-            PETSc.Options().delValue(key)
-        for key,val in origOptions.iteritems():
-            PETSc.Options().setValue(key, val)
+        if parameters:
+            for key in parameters.iterkeys():
+                PETSc.Options().delValue(key)
+            for key,val in origOptions.iteritems():
+                PETSc.Options().setValue(key, val)
 
         info('constructed %s preconditioner in %.2f s'%(self.__class__.__name__, time()-T))
 
@@ -71,23 +68,36 @@ class precond(block_base):
 
 class ML(precond):
     def __init__(self, A, parameters=None, pdes=1, nullspace=None):
-        precond.__init__(self, A, PETSc.PC.Type.ML, parameters, pdes, nullspace)
+        options = {
+            # Symmetry- and PD-preserving smoother
+            'mg_levels_ksp_type': 'chebyshev',
+            'mg_levels_pc_type':  'jacobi',
+            # Fixed number of iterations to preserve linearity
+            'mg_levels_ksp_max_it':               2,
+            'mg_levels_ksp_check_norm_iteration': 9999,
+            # Exact inverse on coarse grid
+            'mg_coarse_ksp_type': 'preonly',
+            'mg_coarse_pc_type':  'lu',
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.ML, options, pdes, nullspace)
 
 class ILU(precond):
     def __init__(self, A, parameters=None, pdes=1, nullspace=None):
         precond.__init__(self, A, PETSc.PC.Type.ILU, parameters, pdes, nullspace)
 
+class Cholesky(precond):
+    def __init__(self, A, parameters=None):
+        precond.__init__(self, A, PETSc.PC.Type.CHOLESKY, parameters, 1, None)
 
-# Set some "safe" options
-_defaultOptions = {
-    # Symmetry- and PD-preserving smoother
-    'mg_levels_ksp_type': 'chebyshev',
-    'mg_levels_pc_type':  'jacobi',
-    # Fixed number of iterations to preserve linearity
-    'mg_levels_ksp_max_it':               2,
-    'mg_levels_ksp_check_norm_iteration': 9999,
-    # Exact inverse on coarse grid
-    'mg_coarse_ksp_type': 'preonly',
-    'mg_coarse_pc_type':  'lu',
-    }
+class LU(precond):
+    def __init__(self, A, parameters=None):
+        precond.__init__(self, A, PETSc.PC.Type.LU, parameters, 1, None)
 
+class MumpsSolver(LU):
+    def __init__(self, A, parameters=None):
+        options = parameters.copy() if parameters else {}
+        options['pc_factor_mat_solver_package'] = 'mumps'
+        precond.__init__(self, A, PETSc.PC.Type.LU, parameters, 1, None)
