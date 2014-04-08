@@ -7,7 +7,7 @@ from dolfin import *
 from block.dolfin_util import *
 import numpy
 
-if MPI.num_processes() > 1:
+if MPI.size(None) > 1:
     print "numpy demo does not work in parallel"
     exit()
 

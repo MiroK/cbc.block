@@ -30,7 +30,7 @@ def block_assemble(lhs, rhs=None, bcs=None,
     # Check arguments
     if symmetric:
         from dolfin import MPI
-        if MPI.num_processes() > 1:
+        if MPI.size(None) > 1:
             raise NotImplementedError(error_msg['mpi and symm'])
     if lhs and rhs:
         A, b = map(block_tensor,[lhs,rhs])

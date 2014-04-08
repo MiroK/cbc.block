@@ -148,7 +148,7 @@ if abs(1.213-Sigma.norm('l2')) > 1e-3 or abs(6.713-U.norm('l2')) > 1e-3:
     raise RuntimeError("Wrong value in norms -- please check!")
 
 # Plot sigma and u
-if MPI.num_processes() == 1:
+if MPI.size(None) == 1:
     plot(Function(BDM, Sigma))
     plot(Function(DG,  U))
     interactive()
