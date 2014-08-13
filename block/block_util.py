@@ -1,5 +1,13 @@
 from __future__ import division
 
+def isequal(op1, op2, eps=1e-3):
+    from block import block_vec
+    v = op1.create_vec()
+    block_vec([v]).randomize()
+    xv = op1*v
+    err = (xv-op2*v).norm('l2')/(xv).norm('l2')
+    return err < eps
+
 def issymmetric(op):
     x = op.create_vec()
     if hasattr(x, 'randomize'):
