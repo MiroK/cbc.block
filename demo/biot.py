@@ -43,7 +43,7 @@ Richardson method just for reporting purposes.
 
 from block import *
 from block.iterative import *
-from block.algebraic.petsc import *
+from block.algebraic.trilinos import *
 from dolfin import *
 from block.dolfin_util import *
 import numpy

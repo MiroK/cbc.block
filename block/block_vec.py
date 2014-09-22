@@ -66,11 +66,11 @@ class block_vec(block_container):
         for i in range(len(self)):
             if hasattr(self[i], 'local_size'):
                 ran = numpy.random.random(self[i].local_size())
-                ran -= MPI.sum(None, sum(ran))/self[i].size()
+                ran -= MPI.sum(self[i].mpi_comm(), sum(ran))/self[i].size()
                 self[i].set_local(ran)
             elif hasattr(self[i], '__len__'):
                 ran = numpy.random.random(len(self[i]))
-                ran -= MPI.sum(None, sum(ran))/MPI.sum(len(ran))
+                ran -= MPI.sum(self[i].mpi_comm(), sum(ran))/MPI.sum(len(ran))
                 self[i][:] = ran
             else:
                 raise RuntimeError(

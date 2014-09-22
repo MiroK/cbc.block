@@ -50,8 +50,19 @@ class Stokes(unittest.TestCase):
 	M1 = assemble(p*q*dx)
 
 	bcs = [DirichletBC(V, BoundaryFunction(), Boundary()), None]
-	AA, AArhs = block_symmetric_assemble([[a11, a12],
+	AA, AArhs, b = block_symmetric_assemble([[a11, a12],
                                               [a21, a22]], bcs=bcs)
+	dd = block_symmetric_assemble([[a11, a12],
+                                              [a21, a22]], bcs=bcs)
+        print "dabla ", len(dd)
+        x, y, z = dd
+        print x 
+        print ""
+        print y 
+        print ""
+        print z 
+        print ""
+        
 	bb = block_assemble([L1, L2], bcs=bcs, symmetric_mod=AArhs)
 
         [[A, B],
@@ -63,6 +74,8 @@ class Stokes(unittest.TestCase):
 
 	AAinv = MinRes(AA, precond=BB, tolerance=1e-8, show=0)
 	x = AAinv * bb
+
+lllllaaaa lllaaa 
 
 	x.randomize()
 

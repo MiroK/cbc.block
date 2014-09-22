@@ -29,8 +29,8 @@ def block_assemble(lhs, rhs=None, bcs=None,
                  'mpi and symm'    : 'Symmetric application of BC not yet implemented in parallel'}
     # Check arguments
     if symmetric:
-        from dolfin import MPI
-        if MPI.size(None) > 1:
+        from dolfin import MPI, mpi_comm_world
+        if MPI.size(mpi_comm_world()) > 1:
             raise NotImplementedError(error_msg['mpi and symm'])
     if lhs and rhs:
         A, b = map(block_tensor,[lhs,rhs])
