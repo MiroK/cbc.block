@@ -6,8 +6,9 @@ from block.block_base import block_base
 class iterative(block_base):
     def __init__(self, A, precond=1.0, tolerance=1e-5, initial_guess=None,
                  iter=None, maxiter=200, name=None, show=1, rprecond=None,
-                 nonconvergence_is_fatal=False, retain_guess=False,
+                 nonconvergence_is_fatal=False, retain_guess=False, relativeconv=False,
                  callback=None, **kwargs):
+
         self.B = precond
         self.R = rprecond
         self.A = A
@@ -16,6 +17,7 @@ class iterative(block_base):
         self.nonconvergence_is_fatal = nonconvergence_is_fatal
         self.show = show
         self.callback = callback
+        self.relativeconv = relativeconv
         self.kwargs = kwargs
         self.name = name if name else self.__class__.__name__
         if iter is not None:
@@ -67,7 +69,7 @@ class iterative(block_base):
                 tolerance = self.tolerance
                 relative = False
             x = self.method(self.B, self.AR, x, b, tolerance=tolerance,
-                            relativeconv=relative, maxiter=self.maxiter,
+                            relativeconv=self.relativeconv, maxiter=self.maxiter,
                             progress=progress, callback=self.callback,
                             **self.kwargs)
             del progress # trigger final printout

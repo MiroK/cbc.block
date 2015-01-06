@@ -2,6 +2,7 @@ from dolfin import *
 from block import *
 from block.iterative import *
 from block.algebraic.trilinos import ML
+from numpy import random
 
 dolfin.set_log_level(30)
 
@@ -66,7 +67,9 @@ BB = block_mat([[ML(A),  0],
 AAinv = MinRes(AA, precond=BB, tolerance=1e-8, show=0)
 x = AAinv * bb
 
-x.randomize()
+
+xx = random.random(x.size()) 
+x[:] = xx[:]
 
 AAi = CGN(AA, precond=BB, initial_guess=x, tolerance=1e-8, maxiter=1000, show=0)
 AAi * bb

@@ -2,6 +2,7 @@ from __future__ import division
 from common import *
 
 def CGN_BABA(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, callback=None):
+
     #####
     # Adapted from code supplied by KAM (Simula PyCC; GPL license). This code
     # relicensed under LGPL v2.1 or later, in agreement with the original
