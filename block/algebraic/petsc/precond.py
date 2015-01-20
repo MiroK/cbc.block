@@ -27,7 +27,8 @@ class precond(block_base):
         self.ml_prec = PETSc.PC()
         self.ml_prec.create()
         self.ml_prec.setType(prectype)
-        self.ml_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
+#        self.ml_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
+        self.ml_prec.setOperators(Ad, Ad) 
 
         # Merge parameters into the options database
         if parameters:

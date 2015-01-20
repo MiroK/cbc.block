@@ -3,7 +3,7 @@ import numpy
 
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 
 import dolfin
 

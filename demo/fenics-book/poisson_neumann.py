@@ -1,6 +1,6 @@
 from dolfin import *
 from block.iterative import ConjGrad
-from block.algebraic.trilinos import ML
+from block.algebraic.petsc import ML
 
 # Source term
 class Source(Expression):

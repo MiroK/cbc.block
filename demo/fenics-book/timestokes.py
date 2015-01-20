@@ -26,7 +26,7 @@ systems.
 from dolfin import *
 from block import *
 from block.iterative import CGN
-from block.algebraic.trilinos import ML
+from block.algebraic.petsc import ML
 import numpy
 
 dolfin.set_log_level(30)

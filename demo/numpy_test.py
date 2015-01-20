@@ -2,7 +2,7 @@
 
 from block import *
 from block.iterative import *
-from block.algebraic.trilinos import *
+from block.algebraic.petsc import *
 from dolfin import *
 from block.dolfin_util import *
 import numpy
@@ -32,6 +32,5 @@ AA = block_mat([[A, A],
 bb = block_vec([b, b])
 
 xx = AA*bb
-assert abs(xx.norm() - 3.68e-4) < 1e-6
+assert abs(xx.norm() - 3.29e-4) < 1e-6
 
-print xx
