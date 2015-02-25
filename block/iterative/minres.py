@@ -32,6 +32,12 @@ def minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0
     y = B*r1
     beta1 = inner(r1,y)
 
+    if relativeconv:
+        tolerance *= sqrt(beta1)
+#    print "tolerance ", tolerance, beta1, relativeconv 
+
+
+
     #  Test for an indefinite preconditioner.
     #  If b = 0 exactly, stop with x = 0.
     if beta1 < 0:

@@ -146,6 +146,8 @@ class iterative(block_base):
             return True
         if eff_tolerance < 0:
             eff_tolerance *= -self.residuals[0]
+        if self.relativeconv: 
+            eff_tolerance *= self.residuals[0]
         return self.residuals[-1] <= eff_tolerance
 
     def eigenvalue_estimates(self):
