@@ -24,11 +24,11 @@ class precond(block_base):
                 info('failed to set near null space (not supported in petsc4py version)')
 
         self.A = A
-        self.ml_prec = PETSc.PC()
-        self.ml_prec.create()
-        self.ml_prec.setType(prectype)
-#        self.ml_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
-        self.ml_prec.setOperators(Ad, Ad) 
+        self.petsc_prec = PETSc.PC()
+        self.petsc_prec.create()
+        self.petsc_prec.setType(prectype)
+#        self.petsc_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
+        self.petsc_prec.setOperators(Ad, Ad) 
 
         # Merge parameters into the options database
         if parameters:
@@ -37,8 +37,8 @@ class precond(block_base):
                 PETSc.Options().setValue(key, val)
 
         # Create preconditioner based on the options database
-        self.ml_prec.setFromOptions()
-        self.ml_prec.setUp()
+        self.petsc_prec.setFromOptions()
+        self.petsc_prec.setUp()
 
         # Reset the options database
         if parameters:
@@ -58,11 +58,11 @@ class precond(block_base):
             raise RuntimeError(
                 'incompatible dimensions for PETSc matvec, %d != %d'%(len(x),len(b)))
 
-        self.ml_prec.apply(b.down_cast().vec(), x.down_cast().vec())
+        self.petsc_prec.apply(b.down_cast().vec(), x.down_cast().vec())
         return x
 
     def down_cast(self):
-        return self.ml_prec
+        return self.petsc_prec
 
     def __str__(self):
         return '<%s prec of %s>'%(self.__class__.__name__, str(self.A))
