@@ -102,3 +102,67 @@ class MumpsSolver(LU):
         options = parameters.copy() if parameters else {}
         options['pc_factor_mat_solver_package'] = 'mumps'
         precond.__init__(self, A, PETSc.PC.Type.LU, parameters, 1, None)
+
+
+class BoomerAMG(precond):
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        
+        options = {
+            "pc_hypre_type": "boomeramg",
+            #"pc_hypre_boomeramg_cycle_type": "V", # (V,W)
+            #"pc_hypre_boomeramg_max_levels": 25,
+            #"pc_hypre_boomeramg_max_iter": 1,
+            #"pc_hypre_boomeramg_tol": 0,     
+            #"pc_hypre_boomeramg_truncfactor" : 0,      # Truncation factor for interpolation
+            #"pc_hypre_boomeramg_P_max": 0,             # Max elements per row for interpolation
+            #"pc_hypre_boomeramg_agg_nl": 0,            # Number of levels of aggressive coarsening
+            #"pc_hypre_boomeramg_agg_num_paths": 1,     # Number of paths for aggressive coarsening
+            #"pc_hypre_boomeramg_strong_threshold": .25,# Threshold for being strongly connected
+            #"pc_hypre_boomeramg_max_row_sum": 0.9,
+            #"pc_hypre_boomeramg_grid_sweeps_all": 1,   # Number of sweeps for the up and down grid levels 
+            #"pc_hypre_boomeramg_grid_sweeps_down": 1,  
+            #"pc_hypre_boomeramg_grid_sweeps_up":1,
+            #"pc_hypre_boomeramg_grid_sweeps_coarse": 1,# Number of sweeps for the coarse level (None)
+            #"pc_hypre_boomeramg_relax_type_all":  "symmetric-SOR/Jacobi", # (Jacobi, sequential-Gauss-Seidel, seqboundary-Gauss-Seidel, 
+                                                                          #  SOR/Jacobi, backward-SOR/Jacobi,  symmetric-SOR/Jacobi,  
+                                                                          #  l1scaled-SOR/Jacobi Gaussian-elimination, CG, Chebyshev, 
+                                                                          #  FCF-Jacobi, l1scaled-Jacobi)
+            #"pc_hypre_boomeramg_relax_type_down": "symmetric-SOR/Jacobi",
+            #"pc_hypre_boomeramg_relax_type_up": "symmetric-SOR/Jacobi",
+            #"pc_hypre_boomeramg_relax_type_coarse": "Gaussian-elimination",
+            #"pc_hypre_boomeramg_relax_weight_all": 1,   # Relaxation weight for all levels (0 = hypre estimates, -k = determined with k CG steps)
+            #"pc_hypre_boomeramg_relax_weight_level": (1,1), # Set the relaxation weight for a particular level
+            #"pc_hypre_boomeramg_outer_relax_weight_all": 1,
+            #"pc_hypre_boomeramg_outer_relax_weight_level": (1,1),
+            #"pc_hypre_boomeramg_no_CF": "",               # Do not use CF-relaxation 
+            #"pc_hypre_boomeramg_measure_type": "local",   # (local global)
+            #"pc_hypre_boomeramg_coarsen_type": "Falgout", # (Ruge-Stueben, modifiedRuge-Stueben, Falgout, PMIS, HMIS)
+            #"pc_hypre_boomeramg_interp_type": "classical",# (classical, direct, multipass, multipass-wts, ext+i, ext+i-cc, standard, standard-wts, FF, FF1)
+            #"pc_hypre_boomeramg_print_statistics": "",
+            #"pc_hypre_boomeramg_print_debug": "",
+            #"pc_hypre_boomeramg_nodal_coarsen": "",
+            #"pc_hypre_boomeramg_nodal_relaxation": "",
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.HYPRE, options, pdes, nullspace)
+
+
+class SOR(precond):
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        options = {
+            "pc_sor_omega": 1,      # relaxation factor (0 < omega < 2, 1 is Gauss-Seidel)
+            "pc_sor_its": 1,        # number of inner SOR iterations
+            "pc_sor_lits": 1,       # number of local inner SOR iterations
+            "pc_sor_symmetric": "", # for SSOR
+            #"pc_sor_backward": "",
+            #"pc_sor_forward": "",  
+            #"tmp_pc_sor_local_symmetric": "", # use SSOR separately on each processor
+            #"tmp_pc_sor_local_backward": "",  
+            #"tmp_pc_sor_local_forward": "",
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.SOR, options, pdes, nullspace)
