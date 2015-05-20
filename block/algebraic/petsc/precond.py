@@ -104,7 +104,7 @@ class MumpsSolver(LU):
         precond.__init__(self, A, PETSc.PC.Type.LU, parameters, 1, None)
 
 
-class BoomerAMG(precond):
+class AMG(precond):
     def __init__(self, A, parameters=None, pdes=1, nullspace=None):
         
         options = {
