@@ -105,6 +105,9 @@ class MumpsSolver(LU):
 
 
 class AMG(precond):
+    """
+    BoomerAMG preconditioner from the Hypre Library
+    """
     def __init__(self, A, parameters=None, pdes=1, nullspace=None):
         
         options = {
@@ -166,3 +169,38 @@ class SOR(precond):
         if parameters:
             options.update(parameters)
         precond.__init__(self, A, PETSc.PC.Type.SOR, options, pdes, nullspace)
+
+
+class ASM(precond):
+    """
+    Additive Scwharz Method.
+    Defaults (or should default, not tested) to one block per process.
+    """
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        options = {
+            #"pc_asm_blocks":  1,             # Number of subdomains
+            "pc_asm_overlap": 1,             # Number of grid points overlap
+            "pc_asm_type":  "RESTRICT",      # (NONE, RESTRICT, INTERPOLATE, BASIC)
+            "sup_ksp_type": "preonly",       # KSP solver for the subproblems
+            "sub_pc_type": "ilu"             # Preconditioner for the subproblems
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.ASM, options, pdes, nullspace)
+
+
+class Jacobi(precond):
+    """
+    Actually this is only a diagonal scaling preconditioner; no support for relaxation or multiple iterations.
+    """
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        options = {
+            #"pc_jacobi_rowmax": "",  # Use row maximums for diagonal
+            #"pc_jacobi_rowsum": "",  # Use row sums for diagonal
+            #"pc_jacobi_abs":, "",    # Use absolute values of diagaonal entries
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.JACOBI, options, pdes, nullspace)
