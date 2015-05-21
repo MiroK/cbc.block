@@ -24,11 +24,11 @@ class precond(block_base):
                 info('failed to set near null space (not supported in petsc4py version)')
 
         self.A = A
-        self.ml_prec = PETSc.PC()
-        self.ml_prec.create()
-        self.ml_prec.setType(prectype)
-#        self.ml_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
-        self.ml_prec.setOperators(Ad, Ad) 
+        self.petsc_prec = PETSc.PC()
+        self.petsc_prec.create()
+        self.petsc_prec.setType(prectype)
+#        self.petsc_prec.setOperators(Ad, Ad, PETSc.Mat.Structure.SAME_PRECONDITIONER)
+        self.petsc_prec.setOperators(Ad, Ad) 
 
         # Merge parameters into the options database
         if parameters:
@@ -37,8 +37,8 @@ class precond(block_base):
                 PETSc.Options().setValue(key, val)
 
         # Create preconditioner based on the options database
-        self.ml_prec.setFromOptions()
-        self.ml_prec.setUp()
+        self.petsc_prec.setFromOptions()
+        self.petsc_prec.setUp()
 
         # Reset the options database
         if parameters:
@@ -58,11 +58,11 @@ class precond(block_base):
             raise RuntimeError(
                 'incompatible dimensions for PETSc matvec, %d != %d'%(len(x),len(b)))
 
-        self.ml_prec.apply(b.down_cast().vec(), x.down_cast().vec())
+        self.petsc_prec.apply(b.down_cast().vec(), x.down_cast().vec())
         return x
 
     def down_cast(self):
-        return self.ml_prec
+        return self.petsc_prec
 
     def __str__(self):
         return '<%s prec of %s>'%(self.__class__.__name__, str(self.A))
@@ -102,3 +102,105 @@ class MumpsSolver(LU):
         options = parameters.copy() if parameters else {}
         options['pc_factor_mat_solver_package'] = 'mumps'
         precond.__init__(self, A, PETSc.PC.Type.LU, parameters, 1, None)
+
+
+class AMG(precond):
+    """
+    BoomerAMG preconditioner from the Hypre Library
+    """
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        
+        options = {
+            "pc_hypre_type": "boomeramg",
+            #"pc_hypre_boomeramg_cycle_type": "V", # (V,W)
+            #"pc_hypre_boomeramg_max_levels": 25,
+            #"pc_hypre_boomeramg_max_iter": 1,
+            #"pc_hypre_boomeramg_tol": 0,     
+            #"pc_hypre_boomeramg_truncfactor" : 0,      # Truncation factor for interpolation
+            #"pc_hypre_boomeramg_P_max": 0,             # Max elements per row for interpolation
+            #"pc_hypre_boomeramg_agg_nl": 0,            # Number of levels of aggressive coarsening
+            #"pc_hypre_boomeramg_agg_num_paths": 1,     # Number of paths for aggressive coarsening
+            #"pc_hypre_boomeramg_strong_threshold": .25,# Threshold for being strongly connected
+            #"pc_hypre_boomeramg_max_row_sum": 0.9,
+            #"pc_hypre_boomeramg_grid_sweeps_all": 1,   # Number of sweeps for the up and down grid levels 
+            #"pc_hypre_boomeramg_grid_sweeps_down": 1,  
+            #"pc_hypre_boomeramg_grid_sweeps_up":1,
+            #"pc_hypre_boomeramg_grid_sweeps_coarse": 1,# Number of sweeps for the coarse level (None)
+            #"pc_hypre_boomeramg_relax_type_all":  "symmetric-SOR/Jacobi", # (Jacobi, sequential-Gauss-Seidel, seqboundary-Gauss-Seidel, 
+                                                                          #  SOR/Jacobi, backward-SOR/Jacobi,  symmetric-SOR/Jacobi,  
+                                                                          #  l1scaled-SOR/Jacobi Gaussian-elimination, CG, Chebyshev, 
+                                                                          #  FCF-Jacobi, l1scaled-Jacobi)
+            #"pc_hypre_boomeramg_relax_type_down": "symmetric-SOR/Jacobi",
+            #"pc_hypre_boomeramg_relax_type_up": "symmetric-SOR/Jacobi",
+            #"pc_hypre_boomeramg_relax_type_coarse": "Gaussian-elimination",
+            #"pc_hypre_boomeramg_relax_weight_all": 1,   # Relaxation weight for all levels (0 = hypre estimates, -k = determined with k CG steps)
+            #"pc_hypre_boomeramg_relax_weight_level": (1,1), # Set the relaxation weight for a particular level
+            #"pc_hypre_boomeramg_outer_relax_weight_all": 1,
+            #"pc_hypre_boomeramg_outer_relax_weight_level": (1,1),
+            #"pc_hypre_boomeramg_no_CF": "",               # Do not use CF-relaxation 
+            #"pc_hypre_boomeramg_measure_type": "local",   # (local global)
+            #"pc_hypre_boomeramg_coarsen_type": "Falgout", # (Ruge-Stueben, modifiedRuge-Stueben, Falgout, PMIS, HMIS)
+            #"pc_hypre_boomeramg_interp_type": "classical",# (classical, direct, multipass, multipass-wts, ext+i, ext+i-cc, standard, standard-wts, FF, FF1)
+            #"pc_hypre_boomeramg_print_statistics": "",
+            #"pc_hypre_boomeramg_print_debug": "",
+            #"pc_hypre_boomeramg_nodal_coarsen": "",
+            #"pc_hypre_boomeramg_nodal_relaxation": "",
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.HYPRE, options, pdes, nullspace)
+
+
+class SOR(precond):
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        options = {
+            "pc_sor_omega": 1,      # relaxation factor (0 < omega < 2, 1 is Gauss-Seidel)
+            "pc_sor_its": 1,        # number of inner SOR iterations
+            "pc_sor_lits": 1,       # number of local inner SOR iterations
+            "pc_sor_symmetric": "", # for SSOR
+            #"pc_sor_backward": "",
+            #"pc_sor_forward": "",  
+            #"tmp_pc_sor_local_symmetric": "", # use SSOR separately on each processor
+            #"tmp_pc_sor_local_backward": "",  
+            #"tmp_pc_sor_local_forward": "",
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.SOR, options, pdes, nullspace)
+
+
+class ASM(precond):
+    """
+    Additive Scwharz Method.
+    Defaults (or should default, not tested) to one block per process.
+    """
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        options = {
+            #"pc_asm_blocks":  1,             # Number of subdomains
+            "pc_asm_overlap": 1,             # Number of grid points overlap
+            "pc_asm_type":  "RESTRICT",      # (NONE, RESTRICT, INTERPOLATE, BASIC)
+            "sup_ksp_type": "preonly",       # KSP solver for the subproblems
+            "sub_pc_type": "ilu"             # Preconditioner for the subproblems
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.ASM, options, pdes, nullspace)
+
+
+class Jacobi(precond):
+    """
+    Actually this is only a diagonal scaling preconditioner; no support for relaxation or multiple iterations.
+    """
+    def __init__(self, A, parameters=None, pdes=1, nullspace=None):
+        options = {
+            #"pc_jacobi_rowmax": "",  # Use row maximums for diagonal
+            #"pc_jacobi_rowsum": "",  # Use row sums for diagonal
+            #"pc_jacobi_abs":, "",    # Use absolute values of diagaonal entries
+            }
+        options.update(PETSc.Options().getAll())
+        if parameters:
+            options.update(parameters)
+        precond.__init__(self, A, PETSc.PC.Type.JACOBI, options, pdes, nullspace)
