@@ -103,7 +103,7 @@ class FormSplitter(MultiFunction):
         self._args[o] = as_vector(args)
         return self._args[o]
 
-def collapse_form(form):
+def split_form(form):
     # Takes a mixed space form and returns a numpy array of forms for use with cbc.block
     # Array entries are the forms on each collapsed subspace of the mixed space.
     from numpy import zeros
@@ -132,7 +132,7 @@ def _collapse_bc(bc):
     return (int(sub_id), sub_bc)    
 
 
-def collapse_bcs(bcs, m):
+def split_bcs(bcs, m):
     # return a list of lists of DirichletBC for use with cbc.block
     # we need the number of blocks m to ensure correct length of output list
     collapsed_bcs = [[] for i in xrange(m)]

@@ -56,8 +56,8 @@ def block_tensor(obj):
 
     from ufl import Form
     if isinstance(obj, Form):
-        from splitting import collapse_form
-        obj = collapse_form(obj)
+        from splitting import split_form
+        obj = split_form(obj)
     blocks = numpy.array(obj)
     if len(blocks.shape) == 2:
         return block_mat(blocks)

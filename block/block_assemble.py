@@ -67,11 +67,11 @@ def block_assemble(lhs, rhs=None, bcs=None,
         else:
             return b
 
-    # check if arguments are forms, in which case bcs have to be collapsed
+    # check if arguments are forms, in which case bcs have to be split
     from ufl import Form
     if isinstance(lhs, Form):
-        from splitting import collapse_bcs
-        bcs = collapse_bcs(bcs, m)
+        from splitting import split_bcs
+        bcs = split_bcs(bcs, m)
     # Otherwise check that boundary conditions are valid.
     if not hasattr(bcs,'__iter__'):
         raise TypeError(error_msg['invalid bcs'])
