@@ -28,11 +28,15 @@ def block_assemble(lhs, rhs=None, bcs=None,
                  'invalid signs'   : 'signs should be a list of length n containing only 1 or -1',
                  'mpi and symm'    : 'Symmetric application of BC not yet implemented in parallel'}
     # Check arguments
+    from numpy import ndarray
+    has_rhs = True if isinstance(rhs, ndarray) else rhs != None
+    has_lhs = True if isinstance(rhs, ndarray) else rhs != None
+
     if symmetric:
         from dolfin import MPI, mpi_comm_world
         if MPI.size(mpi_comm_world()) > 1:
             raise NotImplementedError(error_msg['mpi and symm'])
-    if lhs and rhs:
+    if has_lhs and has_rhs:
         A, b = map(block_tensor,[lhs,rhs])
         n, m = A.blocks.shape
         if not ( isinstance(b,block_vec) and  len(b.blocks) is m):
@@ -54,13 +58,20 @@ def block_assemble(lhs, rhs=None, bcs=None,
     if A:
         A.blocks.flat[:] = map(assemble_if_form,A.blocks.flat)
     if b:
-        b.blocks[:] = map(assemble_if_form,b.blocks)
+        #b.blocks.flat[:] = map(assemble_if_form, b.blocks.flat)
+        b = block_vec(map(assemble_if_form, b.blocks.flat))
     # If there are no boundary conditions then we are done.
     if bcs is None:
         if A:
             return [A,b] if b else A
         else:
             return b
+
+    # check if arguments are forms, in which case bcs have to be split
+    from ufl import Form
+    if isinstance(lhs, Form):
+        from splitting import split_bcs
+        bcs = split_bcs(bcs, m)
     # Otherwise check that boundary conditions are valid.
     if not hasattr(bcs,'__iter__'):
         raise TypeError(error_msg['invalid bcs'])
@@ -162,6 +173,7 @@ def block_assemble(lhs, rhs=None, bcs=None,
         result += [b]
     return result[0] if len(result)==1 else result
 
+
 def block_symmetric_assemble(forms, bcs):
     return block_assemble(forms,bcs=bcs,symmetric=True)
 
@@ -171,7 +183,7 @@ def _is_form(form):
     return isinstance(form, (cpp_Form, ufl_Form))
 
 def _new_square_matrix(bc, val):
-    from dolfin import *
+    from dolfin import TrialFunction, TestFunction
     import numpy
     V = bc.function_space()
     u,v = TrialFunction(V),TestFunction(V)
