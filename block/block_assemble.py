@@ -184,6 +184,7 @@ def _is_form(form):
 
 def _new_square_matrix(bc, val):
     from dolfin import TrialFunction, TestFunction
+    from dolfin import assemble, Constant, inner, dx
     import numpy
     V = bc.function_space()
     u,v = TrialFunction(V),TestFunction(V)
