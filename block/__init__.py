@@ -21,7 +21,7 @@ from block_util import issymmetric
 
 def _init():
     import dolfin
-    from object_pool import vec_pool
+    from object_pool import vec_pool, store_args_ref
     from block_base import block_container
 
     # To make stuff like L=C*B work when C and B are type dolfin.Matrix, we inject
@@ -75,7 +75,13 @@ def _init():
         vec = dolfin.Vector()
         self.init_vector(vec, dim)
         return vec
+
     inject_matrix_method('create_vec', vec_pool(create_vec))
+
+    # HACK: The problem is that create_vec uses a pool of free vectors, but the internal
+    # (shared_ptr) reference in Function is not visible in Python. This creates an explicit
+    # Python-side reference to the Vector, so it's not considered re-usable too soon.
+    dolfin.Function.__init__ = store_args_ref(dolfin.Function.__init__)
 
     # For the Trilinos stuff, it's much nicer if down_cast is a method on the
     # object. FIXME: Follow new dolfin naming? Invent our own?

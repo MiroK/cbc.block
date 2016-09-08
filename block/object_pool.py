@@ -58,3 +58,13 @@ def vec_pool(func):
         return vec
     pooled_create_vec.__doc__ = func.__doc__
     return pooled_create_vec
+
+def store_args_ref(func):
+    """Decorator for any function, which stores a reference to the arguments
+    on the object. Used to force a Python-side reference, when the native-side
+    reference isn't sufficient (or present)."""
+    def store_args_and_pass(self, *args, **kwargs):
+        self._vec_pool_args = (args, kwargs)
+        return func(self, *args, **kwargs)
+    store_args_and_pass.__doc__ = func.__doc__
+    return store_args_and_pass
