@@ -54,7 +54,7 @@ def block_assemble(lhs, rhs=None, bcs=None,
         raise RuntimeError(error_msg['symmetric_mod error'])
     # First assemble everything needing assembling.
     from dolfin import assemble
-    assemble_if_form = lambda x: assemble(x) if _is_form(x) else x
+    assemble_if_form = lambda x: assemble(x, keep_diagonal=True) if _is_form(x) else x
     if A:
         A.blocks.flat[:] = map(assemble_if_form,A.blocks.flat)
     if b:
