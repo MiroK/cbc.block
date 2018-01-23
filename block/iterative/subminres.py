@@ -66,8 +66,14 @@ def subminres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shif
     # Convergence is achieved when the P-norms of the total residual vector
     # and all of its subvectors verify both their relative and absolute tolerances
     if relativeconv:
-        small_enough = lambda array: all(abs(elm) < tolerance*abs(elm0)
-                                         for elm, elm0 in zip(array, eta0))
+        # NOTE: Sometimes (e.g. x == 0) can lead to some of the elements of
+        # elm0 to be zero. In this case we substite for zeros the mean of
+        # the error
+        eta0_cvrg = np.abs(eta0)
+        eta0_cvrg[eta0_cvrg < 1E-15] = np.mean(eta0_cvrg)
+        
+        small_enough = lambda array: all(abs(elm) < tolerance*elm0
+                                         for elm, elm0 in zip(array, eta0_cvrg))
     else:
         small_enough = lambda array: all(abs(elm) < tolerance for elm in array)
 
