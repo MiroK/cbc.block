@@ -26,6 +26,10 @@ class MinRes(iterative):
     import minres
     method = staticmethod(minres.minres)
 
+class SubMinRes(iterative):
+    import subminres
+    method = staticmethod(subminres.subminres)
+    
 class MinRes2(iterative):
     import minres2
     method = staticmethod(minres2.minres)

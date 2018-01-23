@@ -33,10 +33,17 @@ if MPI.size(None) > 1:
     exit()
 
 # Load mesh and subdomains
-path = os.path.join(os.path.dirname(__file__), '')
-mesh = Mesh(path+"dolfin-2.xml.gz")
-dim = mesh.topology().dim()
-sub_domains = MeshFunction("size_t", mesh, path+"subdomains.xml.gz")
+#path = os.path.join(os.path.dirname(__file__), '')
+#mesh = Mesh(path+"dolfin-2.xml.gz")
+#dim = mesh.topology().dim()
+#sub_domains = MeshFunction("size_t", mesh, path+"subdomains.xml.gz")
+import sys
+n = int(sys.argv[1])
+mesh = UnitSquareMesh(n, n)
+sub_domains = FacetFunction('size_t', mesh, 100)
+DomainBoundary().mark(sub_domains, 0)
+CompiledSubDomain('near(x[0], 0.)').mark(sub_domains, 1)
+CompiledSubDomain('near(x[0], 1.)').mark(sub_domains, 2)
 
 # Define function spaces
 V = VectorFunctionSpace(mesh, "CG", 2)
@@ -47,7 +54,7 @@ noslip = Constant((0, 0))
 bc0 = DirichletBC(V, noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
-inflow = Expression(("-sin(x[1]*pi)", "0.0"))
+inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
 bc1 = DirichletBC(V, inflow, sub_domains, 1)
 
 # Boundary condition for pressure at outflow
@@ -83,7 +90,7 @@ block_bc(bcs, True).apply(AA).apply(bb)
 
 # Create preconditioners: An ML preconditioner for A, and the inverse diagonal
 # of the mass matrix for the (2,2) block.
-Ap = ML(A, nullspace=rigid_body_modes(V))
+Ap = AMG(A)#ML(A, nullspace=rigid_body_modes(V))
 Ip = LumpedInvDiag(I)
 
 prec = block_mat([[Ap, 0],
@@ -91,7 +98,14 @@ prec = block_mat([[Ap, 0],
 
 # Create the block inverse, using the preconditioned Minimum Residual method
 # (suitable for symmetric indefinite problems).
-AAinv = MinRes(AA, precond=prec, tolerance=1e-10, maxiter=500, show=2)
+x0 = AA.create_vec()
+x0.randomize()
+
+memory = []
+callback = lambda k, n, x, memory=memory: memory.append(n)
+AAinv = SubMinRes(AA, precond=prec, tolerance=1e-6, maxiter=500, relativeconv=True, show=2,
+                  callback=callback,
+                  initial_guess=x0)
 
 # Compute solution
 u, p = AAinv * bb
@@ -99,7 +113,21 @@ u, p = AAinv * bb
 print "Norm of velocity coefficient vector: %.15g" % u.norm("l2")
 print "Norm of pressure coefficient vector: %.15g" % p.norm("l2")
 
+import matplotlib.pyplot as plt
+import numpy as np
+memory = np.array(memory)
+
+plt.figure()
+plt.semilogy(memory[:, 0], label='u')
+plt.semilogy(memory[:, 1], label='p')
+plt.legend(loc='best')
+plt.show()
+#import numpy as np
+#from scipy.sparse import diags
+
+#T = diags([AAinv.betas[1:], AAinv.alphas, AAinv.betas[1:]], [-1, 0, 1])
+#print np.linalg.cond(T.todense())
 # Plot solution
-plot(Function(V, u))
-plot(Function(Q, p))
-interactive()
+#plot(Function(V, u))
+#plot(Function(Q, p))
+#interactive()
