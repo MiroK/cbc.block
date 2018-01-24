@@ -34,7 +34,9 @@ class MinRes2(iterative):
     import minres2
     method = staticmethod(minres2.minres)
 
-
+class PETScMinRes(iterative):
+    import petscminres
+    method = staticmethod(petscminres.petsc_minres)
 
 class LGMRES(iterative):
     import lgmres

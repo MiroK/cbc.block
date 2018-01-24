@@ -102,10 +102,10 @@ x0 = AA.create_vec()
 x0.randomize()
 
 memory = []
-callback = lambda k, n, x, memory=memory: memory.append(n)
-AAinv = SubMinRes(AA, precond=prec, tolerance=1e-6, maxiter=500, relativeconv=True, show=2,
-                  callback=callback,
-                  initial_guess=x0)
+#callback = lambda k, n, x, memory=memory: memory.append(n)
+AAinv = PETScMinRes(AA, precond=prec, tolerance=1e-6, maxiter=500, relativeconv=True, show=2,
+               callback=None,#callback,
+               initial_guess=x0)
 
 # Compute solution
 u, p = AAinv * bb
@@ -113,21 +113,13 @@ u, p = AAinv * bb
 print "Norm of velocity coefficient vector: %.15g" % u.norm("l2")
 print "Norm of pressure coefficient vector: %.15g" % p.norm("l2")
 
-import matplotlib.pyplot as plt
-import numpy as np
-memory = np.array(memory)
+if memory:
+    import matplotlib.pyplot as plt
+    import numpy as np
+    memory = np.array(memory)
 
-plt.figure()
-plt.semilogy(memory[:, 0], label='u')
-plt.semilogy(memory[:, 1], label='p')
-plt.legend(loc='best')
-plt.show()
-#import numpy as np
-#from scipy.sparse import diags
-
-#T = diags([AAinv.betas[1:], AAinv.alphas, AAinv.betas[1:]], [-1, 0, 1])
-#print np.linalg.cond(T.todense())
-# Plot solution
-#plot(Function(V, u))
-#plot(Function(Q, p))
-#interactive()
+    plt.figure()
+    plt.semilogy(memory[:, 0], label='u')
+    plt.semilogy(memory[:, 1], label='p')
+    plt.legend(loc='best')
+    plt.show()
