@@ -26,7 +26,7 @@ systems.
 from dolfin import *
 from block import *
 from block.iterative import CGN
-from block.algebraic.petsc import ML
+from block.algebraic.petsc import AMG
 import numpy
 
 dolfin.set_log_level(30)
@@ -55,7 +55,7 @@ mesh = UnitSquareMesh(N,N)
 V = VectorFunctionSpace(mesh, "CG", 2)
 Q = FunctionSpace(mesh, "CG", 1)
 
-f = Constant((0,0))
+f = Constant((1,0))
 g = Constant(0)
 k = Constant(k_val)
 kinv = Constant(1.0/k_val)
@@ -68,20 +68,21 @@ a12 = div(v)*p*dx
 a21 = div(u)*q*dx
 L1  = dot(f, v)*dx
 
-bcs = block_bc([DirichletBC(V, BoundaryFunction(), Boundary()), None], True)
+#bcs = block_bc([DirichletBC(V, BoundaryFunction(degree=1), Boundary()), None], True)
 AA = block_assemble([[a11, a12],
                      [a21,  0 ]])
 bb = block_assemble([L1, 0])
-bcs.apply(AA).apply(bb)
+# bcs.apply(AA).apply(bb)
 
 [[A, B],
  [C, _]] = AA
 
 M = assemble(kinv*p*q*dx)
-L = assemble(dot(grad(p),grad(q))*dx)
+bcsQ = DirichletBC(Q, Constant(0), 'on_boundary')
+L, _ = assemble_system(dot(grad(p),grad(q))*dx, inner(Constant(0), q)*dx, bcsQ)
 
-prec = block_mat([[ML(A),      0     ],
-                  [0,     ML(L)+ML(M)]])
+prec = block_mat([[AMG(A),      0     ],
+                  [0,     AMG(L)+AMG(M)]])
 
 xx = AA.create_vec()
 xx.randomize()
