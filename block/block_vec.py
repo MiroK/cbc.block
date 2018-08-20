@@ -20,10 +20,11 @@ class block_vec(block_container):
         DirichletBCs or FunctionSpaces). If dim==0, newly allocated vectors use
         layout appropriate for b (in Ax=b); if dim==1, the layout for x is
         used."""
-        from dolfin import GenericVector
+        from dolfin import GenericVector, Vector
         from block_mat import block_mat
         for i in range(len(self)):
-            if isinstance(self[i], GenericVector):
+            print '>>>', type(self[i])
+            if isinstance(self[i], (GenericVector, Vector)):
                 continue
             if isinstance(template, block_mat):
                 val = self[i]
@@ -40,7 +41,7 @@ class block_vec(block_container):
                     self[i] = create_vec_from(template[i])
                 except RuntimeError:
                     pass
-            if not isinstance(self[i], GenericVector):
+            if not isinstance(self[i], (GenericVector, Vector)):
                 raise RuntimeError("Can't allocate vector - no usable template for block %d.\n"%i +
                                    "Consider calling something like bb.allocate([V, Q]) to initialise the block_vec.")
             self[i][:] = val or 0.0

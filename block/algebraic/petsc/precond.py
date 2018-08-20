@@ -54,7 +54,8 @@ class precond(block_base):
         if not isinstance(b, GenericVector):
             return NotImplemented
         x = self.A.create_vec(dim=1)
-        if len(x) != len(b):
+
+        if x.size() != b.size():
             raise RuntimeError(
                 'incompatible dimensions for PETSc matvec, %d != %d'%(len(x),len(b)))
 

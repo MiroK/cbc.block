@@ -29,7 +29,7 @@ class diag_op(block_base):
             return NotImplemented
 
         x = self.create_vec(dim=1)
-        if len(x) != len(b):
+        if x.size() != b.size():
             raise RuntimeError(
                 'incompatible dimensions for %s matvec, %d != %d'%(self.__class__.__name__,len(x),len(b)))
 
