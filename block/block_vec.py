@@ -23,7 +23,7 @@ class block_vec(block_container):
         from dolfin import GenericVector, Vector
         from block_mat import block_mat
         for i in range(len(self)):
-            print '>>>', type(self[i])
+
             if isinstance(self[i], (GenericVector, Vector)):
                 continue
             if isinstance(template, block_mat):

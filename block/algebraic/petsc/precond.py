@@ -153,6 +153,20 @@ class AMG(precond):
         precond.__init__(self, A, PETSc.PC.Type.HYPRE, options, pdes, nullspace)
 
 
+def PETScPreconditioner(pc_type):
+    '''turn 'mg' to that PETSC PC preconditioner'''
+    class PC(precond):
+        def __init__(self, A, parameters=None, pdes=1, nullspace=None, pc_type=pc_type):
+            options = {}
+            options.update(PETSc.Options().getAll())
+
+            parameters and options.update(parameters)
+            pc_type = eval('PETSc.PC.Type.%s' % pc_type.upper())
+            precond.__init__(self, A, pc_type, options, pdes, nullspace)
+
+    return PC
+
+
 class SOR(precond):
     def __init__(self, A, parameters=None, pdes=1, nullspace=None):
         options = {
