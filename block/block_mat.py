@@ -73,35 +73,44 @@ class block_mat(block_container):
         import numpy
         from dolfin import GenericVector
 
-        m,n = self.blocks.shape
-        y = block_vec(self.blocks.shape[0])
+        m, n = self.blocks.shape
+        y = block_vec(n) if n > 1 else None
 
         for i in range(n):
             for j in range(m):
                 if self[j,i] is None or self[j,i]==0:
                     # Skip multiply if zero
                     continue
-                if self[i,j] == 1:
+                if self[j, i] == 1:
                     # Skip multiply if identity
-                    z = x[j]
+                    z = x[j] if m > 1 else x
                 elif numpy.isscalar(self[j,i]):
                     # mult==transpmult
-                    z = self[j,i]*x[j]
+                    z = self[j,i]*(x[j] if m > 1 else x)
                 else:
                     # Do the block multiply
-                    z = self[j,i].transpmult(x[j])
+                    z = self[j,i].transpmult(x[j] if m > 1 else x)
                 if not isinstance(z, (GenericVector, block_vec)):
                     # see comment in matvec
                     raise RuntimeError(
                         'unexpected result in matvec, %s\n-- possibly because RHS contains scalars ' \
                         'instead of vectors, use create_vec() or allocate()' % type(z))
-                if y[i] is None:
-                    y[i] = z
+                if n > 1:
+                    if y[i] is None:
+                        y[i] = z
+                    else:
+                        if len(y[i]) != len(z):
+                            raise RuntimeError(
+                                'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i])))
+                        y[i] += z
                 else:
-                    if len(y[i]) != len(z):
-                        raise RuntimeError(
-                            'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i])))
-                    y[i] += z
+                    if y is None:
+                        y = z
+                    else:
+                        if len(y) != len(z):
+                            raise RuntimeError(
+                                'incompatible dimensions in block (%d,%d) -- %d, was %d'%(i,j,len(z),len(y[i])))
+                        y += z
         return y
 
     def copy(self):

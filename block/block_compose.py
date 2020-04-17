@@ -164,7 +164,10 @@ class block_transpose(block_base):
     def __init__(self, A):
         self.A = A
     def matvec(self, x):
-        return self.A.transpmult(x)
+        try:
+            return self.A.transpmult(x)
+        except AttributeError:
+            return self.A*x
     def transpmult(self, x):
         return self.A.__mul__(x)
 
