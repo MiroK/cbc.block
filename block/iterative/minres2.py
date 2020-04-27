@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 
 """
 @license: Copyright (C) 2006
@@ -24,6 +25,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 MinRes: A generic implementation of the Minimum Residual method.
 """
+
 
 
 MinResError = "Error in MinRes"

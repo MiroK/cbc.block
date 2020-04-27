@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from dolfin import *
 from block.iterative import ConjGrad
 from block.algebraic.petsc import ML
@@ -54,4 +56,4 @@ x = Ainv*b
 
 e = Ainv.eigenvalue_estimates()
 
-print "N=%d iter=%d K=%.3g" % (N, Ainv.iterations, e[-1]/e[0])
+print("N=%d iter=%d K=%.3g" % (N, Ainv.iterations, e[-1]/e[0]))

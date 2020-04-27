@@ -19,6 +19,8 @@ and BB^ approximates the inverse of the block operator
        | 0   L |
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 from dolfin import *
 from block import *
 from block.dolfin_util import *
@@ -27,20 +29,22 @@ from block.algebraic.petsc import *
 
 import os
 
-dolfin.set_log_level(15)
-if MPI.size(None) > 1:
-    print "Stokes demo does not work in parallel because of old-style XML mesh files"
-    exit()
 
 # Load mesh and subdomains
 #path = os.path.join(os.path.dirname(__file__), '')
 #mesh = Mesh(path+"dolfin-2.xml.gz")
 #dim = mesh.topology().dim()
 #sub_domains = MeshFunction("size_t", mesh, path+"subdomains.xml.gz")
+
 import sys
 n = int(sys.argv[1])
 mesh = UnitSquareMesh(n, n)
-sub_domains = FacetFunction('size_t', mesh, 100)
+
+if MPI.size(mesh.mpi_comm()) > 1:
+    print("Stokes demo does not work in parallel because of old-style XML mesh files")
+    exit()
+
+sub_domains = MeshFunction('size_t', mesh, mesh.topology().dim()-1, 100)
 DomainBoundary().mark(sub_domains, 0)
 CompiledSubDomain('near(x[0], 0.)').mark(sub_domains, 1)
 CompiledSubDomain('near(x[0], 1.)').mark(sub_domains, 2)
@@ -110,8 +114,8 @@ AAinv = PETScMinRes(AA, precond=prec, tolerance=1e-6, maxiter=500, relativeconv=
 # Compute solution
 u, p = AAinv * bb
 
-print "Norm of velocity coefficient vector: %.15g" % u.norm("l2")
-print "Norm of pressure coefficient vector: %.15g" % p.norm("l2")
+print("Norm of velocity coefficient vector: %.15g" % u.norm("l2"))
+print("Norm of pressure coefficient vector: %.15g" % p.norm("l2"))
 
 if memory:
     import matplotlib.pyplot as plt

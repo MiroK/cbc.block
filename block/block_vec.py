@@ -1,5 +1,7 @@
 from __future__ import division
-from block_base import block_container
+from __future__ import absolute_import
+from .block_base import block_container
+from six.moves import range
 
 class block_vec(block_container):
     """Class defining a block vector suitable for multiplication with a
@@ -21,7 +23,7 @@ class block_vec(block_container):
         layout appropriate for b (in Ax=b); if dim==1, the layout for x is
         used."""
         from dolfin import GenericVector, Vector
-        from block_mat import block_mat
+        from .block_mat import block_mat
         for i in range(len(self)):
 
             if isinstance(self[i], (GenericVector, Vector)):
@@ -36,7 +38,7 @@ class block_vec(block_container):
                     except AttributeError:
                         pass
             else:
-                from block_util import create_vec_from
+                from .block_util import create_vec_from
                 try:
                     self[i] = create_vec_from(template[i])
                 except RuntimeError:
@@ -84,7 +86,7 @@ class block_vec(block_container):
         symmetry), but if any vectors have been individually reassembled then
         it needs careful thought. It is probably better to just reassemble the
         whole block_vec using block_assemble()."""
-        from block_util import create_vec_from, wrap_in_list
+        from .block_util import create_vec_from, wrap_in_list
         from dolfin import GenericVector
         for i in range(len(self)):
             if not isinstance(self[i], GenericVector):
@@ -103,7 +105,7 @@ class block_vec(block_container):
         for i in range(len(self)):
             try:
                 y[i] = getattr(self[i], operator)()
-            except Exception, e:
+            except Exception as e:
                 if i==0 or not inplace:
                     raise e
                 else:
@@ -143,7 +145,7 @@ class block_vec(block_container):
 
 
     def copy(self):
-        import block_util
+        from . import block_util
         m = len(self)
         y = block_vec(m)
         for i in range(m):

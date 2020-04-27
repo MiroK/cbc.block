@@ -1,13 +1,16 @@
 from __future__ import division
+from __future__ import absolute_import
+from six.moves import range
 
 """These classes are typically not used directly, but returned by a call to
 block_mat.scheme().
 """
 
-from block_base import block_base
+
+from .block_base import block_base
 
 def block_jacobi(op):
-    from block_mat import block_mat
+    from .block_mat import block_mat
     m,n = op.blocks.shape
     assert m==n
     mat = block_mat(m,n)
@@ -18,7 +21,7 @@ def block_jacobi(op):
 class block_gs(block_base):
     def __init__(self, op, reverse=False, truncated=False, symmetric=False, w=1.0):
         self.op = op
-        self.range = range(len(op))
+        self.range = list(range(len(op)))
         if reverse:
             self.range.reverse()
         if symmetric:

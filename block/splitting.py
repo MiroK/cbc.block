@@ -1,5 +1,8 @@
+from __future__ import absolute_import
 from ufl.corealg.map_dag import MultiFunction
 import collections
+from six.moves import map
+from six.moves import range
 SplitForm = collections.namedtuple("SplitForm", ["indices", "form"])
 
 class FormSplitter(MultiFunction):
@@ -135,7 +138,7 @@ def _collapse_bc(bc):
 def split_bcs(bcs, m):
     # return a list of lists of DirichletBC for use with cbc.block
     # we need the number of blocks m to ensure correct length of output list
-    collapsed_bcs = [[] for i in xrange(m)]
+    collapsed_bcs = [[] for i in range(m)]
     
     for i, bc_i in map(_collapse_bc, bcs):
         collapsed_bcs[i].append(bc_i)

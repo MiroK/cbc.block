@@ -18,6 +18,7 @@ and BB^ approximates the inverse of the block operator
        | 0   L |
 """
 
+from __future__ import absolute_import
 from dolfin import *
 from block import *
 from block.dolfin_util import *

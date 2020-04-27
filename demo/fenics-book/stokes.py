@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from dolfin import *
 from block import *
 from block.iterative import *
@@ -75,4 +77,4 @@ AAi * bb
 
 e = AAi.eigenvalue_estimates()
 
-print "N=%d iter=%d K=%.3g" % (N, AAinv.iterations, sqrt(e[-1]/e[0]))
+print("N=%d iter=%d K=%.3g" % (N, AAinv.iterations, sqrt(e[-1]/e[0])))

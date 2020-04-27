@@ -1,5 +1,7 @@
 from __future__ import division
-from common import *
+from __future__ import absolute_import
+from __future__ import print_function
+from .common import *
 
 def precondconjgrad(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, robustresidual=False, callback=None):
     #####
@@ -30,7 +32,7 @@ def precondconjgrad(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
         z = A*d
         dz = inner(d,z)
         if dz == 0:
-            print 'ConjGrad breakdown'
+            print('ConjGrad breakdown')
             break
         alpha = rz/dz
         x += alpha*d
@@ -42,7 +44,7 @@ def precondconjgrad(B, A, x, b, tolerance, maxiter, progress, relativeconv=False
         rz_prev = rz
         rz = inner(r,z)
         if rz < 0:
-            print 'ConjGrad breakdown'
+            print('ConjGrad breakdown')
             # Restore pre-breakdown state. Don't know if it helps any, but it's
             # consistent with returned quasi-residuals.
             x -= alpha*d

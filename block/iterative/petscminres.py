@@ -1,4 +1,8 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from block.algebraic.petsc.type_wrap import *
+from six.moves import map
+from six.moves import zip
 
 
 def petsc_minres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0, callback=None):
@@ -52,9 +56,9 @@ if __name__ == '__main__':
     Q = FunctionSpace(mesh, 'CG', 1)
     W = [V, Q]
     
-    vq = map(TestFunction, W)
+    vq = list(map(TestFunction, W))
 
-    bb = block_assemble(map(lambda v: inner(Constant(1), v)*dx, vq))
+    bb = block_assemble([inner(Constant(1), v)*dx for v in vq])
 
     vec = PETSc.Vec().create()
     vec.setSizes((V.dim() + Q.dim(), )*2)
@@ -68,12 +72,12 @@ if __name__ == '__main__':
     bb = block_vector(bb, vec)
 
     for x, y in zip(bb, bb0):
-        print (x-y).norm('linf'), x.norm('l2')
+        print((x-y).norm('linf'), x.norm('l2'))
 
-    u, p = map(TrialFunction, W)
-    v, q = map(TestFunction, W)
+    u, p = list(map(TrialFunction, W))
+    v, q = list(map(TestFunction, W))
 
     AA = block_assemble([[inner(u, v)*dx, 0], [0, inner(p, q)*dx]])
 
     x = bb.copy()
-    print petsc_minres(B=1, A=AA, x=x, b=bb, tolerance=1E-10, maxiter=100, progress=1, relativeconv=False)
+    print(petsc_minres(B=1, A=AA, x=x, b=bb, tolerance=1E-10, maxiter=100, progress=1, relativeconv=False))

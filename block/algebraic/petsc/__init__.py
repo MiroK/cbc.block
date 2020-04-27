@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 def _init():
     import block.algebraic
     class active_backend(object):
@@ -15,5 +17,5 @@ def _init():
     petsc4py.init(sys.argv)
 _init()
 
-from precond import *
-from matrix import *
+from .precond import *
+from .matrix import *

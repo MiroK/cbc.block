@@ -1,4 +1,7 @@
 from __future__ import division
+from __future__ import absolute_import
+from six.moves import range
+
 """Base class for iterative solvers."""
 
 from block.block_base import block_base
@@ -32,7 +35,8 @@ class iterative(block_base):
     def matvec(self, b):
         from time import time
         from block.block_vec import block_vec
-        from dolfin import log, info, Progress
+        from dolfin import info, Progress
+        from ffc.log import log
         TRACE = 13 # dolfin.TRACE
 
         T = time()
@@ -73,7 +77,7 @@ class iterative(block_base):
                             progress=progress, callback=self.callback,
                             **self.kwargs)
             del progress # trigger final printout
-        except Exception, e:
+        except Exception as e:
             from dolfin import warning
             warning("Error solving " + self.name)
             raise

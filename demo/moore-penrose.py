@@ -5,6 +5,7 @@ systems of equations (finding the least squares solution for an overspecified
 system, or the minimum-norm / all solutions to an underspecified system.
 """
 
+from __future__ import absolute_import
 from dolfin import *
 from block import *
 from block.iterative import *
@@ -15,7 +16,7 @@ mesh = UnitSquareMesh(64,64)
 V = FunctionSpace(mesh, "CG", 1)
 W = FunctionSpace(mesh, "CG", 2)
 
-f = Expression("sin(pi*x[0])")
+f = Expression("sin(pi*x[0])", degree=5)
 u, v = TrialFunction(V), TestFunction(V)
 s, t = TrialFunction(W), TestFunction(W)
 

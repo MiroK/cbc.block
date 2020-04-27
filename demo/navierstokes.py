@@ -6,6 +6,8 @@ It is a modification of the Stokes demo (demo-stokes.py).
 """
 
 # Scipy (in LGMRES) seems to crash unless it's loaded before PyTrilinos.
+from __future__ import absolute_import
+from __future__ import print_function
 import scipy
 import os
 
@@ -16,7 +18,7 @@ from block.algebraic.petsc import *
 
 dolfin.set_log_level(15)
 if MPI.size(None) > 1:
-    print "Navier-Stokes demo does not work in parallel because of old-style XML mesh files"
+    print("Navier-Stokes demo does not work in parallel because of old-style XML mesh files")
     exit()
 
 # Load mesh and subdomains
@@ -33,7 +35,7 @@ noslip = Constant((0, 0))
 bc0 = DirichletBC(V, noslip, sub_domains, 0)
 
 # Inflow boundary condition for velocity
-inflow = Expression(("-sin(x[1]*pi)", "0.0"))
+inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=4)
 bc1 = DirichletBC(V, inflow, sub_domains, 1)
 
 # Boundary condition for pressure at outflow
@@ -79,8 +81,8 @@ AAinv = LGMRES(AA, precond=prec, tolerance=1e-5, maxiter=50, show=2)
 # Compute solution
 u, p = AAinv * bb
 
-print "Norm of velocity coefficient vector: %.15g" % u.norm("l2")
-print "Norm of pressure coefficient vector: %.15g" % p.norm("l2")
+print("Norm of velocity coefficient vector: %.15g" % u.norm("l2"))
+print("Norm of pressure coefficient vector: %.15g" % p.norm("l2"))
 
 # Plot solution
 plot(Function(V, u))

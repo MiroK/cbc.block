@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from petsc4py import PETSc
 import numpy as np
 

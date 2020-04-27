@@ -1,4 +1,6 @@
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
 
 """This demo program shows the use of block preconditioners with Biot's consolidation equations.
 
@@ -104,7 +106,7 @@ c = 0.25
 h = mesh.hmin()
 fluid_source_domain = CompiledSubDomain('{min}<x[0] && x[0]<{max} && {min}<x[1] && x[1]<{max}'
                                          .format(min=c-h, max=c+h))
-topload_source      = Expression("-sin(2*t*pi)*sin(x[0]*pi/2)/3", t=0)
+topload_source      = Expression("-sin(2*t*pi)*sin(x[0]*pi/2)/3", t=0, degree=4)
 
 bc_u_bedrock        = DirichletBC(V,            [0]*dim,        boundary.bottom)
 bc_u_topload        = DirichletBC(V.sub(dim-1), topload_source, boundary.top)
@@ -164,7 +166,7 @@ AAinv = BiCGStab(AA, precond=AApre, show=2, tolerance=1e-10)
 t = 0.0
 x = None
 while t <= T:
-    print "Time step %f" % t
+    print("Time step %f" % t)
 
     topload_source.t = t
     bb = block_assemble([0, L1])
@@ -184,4 +186,4 @@ while t <= T:
     t += float(dt)
 
 interactive()
-print "Finished normally"
+print("Finished normally")

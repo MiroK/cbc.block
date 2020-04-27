@@ -1,4 +1,10 @@
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
+
+import sys
+
+is_python3 = lambda: sys.version_info > (3, 0)
 
 """This demo program shows the use of block preconditioners for Mixed
 Poisson. The original DOLFIN demo, with description of the mixed formulation of
@@ -43,10 +49,9 @@ This describes a solver using Richardson iterations, with damping 0.5 and a
 fixed number of iterations. It is not very efficient, but since it is a linear
 operator it is safe to use as inner solver for an outer Krylov solver.
 """
-
 from block import *
 from block.iterative import *
-from block.algebraic.petsc import ML, collapse
+from block.algebraic.petsc import AMG, collapse
 from dolfin import *
 
 # Create mesh
@@ -61,8 +66,9 @@ tau, sigma = TestFunction(BDM), TrialFunction(BDM)
 v,   u     = TestFunction(DG),  TrialFunction(DG)
 
 # Define function G such that G \cdot n = g
-class BoundarySource(Expression):
-    def __init__(self, mesh):
+class BoundarySource(UserExpression):
+    def __init__(self, mesh, **kwargs):
+        is_python3() and super().__init__(**kwargs)
         self.mesh = mesh
     def eval_cell(self, values, x, ufc_cell):
         cell = Cell(self.mesh, ufc_cell.index)
@@ -73,7 +79,7 @@ class BoundarySource(Expression):
     def value_shape(self):
         return (2,)
 
-G = BoundarySource(mesh)
+G = BoundarySource(mesh, degree=4)
 
 # Define essential boundary
 def boundary(x):
@@ -85,7 +91,7 @@ bcs_BDM = [DirichletBC(BDM, G, boundary)]
 bcs = block_bc([bcs_BDM, None], True)
 
 # Define source function
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)")
+f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=5)
 
 # Define variational forms (one per block)
 a11 = dot(sigma, tau) * dx
@@ -104,8 +110,7 @@ bcs.apply(AA).apply(bb)
 [[A, B],
  [C, _]] = AA
 
-# Create a preconditioner for A (using the ML preconditioner from Trilinos)
-Ap = ML(A)
+Ap = AMG(A)
 
 # Create an approximate inverse of L=C*B using inner Richardson iterations
 L = C*B
@@ -140,15 +145,15 @@ Sigma, U = AAinv * bb
 #=====================
 
 # Print norms that can be compared with those reported by demo-parallelmixedpoisson
-print 'norm Sigma:', Sigma.norm('l2')
-print 'norm U    :', U.norm('l2')
+print('norm Sigma:', Sigma.norm('l2'))
+print('norm U    :', U.norm('l2'))
 
 # Check that the norms are as expected
-if abs(1.213-Sigma.norm('l2')) > 1e-3 or abs(6.713-U.norm('l2')) > 1e-3:
+if abs(1.213-Sigma.norm('l2')) > 5e-3 or abs(6.713-U.norm('l2')) > 5e-3:
     raise RuntimeError("Wrong value in norms -- please check!")
 
 # Plot sigma and u
 if MPI.size(None) == 1:
     plot(Function(BDM, Sigma))
     plot(Function(DG,  U))
-    interactive()
+    # interactive()

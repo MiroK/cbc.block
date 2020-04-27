@@ -1,5 +1,7 @@
 """Demo showing how to mix dolfin matrices with dense numpy arrays in a block_mat"""
 
+from __future__ import absolute_import
+from __future__ import print_function
 from block import *
 from block.iterative import *
 from block.algebraic.petsc import *
@@ -8,7 +10,7 @@ from block.dolfin_util import *
 import numpy
 
 if MPI.size(None) > 1:
-    print "numpy demo does not work in parallel"
+    print("numpy demo does not work in parallel")
     exit()
 
 # Function spaces, elements
@@ -17,7 +19,7 @@ mesh = UnitSquareMesh(16,16)
 
 V = FunctionSpace(mesh, "CG", 1)
 
-f = Expression("sin(3.14*x[0])")
+f = Expression("sin(3.14*x[0])", degree=4)
 u, v = TrialFunction(V), TestFunction(V)
 
 a = u*v*dx

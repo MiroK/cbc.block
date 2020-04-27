@@ -1,6 +1,9 @@
 from __future__ import division
-from common import *
+from __future__ import absolute_import
+from __future__ import print_function
+from .common import *
 import numpy as np
+from six.moves import zip
 
 
 def subminres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shift=0, callback=None):
@@ -89,68 +92,68 @@ def subminres(B, A, x, b, tolerance, maxiter, progress, relativeconv=False, shif
     # Main loop (lines 8-29) 
     while not small_enough(etajm1) and niter <= maxiter:
         # Main body 
-	# Evaluate matrix times vector and update delta and v (lines 9-10)
-	Azj = A*zj
-	deltaj = zj.inner(Azj)
-	vjp1 = Azj - deltaj*vj - gammaj*vjm1
+        # Evaluate matrix times vector and update delta and v (lines 9-10)
+        Azj = A*zj
+        deltaj = zj.inner(Azj)
+        vjp1 = Azj - deltaj*vj - gammaj*vjm1
 
-	# Apply the preconditioner (line 11)
-	zjp1 = B*vjp1
-	# Evaluate duality product (line 12)
-	gamma2jp1 = vjp1.inner(zjp1)
-	# Check action of preconditioner
-	if gamma2jp1 < 0:
+        # Apply the preconditioner (line 11)
+        zjp1 = B*vjp1
+        # Evaluate duality product (line 12)
+        gamma2jp1 = vjp1.inner(zjp1)
+        # Check action of preconditioner
+        if gamma2jp1 < 0:
             raise ValueError('Preconditioner was not symmetric positive definite')
         
-	gammajp1 = np.sqrt(gamma2jp1);
+        gammajp1 = np.sqrt(gamma2jp1);
         
         # Normalize the quantities v and z (line 13-14)
-	zjp1 *= 1./gammajp1;
-	vjp1 *= 1./gammajp1;
-	
-	# Update QR factorization (line 15-19)
-	alpha0 = cj*deltaj - cjm1*sj*gammaj
-	alpha1 = np.sqrt(alpha0**2 + gammajp1**2)
-	alpha2 = sj*deltaj + cjm1*cj*gammaj
-	alpha3 = sjm1*gammaj
-	cjp1 = alpha0/alpha1
-	sjp1 = gammajp1/alpha1
+        zjp1 *= 1./gammajp1;
+        vjp1 *= 1./gammajp1;
 
-	# Update partial duality products psi and theta (lines 20-21)
+        # Update QR factorization (line 15-19)
+        alpha0 = cj*deltaj - cjm1*sj*gammaj
+        alpha1 = np.sqrt(alpha0**2 + gammajp1**2)
+        alpha2 = sj*deltaj + cjm1*cj*gammaj
+        alpha3 = sjm1*gammaj
+        cjp1 = alpha0/alpha1
+        sjp1 = gammajp1/alpha1
+
+        # Update partial duality products psi and theta (lines 20-21)
         thetajp1 = np.array([mjk.inner(zjp1k) for mjk, zjp1k in zip(mj, zjp1)])
         psijp1 = np.array([zjp1k.inner(vjp1k) for zjp1k, vjp1k in zip(zjp1, vjp1)])
 
-	# Update m,w,x vectors (lines 22-24)
+        # Update m,w,x vectors (lines 22-24)
         mjp1 = -sjp1*mj + cjp1*vjp1
-	wjp1 = (zj - alpha3*wjm1 - alpha2*wj)/alpha1
-	x += cjp1*etajm1[-1]*wjp1
+        wjp1 = (zj - alpha3*wjm1 - alpha2*wj)/alpha1
+        x += cjp1*etajm1[-1]*wjp1
 
-	# Update squared residual P-norm fractions (lines 25-26)
-	muj = sjp1**2*mujm1 - 2*sjp1*cjp1*thetajp1 + cjp1**2*psijp1
+        # Update squared residual P-norm fractions (lines 25-26)
+        muj = sjp1**2*mujm1 - 2*sjp1*cjp1*thetajp1 + cjp1**2*psijp1
 
-	# Update total and partial residual P-norms (lines 27-28)
-	etaj  = -sjp1*etajm1[-1]
-	etaj = np.r_[np.sqrt(muj)*etaj, etaj]
+        # Update total and partial residual P-norms (lines 27-28)
+        etaj  = -sjp1*etajm1[-1]
+        etaj = np.r_[np.sqrt(muj)*etaj, etaj]
 
         residuals.append(np.abs(etaj))
-        print niter, residuals[-1]
+        print(niter, residuals[-1])
 
         if converged_by_cb(niter, residuals[-1], x): break
 
-	# Prepare iterates for the next round
-	vjm1 = vj; vj = vjp1
-	wjm1 = wj; wj = wjp1 
-	etajm1 = etaj
-	mj = mjp1
-	mujm1 = muj
-	psij = psijp1
-	zj = zjp1
-	gammaj = gammajp1
-	cjm1 = cj; cj = cjp1
-	sjm1 = sj; sj = sjp1
+        # Prepare iterates for the next round
+        vjm1 = vj; vj = vjp1
+        wjm1 = wj; wj = wjp1 
+        etajm1 = etaj
+        mj = mjp1
+        mujm1 = muj
+        psij = psijp1
+        zj = zjp1
+        gammaj = gammajp1
+        cjm1 = cj; cj = cjp1
+        sjm1 = sj; sj = sjp1
 
-	# Check for maximum # of iterations
-	niter += 1
+        # Check for maximum # of iterations
+        niter += 1
     # Output just the last (global/not-componentwise) residial
     sub_residuals = np.array(residuals)
     

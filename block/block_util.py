@@ -1,5 +1,7 @@
 from __future__ import division
 
+from __future__ import absolute_import
+
 def isequal(op1, op2, eps=1e-3):
     from block import block_vec
     v = op1.create_vec()
@@ -56,7 +58,7 @@ def block_tensor(obj):
 
     from ufl import Form
     if isinstance(obj, Form):
-        from splitting import split_form
+        from .splitting import split_form
         obj = split_form(obj)
     blocks = numpy.array(obj)
     if len(blocks.shape) == 2:

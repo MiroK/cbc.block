@@ -1,4 +1,7 @@
 from __future__ import division
+from __future__ import absolute_import
+from six.moves import map
+from six.moves import range
 
 """Module implementing algebraic operations on PETSc matrices: Diag, InvDiag
 etc, as well as the collapse() method which performs matrix addition and
@@ -7,6 +10,15 @@ multiplication.
 
 from block.block_base import block_base
 from petsc4py import PETSc
+
+from dolfin import GenericVector
+
+from dolfin import Matrix    
+try:
+    from dolfin import GenericMatrix
+except ImportError:
+    GenericMatrix = Matrix
+
 
 class diag_op(block_base):
     """Base class for diagonal Epetra operators (represented by an Epetra vector)."""
@@ -59,7 +71,7 @@ class diag_op(block_base):
 
     def add(self, other, lscale=1.0, rscale=1.0):
         from block.block_util import isscalar
-        from PyTrilinos import Epetra
+
         try:
             if isscalar(other):
                 x = self.v.copy()
@@ -105,7 +117,6 @@ class matrix_op(block_base):
         return matrix_op(self.M, not self.transposed)
 
     def matvec(self, b):
-        from dolfin import GenericVector
         if not isinstance(b, GenericVector):
             return NotImplemented
         if self.transposed:
@@ -225,7 +236,7 @@ class LumpedInvDiag(diag_op):
     def __init__(self, A):
         v = A.create_vec().down_cast().vec()
         a = A.down_cast().mat()
-        for row in xrange(*a.getOwnershipRange()):
+        for row in range(*a.getOwnershipRange()):
             data = a.getRow(row)[1]
             v.setValue(row, sum(abs(d) for d in data))
         v.assemblyBegin()
@@ -244,7 +255,7 @@ def _collapse(x):
     from block.block_compose import block_mul, block_add, block_sub, block_transpose
     from block.block_mat import block_mat
     from block.block_util import isscalar
-    from dolfin import GenericMatrix
+
     if isinstance(x, (matrix_op, diag_op)):
         return x
     elif isinstance(x, GenericMatrix):
@@ -254,7 +265,7 @@ def _collapse(x):
             raise NotImplementedError("collapse() for block_mat with shape != (1,1)")
         return _collapse(x[0,0])
     elif isinstance(x, block_mul):
-        factors = map(_collapse, x)
+        factors = list(map(_collapse, x))
         while len(factors) > 1:
             A = factors.pop(0)
             B = factors[0]
@@ -266,13 +277,13 @@ def _collapse(x):
 
         return factors[0]
     elif isinstance(x, block_add):
-        A,B = map(_collapse, x)
+        A,B = list(map(_collapse, x))
         if isscalar(A) and isscalar(B):
             return A+B
         else:
             return B.add(A) if isscalar(A) else A.add(B)
     elif isinstance(x, block_sub):
-        A,B = map(_collapse, x)
+        A,B = list(map(_collapse, x))
         if isscalar(A) and isscalar(B):
             return A-B
         else:
@@ -319,27 +330,3 @@ def collapse(x):
 
 def create_identity(vec, val=1):
     raise NotImplementedError()
-
-    """Create an identity matrix with the layout given by the supplied
-    GenericVector. The values of the vector are NOT used."""
-    import numpy
-    from PyTrilinos import Epetra
-    from dolfin import EpetraMatrix
-    rowmap = vec.down_cast().vec().Map()
-    graph = Epetra.CrsGraph(Epetra.Copy, rowmap, 1, True)
-    indices = numpy.array([0], dtype=numpy.intc)
-    for row in rowmap.MyGlobalElements():
-        indices[0] = row
-        graph.InsertGlobalIndices(row, indices)
-    graph.FillComplete()
-
-    matrix = EpetraMatrix(graph)
-    indices = numpy.array(rowmap.MyGlobalElements())
-    if val == 0:
-        matrix.zero(indices)
-    else:
-        matrix.ident(indices)
-        if val != 1:
-            matrix *= val
-
-    return matrix

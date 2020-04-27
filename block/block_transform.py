@@ -1,5 +1,16 @@
-from block_mat import block_mat
-from block_compose import block_mul
+from __future__ import absolute_import
+from __future__ import print_function
+from .block_mat import block_mat
+from .block_compose import block_mul
+from six.moves import range
+
+
+from dolfin import Matrix    
+try:
+    from dolfin import GenericMatrix
+except ImportError:
+    GenericMatrix = Matrix
+
 
 def block_kronecker(A, B):
     """Create the Kronecker (tensor) product of two matrices. The result is
@@ -17,10 +28,10 @@ def block_kronecker(A, B):
     Similarly, it may be wise to do the inverse separately:
       C,D = block_kronecker(A,B); inverse = some_invert(D)*ConjGrad(C)
     """
-    from block_util import isscalar
+    from .block_util import isscalar
     import dolfin
 
-    if isinstance(A, dolfin.GenericMatrix) and not isinstance(B, block_mat):
+    if isinstance(A, (Matrix, GenericMatrix)) and not isinstance(B, block_mat):
         A = block_mat(A.array())
     assert isinstance(A, block_mat) or isinstance(B, block_mat)
 
@@ -33,7 +44,7 @@ def block_kronecker(A, B):
     if isinstance(A, block_mat):
         m,n = A.blocks.shape
         if isinstance(B, block_mat):
-            print "Note: block_kronecker with two block matrices is probably buggy"
+            print("Note: block_kronecker with two block matrices is probably buggy")
             D = block_mat(n,n)
             for i in range(n):
                 for j in range(n):

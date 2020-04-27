@@ -4,10 +4,12 @@ mixed-spaces, but the form is assembled in blocks instead of one
 monolithic matrix.
 
 """
+from __future__ import absolute_import
 from dolfin import *
 from block import *
 from block.algebraic.petsc import *
 from block.iterative import *
+from six.moves import map
 
 mesh = UnitSquareMesh(32, 32)
 
@@ -51,7 +53,7 @@ x = Ainv * y
 
 # plotting
 V, Q = [sub_space.collapse() for sub_space in W.split()]
-u, p = map(Function, [V, Q], x)
+u, p = list(map(Function, [V, Q], x))
 plot(u)
 plot(p)
 interactive()

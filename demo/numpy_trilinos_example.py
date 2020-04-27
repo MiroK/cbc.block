@@ -1,9 +1,12 @@
+from __future__ import absolute_import
+from __future__ import print_function
 from block import *
 from block.iterative import *
 from block.algebraic.trilinos import *
 
 import dolfin
 import numpy 
+from six.moves import range
 
 def numpy2epetra(M):
     import numpy
@@ -49,7 +52,7 @@ x[:] = random.random(N)
 Ainv = ConjGrad(A, precond=ML(A), tolerance=1e-10, show=3)
 
 y = Ainv*x
-print "CG/ML converged in ", len(Ainv.residuals), " iterations "
+print("CG/ML converged in ", len(Ainv.residuals), " iterations ")
 
 
 

@@ -1,4 +1,6 @@
 
+from __future__ import absolute_import
+from __future__ import print_function
 import numpy 
 
 from block import *
@@ -6,6 +8,7 @@ from block.iterative import *
 from block.algebraic.petsc import *
 
 import dolfin
+from six.moves import range
 
 class numpy_op(block_base):
     from block.object_pool import vec_pool
@@ -57,7 +60,7 @@ Ainv = ConjGrad(A, tolerance=1e-10, show=2)
 
 y = Ainv*x
 
-print "CG converged in ", len(Ainv.residuals), " iterations "
+print("CG converged in ", len(Ainv.residuals), " iterations ")
 
 
 

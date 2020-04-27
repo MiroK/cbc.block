@@ -1,4 +1,6 @@
-from __future__ import division
+from __future__ import division, absolute_import
+import six
+from six.moves import range
 
 """Utility functions for plotting, boundaries, etc."""
 
@@ -74,7 +76,7 @@ class update():
                     if mesh is not None:
                         break
                     if mesh is None:
-                        raise RuntimeError, "Unable to project expression, no suitable mesh."
+                        raise RuntimeError("Unable to project expression, no suitable mesh.")
 
         # Create function space
         shape = expression.shape()
@@ -85,7 +87,7 @@ class update():
         elif len(shape) == 2:
             V = TensorFunctionSpace(mesh, "CG", 1, shape=shape)
         else:
-            raise RuntimeError, "Unable to project expression, unhandled rank, shape is %s." % (shape,)
+            raise RuntimeError("Unable to project expression, unhandled rank, shape is %s." % (shape,))
 
         return V
 
@@ -96,7 +98,7 @@ class update():
                 if isinstance(mesh, cpp.Mesh):
                     V = FunctionSpaceBase(mesh, v.ufl_element())
                 else:
-                    raise TypeError, "expected a mesh when projecting an Expression"
+                    raise TypeError("expected a mesh when projecting an Expression")
             else:
                 V = self._extract_function_space(f, mesh)
         key = str(V)
@@ -152,7 +154,7 @@ class update():
             self.plots[name].update(data, title=title, **kwargs)
 
     def __call__(self, time=None, postfix="", **functionals):
-        for name,func in sorted(functionals.iteritems()):
+        for name,func in sorted(six.iteritems(functionals)):
             args = self.kwargs.get(name, {})
             if 'functionspace' in args or not isinstance(func, Function):
                 func = self.project(func, name, args.get('functionspace'))

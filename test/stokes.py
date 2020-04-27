@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+from __future__ import print_function
 import PyTrilinos
 from dolfin import *
 from block import *
@@ -77,9 +79,9 @@ class Stokes(unittest.TestCase):
 
 
 if __name__ == "__main__" :
-    print ""
-    print "Testing Stokes preconditioner"
-    print "---------------------------------------------------------------------------"
+    print("")
+    print("Testing Stokes preconditioner")
+    print("---------------------------------------------------------------------------")
     unittest.main()
 
 

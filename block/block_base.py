@@ -1,6 +1,17 @@
 from __future__ import division
 
+from __future__ import absolute_import
 import numpy
+from six.moves import map
+
+from dolfin import GenericVector
+
+from dolfin import Matrix
+try:
+    from dolfin import GenericMatrix
+except ImportError:
+    GenericMatrix = Matrix
+
 
 class block_base(object):
     """Base class for (block) operators. Defines algebraic operations that
@@ -9,40 +20,40 @@ class block_base(object):
     matvec(self, other) method.
     """
     def __mul__(self, other):
-        from block_compose import block_mul
-        from block_vec import block_vec
-        from dolfin import GenericVector
+        from .block_compose import block_mul
+        from .block_vec import block_vec
+
         if not isinstance(other, (block_vec, GenericVector)):
             return block_mul(self, other)
         return self.matvec(other)
 
     def __rmul__(self, other):
-        from block_compose import block_mul
+        from .block_compose import block_mul
         return block_mul(other, self)
 
     def __neg__(self):
-        from block_compose import block_mul
+        from .block_compose import block_mul
         return block_mul(-1, self)
 
     def __add__(self, other):
-        from block_compose import block_add
+        from .block_compose import block_add
         return block_add(self, other)
 
     def __radd__(self, other):
-        from block_compose import block_add
+        from .block_compose import block_add
         return block_add(other, self)
 
     def __sub__(self, other):
-        from block_compose import block_sub
+        from .block_compose import block_sub
         return block_sub(self, other)
 
     def __rsub__(self, other):
-        from block_compose import block_sub
+        from .block_compose import block_sub
         return block_sub(other, self)
 
     @property
     def T(self):
-        from block_compose import block_transpose
+        from .block_compose import block_transpose
         return block_transpose(self)
 
     def __pow__(self, other):
@@ -60,7 +71,7 @@ class block_container(block_base):
     """
     def __init__(self, mn, blocks):
         import dolfin
-        from block_util import flatten
+        from .block_util import flatten
 
         self.blocks = numpy.ndarray(mn, dtype=numpy.object)
 
@@ -69,7 +80,7 @@ class block_container(block_base):
         # (due to non-zero-based numbering).
         orig_len_func = {}
         for el in flatten(blocks):
-            if isinstance(el, dolfin.GenericTensor):
+            if isinstance(el, (GenericVector, Matrix)):
                 tp = type(el)
                 if not tp in orig_len_func:
                     orig_len_func[tp] = getattr(tp, '__len__', None)
@@ -90,7 +101,7 @@ class block_container(block_base):
     def __getitem__(self, key):
         try:
             return self.blocks[key]
-        except IndexError, e:
+        except IndexError as e:
             raise IndexError(str(e) + ' at ' + str(key) + ' -- incompatible block structure')
     def __len__(self):
         return len(self.blocks)
